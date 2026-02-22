@@ -1,0 +1,9 @@
+服务器的数据库链接是：
+# 数据库配置 - 连接到独立安装的MongoDB
+MONGODB_URI=mongodb://localhost:27017/midjourney-gallery
+
+
+
+本地开发端链接是：
+# 数据库配置 - 连接到独立安装的MongoDB
+MONGODB_URI=mongodb://localhost:27017/midjourney-gallery-dev

@@ -1,0 +1,29 @@
+{
+  "short_name": "III.PICS",
+  "name": "III.PICS - 专业AI视觉艺术平台",
+  "description": "激发灵感·释放想象·推动创新，汇聚全球创作者的精美作品",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#667eea",
+  "background_color": "#ffffff",
+  "categories": ["entertainment", "lifestyle", "photo"],
+  "lang": "zh-CN"
+}

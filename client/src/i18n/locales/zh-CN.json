@@ -1,0 +1,781 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "edit": "编辑",
+    "delete": "删除",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "refresh": "刷新",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "submit": "提交",
+    "reset": "重置",
+    "close": "关闭",
+    "open": "打开",
+    "view": "查看",
+    "share": "分享",
+    "copy": "复制",
+    "download": "下载",
+    "upload": "上传",
+    "create": "创建",
+    "update": "更新",
+    "remove": "移除",
+    "add": "添加",
+    "select": "选择",
+    "clear": "清除",
+    "all": "全部",
+    "none": "无",
+    "yes": "是",
+    "no": "否",
+    "ok": "好的",
+    "more": "更多",
+    "less": "收起",
+    "expand": "展开",
+    "collapse": "折叠"
+  },
+  "nav": {
+    "home": "首页",
+    "explore": "发现",
+    "create": "创作",
+    "dashboard": "我的",
+    "profile": "个人资料",
+    "settings": "设置",
+    "admin": "管理",
+    "help": "帮助",
+    "about": "关于",
+    "contact": "联系",
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出登录",
+    "favorites": "收藏",
+    "notifications": "通知"
+  },
+  "header": {
+    "brand": "III.PICS",
+    "userMenu": "用户菜单",
+    "mobileMenu": "移动菜单"
+  },
+  "footer": {
+    "description": "III.PICS - 专业AI视觉艺术平台，激发灵感，释放想象，创新无限。让AI艺术创作更加便捷和有趣。",
+    "quickLinks": "快速链接",
+    "support": "支持",
+    "legal": "法律",
+    "privacy": "隐私政策",
+    "terms": "服务条款",
+    "copyright": "©  III.PICS. 保留所有权利。2025"
+  },
+  "home": {
+    "hero": {
+      "title": "发现 AI 艺术的无限可能",
+      "subtitle": "探索精美的 Midjourney 风格参数，激发你的创作灵感",
+      "cta": "开始探索",
+      "createButton": "开始创作",
+      "exploreButton": "浏览作品",
+      "stats": {
+        "posts": "精美作品",
+        "users": "创作者",
+        "styles": "风格参数",
+        "shares": "参数分享"
+      }
+    },
+    "featured": {
+      "title": "精选作品",
+      "subtitle": "发现最受欢迎的创作"
+    },
+    "searchPlaceholder": "搜索风格参数、标题或描述...",
+    "sortByNewest": "最新发布",
+    "sortByViews": "最多浏览",
+    "sortByLikes": "最多点赞",
+    "sortByComments": "最多评论",
+    "popularTags": "热门标签",
+    "noResults": "未找到相关内容",
+    "noContent": "暂无内容",
+    "tryAdjustSearch": "尝试调整搜索条件或浏览其他内容",
+    "beFirstToShare": "成为第一个分享精美作品的人",
+    "search": {
+      "placeholder": "搜索风格参数、标题或描述...",
+      "button": "搜索"
+    },
+    "filters": {
+      "sortBy": "排序方式",
+      "newest": "最新",
+      "popular": "最热",
+      "trending": "趋势",
+      "tags": "热门标签",
+      "allTags": "所有标签"
+    },
+    "loadError": {
+      "title": "加载失败",
+      "message": "请刷新页面重试"
+    }
+  },
+  "auth": {
+    "welcomeBack": "欢迎回来",
+    "loginSubtitle": "登录您的账户，继续您的AI艺术之旅",
+    "email": "邮箱地址",
+    "emailPlaceholder": "请输入邮箱地址",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "rememberMe": "记住我",
+    "loggingIn": "登录中...",
+    "noAccount": "还没有账户？",
+    "accountLocked": "账户已被锁定，请联系客服",
+    "loginFailed": "登录失败，请重试",
+    "login": {
+      "title": "登录",
+      "subtitle": "欢迎回来",
+      "email": "邮箱",
+      "password": "密码",
+      "remember": "记住我",
+      "forgot": "忘记密码？",
+      "submit": "登录",
+      "noAccount": "还没有账号？",
+      "signUp": "立即注册"
+    },
+    "register": {
+      "title": "加入我们",
+      "subtitle": "创建您的账户，开始分享精美的AI艺术作品",
+      "username": "用户名",
+      "usernamePlaceholder": "请输入用户名",
+      "email": "邮箱地址",
+      "emailPlaceholder": "请输入邮箱地址",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "confirmPassword": "确认密码",
+      "confirmPasswordPlaceholder": "请再次输入密码",
+      "agreeToTerms": "我同意",
+      "termsOfService": "服务条款",
+      "and": "和",
+      "privacyPolicy": "隐私政策",
+      "createAccount": "注册账户",
+      "registering": "注册中...",
+      "haveAccount": "已有账户？",
+      "loginNow": "立即登录"
+    },
+    "forgotPassword": {
+      "title": "忘记密码",
+      "subtitle": "重置您的密码",
+      "email": "邮箱地址",
+      "submit": "发送重置链接",
+      "back": "返回登录",
+      "success": "重置链接已发送到您的邮箱"
+    },
+    "resetPassword": {
+      "title": "重置密码",
+      "subtitle": "设置新密码",
+      "password": "新密码",
+      "confirmPassword": "确认新密码",
+      "submit": "重置密码",
+      "success": "密码重置成功"
+    },
+    "emailVerification": {
+      "title": "邮箱验证",
+      "subtitle": "请验证您的邮箱地址",
+      "message": "我们已向您的邮箱发送了验证链接",
+      "resend": "重新发送",
+      "success": "邮箱验证成功"
+    }
+  },
+  "post": {
+    "create": {
+      "title": "创建新作品",
+      "subtitle": "分享您的创作",
+      "titleField": "标题",
+      "description": "描述",
+      "styleParams": "风格参数",
+      "tags": "标签",
+      "image": "图片",
+      "submit": "发布作品",
+      "draft": "保存草稿"
+    },
+    "detail": {
+      "author": "作者",
+      "createdAt": "发布时间",
+      "views": "浏览",
+      "likes": "点赞",
+      "share": "分享",
+      "favorite": "收藏",
+      "report": "举报",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "promptDetail": {
+      "relatedPrompts": "相关提示词"
+    },
+    "comments": {
+      "title": "评论",
+      "placeholder": "写下您的评论...",
+      "submit": "发表评论",
+      "reply": "回复",
+      "like": "点赞",
+      "edit": "编辑",
+      "delete": "删除",
+      "noComments": "暂无评论"
+    }
+  },
+  "profile": {
+    "title": "个人资料",
+    "edit": "编辑资料",
+    "avatar": "头像",
+    "username": "用户名",
+    "email": "邮箱",
+    "bio": "个人简介",
+    "website": "网站",
+    "location": "位置",
+    "joinedAt": "加入时间",
+    "posts": "作品",
+    "followers": "粉丝",
+    "following": "关注",
+    "follow": "关注",
+    "unfollow": "取消关注",
+    "tabs": {
+      "posts": "作品",
+      "favorites": "收藏",
+      "followers": "粉丝",
+      "following": "关注"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "profile": "个人资料",
+    "account": "账户设置",
+    "privacy": "隐私设置",
+    "notifications": "通知设置",
+    "language": "语言设置",
+    "theme": "主题设置",
+    "security": "安全设置",
+    "changePassword": "修改密码",
+    "deleteAccount": "删除账户",
+    "save": "保存设置"
+  },
+  "admin": {
+    "title": "管理后台",
+    "dashboard": "仪表板",
+    "users": "用户管理",
+    "posts": "内容管理",
+    "reports": "举报管理",
+    "analytics": "数据分析",
+    "settings": "系统设置",
+    "stats": {
+      "totalUsers": "总用户数",
+      "totalPosts": "总作品数",
+      "activeUsers": "活跃用户",
+      "newUsers": "新用户"
+    },
+    "users": {
+      "searchPlaceholder": "搜索用户名或邮箱..."
+    },
+    "posts": {
+      "searchPlaceholder": "搜索标题或描述..."
+    },
+    "broadcast": {
+      "messagePlaceholder": "输入广播消息内容..."
+    }
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标记为已读",
+    "noNotifications": "暂无通知",
+    "types": {
+      "like": "点赞了您的作品",
+      "comment": "评论了您的作品",
+      "follow": "关注了您",
+      "system": "系统通知"
+    }
+  },
+  "error": {
+    "loadFailed": "加载失败",
+    "refreshPage": "请刷新页面重试"
+  },
+  "errors": {
+    "404": {
+      "title": "页面未找到",
+      "message": "抱歉，您访问的页面不存在",
+      "home": "返回首页"
+    },
+    "500": {
+      "title": "服务器错误",
+      "message": "服务器出现了一些问题，请稍后再试"
+    },
+    "network": {
+      "title": "网络错误",
+      "message": "请检查您的网络连接"
+    },
+    "unauthorized": {
+      "title": "未授权",
+      "message": "您没有权限访问此页面"
+    }
+  },
+  "ui": {
+    "modal": {
+      "backdrop": "模态框背景",
+      "close": "关闭"
+    },
+    "avatarSelector": {
+      "title": "选择头像",
+      "subtitle": "选择一个头像来个性化您的个人资料",
+      "cancel": "取消",
+      "confirm": "确认"
+    },
+    "notFound": {
+      "title": "页面走丢了",
+      "message": "抱歉，您访问的页面可能已被移除、重命名或暂时不可用。",
+      "suggestion": "让我们帮您找到正确的方向吧！",
+      "homeButton": "返回首页",
+      "backButton": "返回上一页",
+      "suggestions": "或者您可以访问",
+      "createWork": "创作作品",
+      "dashboard": "个人中心",
+      "systemStatus": "系统状态"
+    }
+  },
+  "validation": {
+      "required": "此字段为必填项",
+      "checking": "检查中...",
+      "emailRequired": "请输入邮箱地址",
+      "emailInvalid": "请输入有效的邮箱地址",
+      "passwordRequired": "请输入密码",
+      "passwordMinLength": "密码长度至少6个字符",
+      "email": {
+        "required": "请输入邮箱地址",
+        "invalid": "请输入有效的邮箱地址",
+        "checkFailed": "检查邮箱失败"
+      },
+      "password": {
+        "required": "请输入密码",
+        "minLength": "密码长度至少6个字符",
+        "invalid": "请输入有效的密码",
+        "valid": "密码格式正确"
+      },
+      "username": {
+        "minLength": "用户名长度至少3个字符",
+        "maxLength": "用户名长度不能超过20个字符",
+        "format": "用户名只能包含字母、数字和下划线",
+        "invalid": "请输入有效的用户名",
+        "checkFailed": "检查用户名失败"
+      },
+      "confirmPassword": {
+        "required": "请确认密码",
+        "mismatch": "两次输入的密码不一致",
+        "valid": "密码确认正确"
+      },
+    "minLength": "至少需要{{min}}个字符",
+    "maxLength": "最多{{max}}个字符",
+    "fileSize": "文件大小不能超过{{size}}MB",
+    "fileType": "不支持的文件类型"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前",
+    "weeksAgo": "{{count}}周前",
+    "monthsAgo": "{{count}}个月前",
+    "yearsAgo": "{{count}}年前"
+  },
+  "language": {
+    "current": "当前语言",
+    "select": "选择语言",
+    "zh-CN": "简体中文",
+    "en-US": "English",
+    "ja-JP": "日本語"
+  },
+  "help": {
+    "title": "帮助中心",
+    "subtitle": "我们随时为您提供帮助和支持",
+    "quickNavigation": "快速导航",
+    "userGuide": "使用指南",
+    "userGuideDesc": "详细的使用教程和操作指南",
+    "viewGuide": "查看指南",
+    "faq": "常见问题",
+    "faqDesc": "查找常见问题的解答",
+    "viewFaq": "查看FAQ",
+    "contactDesc": "联系我们的技术支持团队",
+    "contactUs": "联系我们",
+    "contact": {
+      "title": "联系我们",
+      "description": "如果您有任何问题或需要帮助，请随时联系我们的支持团队。",
+      "emailButton": "发送邮件",
+      "wechat": "微信：RPW000"
+    },
+    "sections": {
+      "gettingStarted": {
+        "title": "入门指南",
+        "questions": {
+          "howToRegister": {
+            "question": "如何注册账户？",
+            "answer": "点击页面右上角的'注册'按钮，填写用户名、邮箱和密码，同意服务条款后即可完成注册。"
+          },
+          "howToLogin": {
+            "question": "如何登录？",
+            "answer": "在登录页面输入您的邮箱和密码，点击'登录'按钮即可。如果忘记密码，可以点击'忘记密码'进行重置。"
+          },
+          "firstSteps": {
+            "question": "注册后应该做什么？",
+            "answer": "建议您先完善个人资料，上传头像，然后浏览首页的精选作品，关注感兴趣的创作者。"
+          }
+        }
+      },
+      "creatingPosts": {
+        "title": "创作发布",
+        "questions": {
+          "howToPost": {
+            "question": "如何发布作品？",
+            "answer": "点击'创作'按钮，上传您的AI艺术作品，填写标题、描述和Midjourney参数，添加相关标签后发布。"
+          },
+          "supportedFormats": {
+            "question": "支持哪些图片格式？",
+            "answer": "我们支持JPG、PNG、WebP等常见图片格式，建议图片大小不超过10MB，分辨率不低于512x512像素。"
+          },
+          "addingParams": {
+            "question": "如何添加Midjourney参数？",
+            "answer": "在发布作品时，请在'风格参数'字段中填写完整的Midjourney提示词和参数，这将帮助其他用户学习和参考。"
+          },
+          "editPosts": {
+            "question": "可以编辑已发布的作品吗？",
+            "answer": "是的，您可以在作品详情页点击'编辑'按钮修改标题、描述、标签等信息，但无法更换图片。"
+          }
+        }
+      },
+      "browsing": {
+        "title": "浏览发现",
+        "questions": {
+          "howToSearch": {
+            "question": "如何搜索作品？",
+            "answer": "使用顶部搜索框输入关键词，可以搜索标题、描述、标签或作者。您还可以使用筛选器按分类、时间等条件筛选。"
+          },
+          "usingTags": {
+            "question": "如何使用标签？",
+            "answer": "点击任意标签可以查看相关作品，您也可以关注感兴趣的标签以获得相关推荐。"
+          },
+          "featuredWorks": {
+            "question": "精选作品是如何选择的？",
+            "answer": "精选作品由我们的编辑团队根据作品质量、创新性、社区反响等因素综合评选。"
+          }
+        }
+      },
+      "interaction": {
+        "title": "社交互动",
+        "questions": {
+          "howToFavorite": {
+            "question": "如何收藏作品？",
+            "answer": "在作品详情页或作品卡片上点击心形图标即可收藏，收藏的作品可以在个人中心查看。"
+          },
+          "howToFollow": {
+            "question": "如何关注其他用户？",
+            "answer": "访问用户的个人主页，点击'关注'按钮即可。关注后您将在首页看到他们的最新作品。"
+          },
+          "howToComment": {
+            "question": "如何评论作品？",
+            "answer": "在作品详情页底部的评论区输入您的评论内容，点击'发表评论'即可。请保持友善和建设性的交流。"
+          },
+          "howToShare": {
+            "question": "如何分享作品？",
+            "answer": "点击作品的'分享'按钮，可以复制链接或分享到社交媒体平台。"
+          }
+        }
+      },
+      "profile": {
+        "title": "个人资料",
+        "questions": {
+          "editProfile": {
+            "question": "如何编辑个人资料？",
+            "answer": "进入个人中心，点击'编辑资料'按钮，可以修改头像、用户名、个人简介等信息。"
+          },
+          "changePassword": {
+            "question": "如何修改密码？",
+            "answer": "在设置页面选择'安全设置'，点击'修改密码'，输入当前密码和新密码即可。"
+          },
+          "viewStats": {
+            "question": "在哪里查看我的数据统计？",
+            "answer": "在个人中心可以查看您的作品数量、获得的点赞数、粉丝数等统计信息。"
+          }
+        }
+      },
+      "midjourneyParams": {
+        "title": "Midjourney参数",
+        "questions": {
+          "whatAreParams": {
+            "question": "什么是Midjourney参数？",
+            "answer": "Midjourney参数是用于控制AI生成图像风格、质量、比例等特性的指令，通过不同的参数组合可以创造出独特的艺术效果。"
+          },
+          "basicFormat": {
+            "question": "参数的基本格式是什么？",
+            "answer": "基本格式为：/imagine prompt: [描述] --[参数名] [参数值]，例如：/imagine prompt: a beautiful sunset --ar 16:9 --v 6"
+          },
+          "versionParam": {
+            "question": "--v 参数有什么作用？",
+            "answer": "--v 参数用于指定Midjourney的版本，不同版本有不同的艺术风格和特性，如 --v 6 表示使用第6版本。"
+          },
+          "aspectRatio": {
+            "question": "如何设置图片比例？",
+            "answer": "使用 --ar 参数设置宽高比，如 --ar 16:9（宽屏）、--ar 1:1（正方形）、--ar 9:16（竖屏）等。"
+          }
+        }
+      }
+    }
+  },
+  "terms": {
+    "title": "服务条款",
+    "subtitle": "使用 III.PICS 服务前，请仔细阅读并理解以下条款",
+    "lastUpdated": "最后更新时间：2025年1月20日",
+    "importantNotice": {
+      "title": "重要提示",
+      "content": "本服务条款是您与 III.PICS 之间的法律协议。使用我们的服务即表示您同意遵守这些条款。请仔细阅读所有条款，如有疑问请联系我们。"
+    },
+    "needHelp": {
+      "title": "需要帮助？",
+      "content": "如果您对服务条款有任何疑问，欢迎随时联系我们",
+      "email": "邮箱：i@mail.iii.pics",
+      "wechat": "微信：RPW000"
+    },
+    "sections": {
+      "acceptance": {
+        "title": "条款接受",
+        "content": [
+          "欢迎使用 III.PICS（\"本服务\"、\"我们\"或\"平台\"）。本服务条款（\"条款\"）构成您与 III.PICS 之间具有法律约束力的协议。",
+          "通过访问或使用我们的服务，您确认您已阅读、理解并同意受本条款约束。",
+          "如果您不同意本条款的任何部分，请不要使用我们的服务。",
+          "我们保留随时修改这些条款的权利。重大变更将提前通知用户，继续使用服务即表示接受修改后的条款。"
+        ]
+      },
+      "description": {
+        "title": "服务描述",
+        "content": [
+          "III.PICS 是一个专门展示和分享 Midjourney AI 艺术作品的在线平台。",
+          "我们提供用户注册、内容发布、浏览发现、社交互动等功能。",
+          "用户可以上传AI艺术作品、分享创作参数、关注其他创作者、收藏喜欢的内容。",
+          "我们致力于为AI艺术爱好者提供一个专业、友好的创作和交流社区。",
+          "服务可能包括免费和付费功能，具体功能和限制以实际提供为准。"
+        ]
+      },
+      "eligibility": {
+        "title": "使用资格",
+        "content": [
+          "您必须年满13岁才能使用我们的服务。未满18岁的用户需要获得父母或监护人的同意。",
+          "您必须提供准确、完整的注册信息，并及时更新任何变更。",
+          "您有责任保护您的账户安全，包括保密您的登录凭据。",
+          "每个用户只能注册一个账户，不得创建虚假或重复账户。",
+          "我们保留拒绝服务、终止账户或限制访问的权利，无需事先通知。"
+        ]
+      },
+      "content": {
+        "title": "用户内容",
+        "content": [
+          "您对上传到平台的所有内容（\"用户内容\"）负全部责任。",
+          "您声明并保证您拥有发布用户内容的合法权利，或已获得必要的许可。",
+          "通过上传内容，您授予我们非独占的、全球性的、免版税的许可来使用、显示、分发您的内容。",
+          "您的内容不得包含非法、有害、威胁、辱骂、骚扰、诽谤、粗俗、淫秽或其他令人反感的材料。",
+          "我们保留审查、编辑或删除任何用户内容的权利，但没有义务这样做。",
+          "您可以随时删除您的内容，但已分享的内容可能继续被其他用户访问。"
+        ]
+      },
+      "conduct": {
+        "title": "行为准则",
+        "content": [
+          "您同意不会使用服务进行任何非法或未经授权的目的。",
+          "禁止发布垃圾信息、恶意软件或进行任何形式的网络攻击。",
+          "不得骚扰、威胁或冒充其他用户。",
+          "禁止侵犯他人的知识产权、隐私权或其他权利。",
+          "不得试图绕过我们的安全措施或干扰服务的正常运行。",
+          "禁止使用自动化工具（如机器人、爬虫）未经授权访问服务。",
+          "不得从事任何可能损害平台声誉或用户体验的行为。"
+        ]
+      },
+      "intellectual": {
+        "title": "知识产权",
+        "content": [
+          "除用户内容外，服务中的所有内容、功能和特性均为我们或我们的许可方所有。",
+          "这包括但不限于文本、图形、标志、图标、图像、音频剪辑、数字下载、数据编译和软件。",
+          "我们的商标、服务标记和标志不得在未经我们事先书面同意的情况下使用。",
+          "您不得复制、修改、分发、销售或租赁我们服务的任何部分。",
+          "如果您认为您的知识产权受到侵犯，请通过 i@mail.iii.pics 联系我们。"
+        ]
+      },
+      "privacy": {
+        "title": "隐私保护",
+        "content": [
+          "您的隐私对我们很重要。我们的隐私政策详细说明了我们如何收集、使用和保护您的信息。",
+          "使用我们的服务即表示您同意我们按照隐私政策处理您的信息。",
+          "我们实施适当的安全措施来保护您的个人信息。",
+          "您有权访问、更正或删除您的个人信息，具体请参阅我们的隐私政策。"
+        ]
+      },
+      "termination": {
+        "title": "服务终止",
+        "content": [
+          "您可以随时停止使用我们的服务并删除您的账户。",
+          "我们可能因以下原因暂停或终止您的账户：违反本条款、长期不活跃、技术或安全原因。",
+          "终止后，您使用服务的权利将立即停止，但本条款的某些条款将继续有效。",
+          "我们将根据隐私政策处理您的数据保留和删除。"
+        ]
+      },
+      "disclaimer": {
+        "title": "免责声明",
+        "content": [
+          "我们的服务按\"现状\"提供，不提供任何明示或暗示的保证。",
+          "我们不保证服务将不间断、无错误或完全安全。",
+          "您使用服务的风险由您自己承担。",
+          "我们不对用户内容的准确性、完整性或合法性负责。"
+        ]
+      },
+      "limitation": {
+        "title": "责任限制",
+        "content": [
+          "在法律允许的最大范围内，我们不对任何间接、偶然、特殊或后果性损害负责。",
+          "我们的总责任不超过您在过去12个月内向我们支付的金额。",
+          "某些司法管辖区不允许排除或限制某些损害，因此上述限制可能不适用于您。"
+        ]
+      },
+      "governing": {
+        "title": "适用法律",
+        "content": [
+          "本条款受中华人民共和国法律管辖。",
+          "因本条款引起的任何争议应通过友好协商解决。",
+          "如协商不成，争议应提交至我们所在地的人民法院解决。"
+        ]
+      },
+      "contact": {
+        "title": "联系我们",
+        "content": [
+          "如果您对本服务条款有任何疑问，请通过以下方式联系我们：",
+          "邮箱：i@mail.iii.pics",
+          "我们将在收到您的询问后尽快回复。"
+        ]
+      }
+    }
+  },
+  "explore": {
+    "title": "探索精彩作品",
+    "subtitle": "发现来自全球创作者的优秀Midjourney作品，获取创作灵感",
+    "searchPlaceholder": "搜索风格参数、标题、标签或作者...",
+    "searchButton": "搜索",
+    "filters": {
+      "category": "分类",
+      "sortBy": "排序",
+      "timeRange": "时间范围",
+      "viewMode": "视图模式",
+      "trending": "热门趋势",
+      "latest": "最新发布",
+      "popular": "最受欢迎",
+      "views": "最多浏览",
+      "today": "今天",
+      "thisWeek": "本周",
+      "thisMonth": "本月",
+      "thisYear": "今年",
+      "all": "全部",
+      "grid": "网格",
+      "list": "列表"
+    },
+    "stats": {
+      "views": "浏览",
+      "likes": "点赞",
+      "comments": "评论"
+    },
+    "noResults": {
+      "title": "未找到相关作品",
+      "message": "尝试调整搜索条件或浏览其他分类"
+    }
+  },
+  "register": {
+    "title": "创建账户",
+    "subtitle": "加入我们的创作者社区",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入用户名",
+    "email": "邮箱地址",
+    "emailPlaceholder": "请输入邮箱地址",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "confirmPassword": "确认密码",
+    "confirmPasswordPlaceholder": "请再次输入密码",
+    "agreeToTerms": "我同意",
+    "termsOfService": "服务条款",
+    "and": "和",
+    "privacyPolicy": "隐私政策",
+    "createAccount": "创建账户",
+    "form": {
+      "usernameHelp": "用户名将作为您的唯一标识",
+      "emailHelp": "我们将向此邮箱发送验证信息",
+      "passwordHelp": "密码至少8个字符，包含字母和数字",
+      "showPassword": "显示密码",
+      "hidePassword": "隐藏密码",
+      "submit": "创建账户",
+      "submitting": "创建中..."
+    },
+    "validation": {
+      "usernameRequired": "请输入用户名",
+      "usernameLength": "用户名长度至少3个字符",
+      "usernameMaxLength": "用户名长度不能超过20个字符",
+      "usernameFormat": "用户名只能包含字母、数字和下划线",
+      "usernameChecking": "检查中...",
+      "usernameAvailable": "用户名可用",
+      "usernameTaken": "用户名已被使用",
+      "emailRequired": "请输入邮箱地址",
+      "emailInvalid": "请输入有效的邮箱地址",
+      "emailChecking": "检查中...",
+      "emailAvailable": "邮箱可用",
+      "emailTaken": "邮箱已被注册",
+      "passwordRequired": "请输入密码",
+      "passwordLength": "密码至少需要8个字符",
+      "passwordWeak": "密码强度较弱，建议包含大小写字母、数字和特殊字符",
+      "confirmPasswordRequired": "请确认密码",
+      "passwordMismatch": "两次输入的密码不一致"
+    },
+    "agreement": {
+      "text": "创建账户即表示您同意我们的",
+      "terms": "服务条款",
+      "and": "和",
+      "privacy": "隐私政策"
+    },
+    "login": {
+      "text": "已有账户？",
+      "link": "立即登录"
+    }
+  },
+  "emailVerification": {
+    "title": "验证邮箱",
+    "subtitle": "请输入发送到您邮箱的验证码",
+    "form": {
+      "code": "验证码",
+      "codePlaceholder": "请输入6位验证码",
+      "submit": "验证邮箱",
+      "submitting": "验证中...",
+      "resend": "重新发送",
+      "resending": "发送中..."
+    },
+    "messages": {
+      "sent": "验证码已发送到 {{email}}",
+      "resendSuccess": "验证码已重新发送，请查收邮箱",
+      "verifySuccess": "邮箱验证成功！正在跳转...",
+      "sendFailed": "验证码发送失败，请点击重新发送按钮",
+      "codeRequired": "请输入验证码",
+      "codeLength": "验证码必须是6位数字",
+      "verifyFailed": "验证失败，请重试",
+      "resendFailed": "发送失败，请重试"
+    },
+    "countdown": "{{seconds}}秒后可重新发送",
+    "back": "返回注册"
+  },
+  "notFound": {
+    "title": "页面走丢了",
+    "subtitle": "抱歉，您访问的页面可能已被移除、重命名或暂时不可用。",
+    "description": "让我们帮您找到正确的方向吧！",
+    "actions": {
+      "home": "返回首页",
+      "back": "返回上一页"
+    },
+    "suggestions": {
+      "title": "或者您可以访问：",
+      "create": "创作作品",
+      "dashboard": "个人中心",
+      "health": "系统状态"
+    }
+  }
+}

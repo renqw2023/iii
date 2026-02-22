@@ -1,0 +1,782 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDropzone } from 'react-dropzone';
+import { useForm } from 'react-hook-form';
+import { 
+  Upload, 
+  X, 
+  Video, 
+  Copy,
+  Lightbulb,
+  Plus,
+  BookOpen,
+  Target,
+  HelpCircle
+} from 'lucide-react';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
+import { promptAPI } from '../services/promptApi';
+import { clearAPICache } from '../services/enhancedApi';
+
+const CreatePrompt = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [files, setFiles] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewParams, setPreviewParams] = useState('');
+  const [fullPromptPreview, setFullPromptPreview] = useState('');
+  const [tags, setTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
+  const [altTexts, setAltTexts] = useState({});
+
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({
+    defaultValues: {
+      category: 'other',
+      difficulty: 'beginner'
+    }
+  });
+
+  // 监听表单变化
+  const watchedFields = watch(['prompt', 'sref', 'style', 'stylize', 'chaos', 'aspect', 'version', 'videoVersion', 'quality', 'seed', 'other']);
+
+  React.useEffect(() => {
+    const [prompt, sref, style, stylize, chaos, aspect, version, videoVersion, quality, seed, other] = watchedFields;
+    
+    // 生成风格参数预览
+    const params = [];
+    if (sref) params.push(`--sref ${sref}`);
+    if (style) params.push(`--style ${style}`);
+    if (stylize) params.push(`--stylize ${stylize}`);
+    if (chaos) params.push(`--chaos ${chaos}`);
+    if (aspect) params.push(`--ar ${aspect}`);
+    if (version) params.push(`--v ${version}`);
+    if (videoVersion) params.push(`--video ${videoVersion}`);
+    if (quality) params.push(`--q ${quality}`);
+    if (seed) params.push(`--seed ${seed}`);
+    if (other) params.push(other);
+    
+    setPreviewParams(params.join(' '));
+    
+    // 生成完整提示词预览
+    let fullPrompt = prompt || '';
+    if (params.length > 0) {
+      fullPrompt += (fullPrompt ? ' ' : '') + params.join(' ');
+    }
+    setFullPromptPreview(fullPrompt);
+  }, [watchedFields]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
+      'video/*': ['.mp4', '.mov', '.avi']
+    },
+    maxFiles: 9,
+    maxSize: 200 * 1024 * 1024, // 200MB
+    onDrop: (acceptedFiles) => {
+      const newFiles = acceptedFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file),
+        type: file.type.startsWith('image/') ? 'image' : 'video'
+      }));
+      setFiles(prev => [...prev, ...newFiles]);
+    },
+    onDropRejected: (rejectedFiles) => {
+      rejectedFiles.forEach(({ errors }) => {
+        errors.forEach(error => {
+          if (error.code === 'file-too-large') {
+            toast.error(t('createPrompt.error.fileTooLarge'));
+          } else if (error.code === 'file-invalid-type') {
+            toast.error(t('createPrompt.error.fileTypeInvalid'));
+          } else if (error.code === 'too-many-files') {
+            toast.error('最多只能上传9个文件，请减少文件数量');
+          }
+        });
+      });
+    }
+  });
+
+  const removeFile = (index) => {
+    setFiles(prev => {
+      const newFiles = [...prev];
+      URL.revokeObjectURL(newFiles[index].preview);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+    // 同时移除对应的ATL文本
+    setAltTexts(prev => {
+      const newAltTexts = { ...prev };
+      delete newAltTexts[index];
+      // 重新索引剩余的ATL文本
+      const reindexedAltTexts = {};
+      Object.keys(newAltTexts).forEach(key => {
+        const numKey = parseInt(key);
+        if (numKey > index) {
+          reindexedAltTexts[numKey - 1] = newAltTexts[key];
+        } else {
+          reindexedAltTexts[key] = newAltTexts[key];
+        }
+      });
+      return reindexedAltTexts;
+    });
+  };
+
+  const handleAltTextChange = (index, value) => {
+    setAltTexts(prev => ({
+      ...prev,
+      [index]: value
+    }));
+  };
+
+  // 标签处理函数
+  const addTag = (tag) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !tags.includes(trimmedTag)) {
+      setTags(prev => [...prev, trimmedTag]);
+    }
+  };
+
+  const removeTag = (index) => {
+    setTags(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        addTag(tagInput);
+        setTagInput('');
+      }
+    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+
+  const onSubmit = async (data) => {
+    if (!data.prompt || data.prompt.trim().length < 10) {
+      toast.error(t('createPrompt.error.promptTooShort'));
+      return;
+    }
+
+    // 前端验证文件数量和大小
+    if (files.length > 9) {
+      toast.error('最多只能上传9张图片，请删除多余的文件后重试');
+      return;
+    }
+
+    // 检查文件大小
+    const oversizedFiles = files.filter(({ file }) => file.size > 200 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      toast.error(t('createPrompt.error.fileTooLarge'));
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('prompt', data.prompt);
+      formData.append('description', data.description || '');
+      formData.append('category', data.category);
+      formData.append('difficulty', data.difficulty);
+      formData.append('expectedResult', data.expectedResult || '');
+      formData.append('tips', data.tips || '');
+      formData.append('styleParams', JSON.stringify({
+        sref: data.sref,
+        style: data.style,
+        stylize: data.stylize ? parseInt(data.stylize) : undefined,
+        chaos: data.chaos ? parseInt(data.chaos) : undefined,
+        aspect: data.aspect,
+        version: data.version,
+        videoVersion: data.videoVersion,
+        quality: data.quality,
+        seed: data.seed ? parseInt(data.seed) : undefined,
+        other: data.other
+      }));
+      formData.append('tags', tags.join(','));
+
+      // 添加媒体文件和对应的ATL文本
+      files.forEach(({ file }, index) => {
+        formData.append('media', file);
+      });
+      
+      // 添加ATL文本数据
+      formData.append('altTexts', JSON.stringify(altTexts));
+
+      const response = await promptAPI.createPrompt(formData);
+      toast.success(t('createPrompt.success.published'));
+      
+      // 清理相关缓存，确保状态完全重置
+      clearAPICache('prompt');
+      
+      // 重置表单状态，避免状态管理问题
+      setFiles([]);
+      setTags([]);
+      setTagInput('');
+      setPreviewParams('');
+      setFullPromptPreview('');
+      setAltTexts({});
+      
+      // 重置useForm管理的表单字段
+      reset({
+        category: 'other',
+        difficulty: 'beginner'
+      });
+      
+      navigate(`/prompt/${response.data.prompt._id}`);
+    } catch (error) {
+      console.error('Publish failed:', error);
+      
+      // 更友好的错误处理
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          errorData.errors.forEach(err => {
+            // 将技术错误转换为用户友好的提示
+            let userMessage = err.msg;
+            if (err.path === 'title') {
+              userMessage = '标题长度必须在1-100个字符之间';
+            } else if (err.path === 'prompt') {
+              userMessage = '提示词长度必须在10-5000个字符之间';
+            } else if (err.path === 'description') {
+              userMessage = '描述不能超过2000个字符';
+            }
+            toast.error(userMessage);
+          });
+        } else {
+          toast.error(errorData.message || '输入数据有误，请检查后重试');
+        }
+      } else if (error.response?.status === 413) {
+        toast.error('文件大小超过限制（最大200MB），请选择较小的文件');
+      } else if (error.response?.status === 500) {
+        // 处理500错误，提供更友好的提示
+        const errorMessage = error.response?.data?.message;
+        if (errorMessage && errorMessage.includes('文件')) {
+          toast.error('文件上传失败，请检查文件格式和大小（最多9张图片，每张最大200MB）');
+        } else if (errorMessage && errorMessage.includes('创建')) {
+          toast.error('提示词创建失败，请稍后重试或联系客服');
+        } else {
+          toast.error('服务器暂时无法处理您的请求，请稍后重试');
+        }
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        toast.error('网络连接失败，请检查网络连接后重试');
+      } else {
+        toast.error('发布失败，请稍后重试');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Lightbulb className="w-8 h-8 text-primary-500 mr-2" />
+            <h1 className="text-3xl font-bold text-slate-900">{t('createPrompt.title')}</h1>
+          </div>
+          <p className="text-slate-600">{t('createPrompt.subtitle')}</p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          {/* 基本信息 */}
+          <div className="card p-6">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center">
+              <BookOpen className="w-5 h-5 mr-2" />
+              {t('createPrompt.basicInfo.title')}
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.basicInfo.titleLabel')} *
+                </label>
+                <input
+                  type="text"
+                  {...register('title', { required: t('createPrompt.basicInfo.titleRequired') })}
+                  className="input"
+                  placeholder={t('createPrompt.basicInfo.titlePlaceholder')}
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.basicInfo.promptLabel')} *
+                </label>
+                <div className="relative">
+                  <textarea
+                    {...register('prompt', {
+                      required: t('createPrompt.basicInfo.promptRequired'),
+                      minLength: {
+                        value: 10,
+                        message: t('createPrompt.basicInfo.promptMinLength')
+                      },
+                      maxLength: {
+                        value: 5000,
+                        message: t('createPrompt.basicInfo.promptMaxLength')
+                      }
+                    })}
+                    rows={4}
+                    className={`textarea font-mono ${errors.prompt ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder={t('createPrompt.basicInfo.promptPlaceholder')}
+                    maxLength={5000}
+                  />
+                  <div className="absolute bottom-2 right-2 text-xs text-slate-500">
+                    {watch('prompt')?.length || 0}/5000
+                  </div>
+                </div>
+                {errors.prompt && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <span className="w-4 h-4 mr-1">⚠️</span>
+                    {errors.prompt.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.basicInfo.descriptionLabel')}
+                </label>
+                <div className="relative">
+                  <textarea
+                    {...register('description', {
+                      maxLength: {
+                        value: 2000,
+                        message: '描述不能超过2000个字符'
+                      }
+                    })}
+                    rows={3}
+                    className={`textarea ${errors.description ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                    placeholder={t('createPrompt.basicInfo.descriptionPlaceholder')}
+                    maxLength={2000}
+                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                  />
+                  <div className="absolute bottom-2 right-2 text-xs text-slate-500">
+                    {watch('description')?.length || 0}/2000
+                  </div>
+                </div>
+                {errors.description && (
+                  <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {t('createPrompt.basicInfo.categoryLabel')}
+                  </label>
+                  <select {...register('category')} className="select">
+                    <option value="other">{t('createPrompt.categories.other')}</option>
+                    <option value="character">{t('createPrompt.categories.character')}</option>
+                    <option value="landscape">{t('createPrompt.categories.landscape')}</option>
+                    <option value="architecture">{t('createPrompt.categories.architecture')}</option>
+                    <option value="abstract">{t('createPrompt.categories.abstract')}</option>
+                    <option value="fantasy">{t('createPrompt.categories.fantasy')}</option>
+                    <option value="scifi">{t('createPrompt.categories.scifi')}</option>
+                    <option value="portrait">{t('createPrompt.categories.portrait')}</option>
+                    <option value="animal">{t('createPrompt.categories.animal')}</option>
+                    <option value="object">{t('createPrompt.categories.object')}</option>
+                    <option value="style">{t('createPrompt.categories.style')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {t('createPrompt.basicInfo.difficultyLabel')}
+                  </label>
+                  <select {...register('difficulty')} className="select">
+                    <option value="beginner">{t('createPrompt.difficulty.beginner')}</option>
+                    <option value="intermediate">{t('createPrompt.difficulty.intermediate')}</option>
+                    <option value="advanced">{t('createPrompt.difficulty.advanced')}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.basicInfo.tagsLabel')}
+                </label>
+                <div className="space-y-2">
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => removeTag(index)}
+                            className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    className="input"
+                    placeholder={t('createPrompt.basicInfo.tagsPlaceholder')}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Midjourney风格参数 */}
+          <div className="card p-6">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">{t('createPrompt.styleParams.title')}</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.sref')}
+                </label>
+                <input
+                  type="text"
+                  {...register('sref')}
+                  className="input font-mono"
+                  placeholder="3311400918"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.style')}
+                </label>
+                <select {...register('style')} className="select">
+                  <option value="">{t('createPrompt.styleParams.selectStyle')}</option>
+                  <option value="raw">Raw</option>
+                  <option value="expressive">Expressive</option>
+                  <option value="cute">Cute</option>
+                  <option value="scenic">Scenic</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.stylize')}
+                </label>
+                <input
+                  type="number"
+                  {...register('stylize')}
+                  className="input font-mono"
+                  placeholder="100"
+                  min="0"
+                  max="1000"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.chaos')}
+                </label>
+                <input
+                  type="number"
+                  {...register('chaos')}
+                  className="input font-mono"
+                  placeholder="0"
+                  min="0"
+                  max="100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.aspect')}
+                </label>
+                <select {...register('aspect')} className="select">
+                  <option value="">{t('createPrompt.styleParams.selectAspect')}</option>
+                  <option value="1:1">{t('createPrompt.styleParams.aspect11')}</option>
+                  <option value="4:3">4:3</option>
+                  <option value="16:9">{t('createPrompt.styleParams.aspect169')}</option>
+                  <option value="9:16">{t('createPrompt.styleParams.aspect916')}</option>
+                  <option value="3:2">3:2</option>
+                  <option value="2:3">2:3</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.version')}
+                </label>
+                <select {...register('version')} className="select">
+                  <option value="">{t('createPrompt.styleParams.selectVersion')}</option>
+                  <option value="7">Version 7</option>
+                  <option value="6">Version 6</option>
+                  <option value="5.2">Version 5.2</option>
+                  <option value="5.1">Version 5.1</option>
+                  <option value="5">Version 5</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.quality')}
+                </label>
+                <select {...register('quality')} className="select">
+                  <option value="">{t('createPrompt.styleParams.selectQuality')}</option>
+                  <option value="0.25">{t('createPrompt.styleParams.quality025')}</option>
+                  <option value="0.5">0.5</option>
+                  <option value="1">{t('createPrompt.styleParams.quality1')}</option>
+                  <option value="2">{t('createPrompt.styleParams.quality2')}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.seed')}
+                </label>
+                <input
+                  type="number"
+                  {...register('seed')}
+                  className="input font-mono"
+                  placeholder="123456"
+                />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                {t('createPrompt.styleParams.otherParams')}
+              </label>
+              <textarea
+                {...register('other')}
+                rows={2}
+                className="textarea font-mono"
+                style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                placeholder={t('createPrompt.styleParams.otherParamsPlaceholder')}
+              />
+            </div>
+
+            {/* 完整提示词预览 */}
+            {fullPromptPreview && (
+              <div className="relative">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.styleParams.fullPreview')}
+                </label>
+                <div className="bg-slate-50 rounded-lg p-4 font-mono text-sm text-slate-700 border-l-4 border-primary-500 pr-12">
+                  {fullPromptPreview}
+                </div>
+                <CopyToClipboard 
+                  text={fullPromptPreview} 
+                  onCopy={() => toast.success(t('createPrompt.styleParams.promptCopied'))}
+                >
+                  <button
+                    type="button"
+                    className="absolute top-8 right-3 w-8 h-8 bg-white rounded-md flex items-center justify-center text-slate-500 hover:text-slate-700 shadow-sm"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </CopyToClipboard>
+              </div>
+            )}
+          </div>
+
+          {/* 高级信息 */}
+          <div className="card p-6">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4 flex items-center">
+              <Target className="w-5 h-5 mr-2" />
+              {t('createPrompt.advanced.title')}
+            </h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.advanced.expectedResultLabel')}
+                </label>
+                <div className="relative">
+                  <textarea
+                    {...register('expectedResult', {
+                      maxLength: {
+                        value: 1000,
+                        message: '预期效果描述不能超过1000个字符'
+                      }
+                    })}
+                    rows={3}
+                    className="textarea"
+                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                    placeholder={t('createPrompt.advanced.expectedResultPlaceholder')}
+                    maxLength={1000}
+                  />
+                  <div className="absolute bottom-2 right-2 text-xs text-slate-500">
+                    {watch('expectedResult')?.length || 0}/1000
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {t('createPrompt.advanced.tipsLabel')}
+                </label>
+                <div className="relative">
+                  <textarea
+                    {...register('tips', {
+                      maxLength: {
+                        value: 1000,
+                        message: '使用技巧不能超过1000个字符'
+                      }
+                    })}
+                    rows={3}
+                    className="textarea"
+                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                    placeholder={t('createPrompt.advanced.tipsPlaceholder')}
+                    maxLength={1000}
+                  />
+                  <div className="absolute bottom-2 right-2 text-xs text-slate-500">
+                    {watch('tips')?.length || 0}/1000
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 示例图片上传 */}
+          <div className="card p-6">
+            <h2 className="text-xl font-semibold text-slate-900 mb-4">{t('createPrompt.upload.title')}</h2>
+            <p className="text-sm text-slate-600 mb-2">{t('createPrompt.upload.description')}</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center text-blue-800">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <span className="text-sm font-medium">上传限制说明</span>
+              </div>
+              <ul className="text-sm text-blue-700 mt-2 ml-6 space-y-1">
+                <li>• 最多上传 9 张图片或视频</li>
+                <li>• 单个文件最大 200MB</li>
+                <li>• 支持格式：JPG、PNG、GIF、WEBP、MP4、MOV、AVI</li>
+                <li>• 当前已上传：{files.length}/9 个文件</li>
+              </ul>
+            </div>
+            
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer ${
+                isDragActive 
+                  ? 'border-primary-500 bg-primary-50' 
+                  : 'border-slate-300 hover:border-primary-400 hover:bg-slate-50'
+              }`}
+            >
+              <input {...getInputProps()} />
+              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-lg font-medium text-slate-700 mb-2">
+                {isDragActive ? t('createPrompt.upload.dropToUpload') : t('createPrompt.upload.dragOrClick')}
+              </p>
+              <p className="text-sm text-slate-500">
+                {t('createPrompt.upload.supportedFiles')}
+              </p>
+            </div>
+
+            {/* 文件预览 */}
+            {files.length > 0 && (
+              <div className="mt-6 space-y-6">
+                {files.map((file, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex gap-4">
+                      {/* 图片预览 */}
+                      <div className="relative group flex-shrink-0">
+                        <div className="w-32 h-32 rounded-lg overflow-hidden bg-slate-100">
+                          {file.type === 'image' ? (
+                            <img
+                              src={file.preview}
+                              alt={t('createPrompt.upload.preview')}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Video className="w-8 h-8 text-slate-400" />
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      {/* ATL文本输入 - 支持图片和视频 */}
+                      <div className="flex-1">
+                        <div className="flex items-center mb-3">
+                          <div className="bg-black text-white px-2 py-1 rounded-sm text-xs font-bold mr-3" style={{ fontSize: '11px', lineHeight: '1' }}>
+                            ALT
+                          </div>
+                          <label className="text-sm font-semibold text-gray-900">
+                            {file.type === 'image' ? '图片描述' : '视频描述'}
+                          </label>
+                        </div>
+                        <div className="relative">
+                          <textarea
+                            value={altTexts[index] || ''}
+                            onChange={(e) => handleAltTextChange(index, e.target.value)}
+                            placeholder={file.type === 'image' ? '为看不到图片的用户描述图片内容...' : '为看不到视频的用户描述视频内容...'}
+                            className="w-full p-4 border border-gray-200 rounded-xl resize-none focus:ring-2 focus:ring-black focus:border-black transition-all duration-200 text-sm leading-relaxed"
+                            rows={3}
+                            maxLength={1000}
+                            style={{ minHeight: '80px', whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
+                          />
+                          <div className="absolute bottom-3 right-3 text-xs text-gray-400 bg-white px-1">
+                            {(altTexts[index] || '').length}/1000
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2 flex items-center">
+                          <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <span>良好的描述有助于让所有人都能理解内容</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 提交按钮 */}
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="btn btn-secondary"
+            >
+              {t('createPrompt.buttons.cancel')}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn btn-primary"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  {t('createPrompt.buttons.publishing')}
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t('createPrompt.buttons.publish')}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreatePrompt;

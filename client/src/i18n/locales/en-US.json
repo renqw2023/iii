@@ -1,0 +1,739 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "refresh": "Refresh",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "close": "Close",
+    "open": "Open",
+    "view": "View",
+    "share": "Share",
+    "copy": "Copy",
+    "download": "Download",
+    "upload": "Upload",
+    "create": "Create",
+    "update": "Update",
+    "remove": "Remove",
+    "add": "Add",
+    "select": "Select",
+    "clear": "Clear",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "more": "More",
+    "less": "Less",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "create": "Create",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "admin": "Admin",
+    "help": "Help",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "favorites": "Favorites",
+    "notifications": "Notifications"
+  },
+  "header": {
+    "brand": "III.PICS",
+    "userMenu": "User Menu",
+    "mobileMenu": "Mobile Menu"
+  },
+  "footer": {
+    "description": "III.PICS - Professional AI Visual Art Platform. Inspire, Imagine, Innovate. Making AI art creation more convenient and fun.",
+    "quickLinks": "Quick Links",
+    "support": "Support",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "copyright": "© 2025 III.PICS. All rights reserved."
+  },
+  "home": {
+    "hero": {
+      "title": "Discover Infinite Possibilities of AI Art",
+      "subtitle": "Explore beautiful Midjourney style parameters and inspire your creativity",
+      "cta": "Start Exploring",
+      "createButton": "Start Creating",
+      "exploreButton": "Browse Works",
+      "stats": {
+        "posts": "Beautiful Works",
+        "users": "Creators",
+        "styles": "Style Parameters",
+        "shares": "Parameter Shares"
+      }
+    },
+    "featured": {
+      "title": "Featured Works",
+      "subtitle": "Discover the most popular creations"
+    },
+    "searchPlaceholder": "Search style parameters, titles or descriptions...",
+    "sortByNewest": "Newest",
+    "sortByViews": "Most Viewed",
+    "sortByLikes": "Most Liked",
+    "sortByComments": "Most Commented",
+    "popularTags": "Popular Tags",
+    "noResults": "No results found",
+    "noContent": "No content available",
+    "tryAdjustSearch": "Try adjusting your search criteria or browse other content",
+    "beFirstToShare": "Be the first to share beautiful artworks",
+    "search": {
+      "placeholder": "Search style parameters, titles or descriptions...",
+      "button": "Search"
+    },
+    "filters": {
+      "sortBy": "Sort By",
+      "newest": "Newest",
+      "popular": "Popular",
+      "trending": "Trending",
+      "tags": "Popular Tags",
+      "allTags": "All Tags"
+    },
+    "loadError": {
+      "title": "Loading Failed",
+      "message": "Please refresh the page and try again"
+    }
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "loginSubtitle": "Sign in to your account and continue your AI art journey",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter your email address",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "rememberMe": "Remember me",
+    "loggingIn": "Signing in...",
+    "noAccount": "Don't have an account?",
+    "accountLocked": "Account has been locked, please contact support",
+    "loginFailed": "Login failed, please try again",
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Welcome back",
+      "email": "Email",
+      "password": "Password",
+      "remember": "Remember me",
+      "forgot": "Forgot password?",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up now"
+    },
+    "register": {
+      "title": "Register",
+      "subtitle": "Create New Account",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "agree": "I agree to the",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "submit": "Register",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign In Now"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Reset Your Password",
+      "email": "Email Address",
+      "submit": "Send Reset Link",
+      "back": "Back to Login",
+      "success": "Reset link has been sent to your email"
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "subtitle": "Set New Password",
+      "password": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "submit": "Reset Password",
+      "success": "Password reset successfully"
+    },
+    "emailVerification": {
+      "title": "Email Verification",
+      "subtitle": "Please verify your email address",
+      "message": "We have sent a verification link to your email",
+      "resend": "Resend",
+      "success": "Email verified successfully"
+    }
+  },
+  "post": {
+    "create": {
+      "title": "Create New Work",
+      "subtitle": "Share Your Creation",
+      "titleField": "Title",
+      "description": "Description",
+      "styleParams": "Style Parameters",
+      "tags": "Tags",
+      "image": "Image",
+      "submit": "Publish Work",
+      "draft": "Save Draft"
+    },
+    "detail": {
+      "author": "Author",
+      "createdAt": "Published",
+      "views": "Views",
+      "likes": "Likes",
+      "comments": "Comments",
+      "share": "Share",
+      "favorite": "Favorite",
+      "report": "Report",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "comments": {
+      "title": "Comments",
+      "placeholder": "Write your comment...",
+      "submit": "Post Comment",
+      "reply": "Reply",
+      "like": "Like",
+      "edit": "Edit",
+      "delete": "Delete",
+      "noComments": "No comments yet"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "edit": "Edit Profile",
+    "avatar": "Avatar",
+    "username": "Username",
+    "email": "Email",
+    "bio": "Bio",
+    "website": "Website",
+    "location": "Location",
+    "joinedAt": "Joined",
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "tabs": {
+      "posts": "Posts",
+      "favorites": "Favorites",
+      "followers": "Followers",
+      "following": "Following"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "account": "Account Settings",
+    "privacy": "Privacy Settings",
+    "notifications": "Notification Settings",
+    "language": "Language Settings",
+    "theme": "Theme Settings",
+    "security": "Security Settings",
+    "changePassword": "Change Password",
+    "deleteAccount": "Delete Account",
+    "save": "Save Settings"
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "dashboard": "Dashboard",
+    "users": "User Management",
+    "posts": "Content Management",
+    "reports": "Report Management",
+    "analytics": "Analytics",
+    "settings": "System Settings",
+    "stats": {
+      "totalUsers": "Total Users",
+      "totalPosts": "Total Posts",
+      "activeUsers": "Active Users",
+      "newUsers": "New Users"
+    },
+    "users": {
+      "searchPlaceholder": "Search username or email..."
+    },
+    "posts": {
+      "searchPlaceholder": "Search title or description..."
+    },
+    "broadcast": {
+      "messagePlaceholder": "Enter broadcast message content..."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark All as Read",
+    "noNotifications": "No notifications",
+    "types": {
+      "like": "liked your post",
+      "comment": "commented on your post",
+      "follow": "followed you",
+      "system": "System notification"
+    }
+  },
+  "errors": {
+    "404": {
+      "title": "Page Not Found",
+      "message": "Sorry, the page you are looking for does not exist",
+      "home": "Go Home"
+    },
+    "500": {
+      "title": "Server Error",
+      "message": "The server encountered an error, please try again later"
+    },
+    "network": {
+      "title": "Network Error",
+      "message": "Please check your network connection"
+    },
+    "unauthorized": {
+      "title": "Unauthorized",
+      "message": "You don't have permission to access this page"
+    }
+  },
+  "error": {
+    "loadFailed": "Load Failed",
+    "refreshPage": "Please refresh the page and try again"
+  },
+  "ui": {
+    "modal": {
+      "backdrop": "Modal backdrop",
+      "close": "Close"
+    },
+    "avatarSelector": {
+      "title": "Select Avatar",
+      "subtitle": "Choose an avatar to personalize your profile",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "notFound": {
+      "title": "Page Not Found",
+      "message": "Sorry, the page you are looking for might have been removed, renamed, or is temporarily unavailable.",
+      "suggestion": "Let us help you find the right direction!",
+      "homeButton": "Go Home",
+      "backButton": "Go Back",
+      "suggestions": "Or you can visit",
+      "createWork": "Create Work",
+      "dashboard": "Dashboard",
+      "systemStatus": "System Status"
+    }
+  },
+  "validation": {
+      "required": "This field is required",
+      "checking": "Checking...",
+      "emailRequired": "Please enter email address",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Please enter password",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "email": {
+        "required": "Please enter email address",
+        "invalid": "Please enter a valid email address",
+        "checkFailed": "Email check failed"
+      },
+      "password": {
+        "required": "Please enter password",
+        "minLength": "Password must be at least 6 characters",
+        "invalid": "Please enter a valid password",
+        "valid": "Password format is correct"
+      },
+      "username": {
+        "minLength": "Username must be at least 3 characters",
+        "maxLength": "Username cannot exceed 20 characters",
+        "format": "Username can only contain letters, numbers, and underscores",
+        "invalid": "Please enter a valid username",
+        "checkFailed": "Username check failed"
+      },
+      "confirmPassword": {
+        "required": "Please confirm password",
+        "mismatch": "Passwords do not match",
+        "valid": "Password confirmation is correct"
+      },
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must be at most {{max}} characters",
+    "fileSize": "File size cannot exceed {{size}}MB",
+    "fileType": "Unsupported file type"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago",
+    "weeksAgo": "{{count}} weeks ago",
+    "monthsAgo": "{{count}} months ago",
+    "yearsAgo": "{{count}} years ago"
+  },
+  "language": {
+    "current": "Current Language",
+    "select": "Select Language",
+    "zh-CN": "简体中文",
+    "en-US": "English",
+    "ja-JP": "日本語"
+  },
+  "help": {
+    "title": "Help Center",
+    "subtitle": "We're here to help and support you",
+    "quickNavigation": "Quick Navigation",
+    "contact": {
+      "title": "Contact Us",
+      "description": "If you have any questions or need assistance, please feel free to contact our support team.",
+      "emailButton": "Send Email",
+      "wechat": "WeChat: RPW000"
+    },
+    "sections": {
+      "gettingStarted": {
+        "title": "Getting Started",
+        "questions": {
+          "howToRegister": {
+            "question": "How to register an account?",
+            "answer": "Click the 'Register' button in the top right corner, fill in your username, email and password, agree to the terms of service to complete registration."
+          },
+          "howToLogin": {
+            "question": "How to login?",
+            "answer": "Enter your email and password on the login page, then click the 'Login' button. If you forget your password, click 'Forgot Password' to reset it."
+          },
+          "firstSteps": {
+            "question": "What should I do after registration?",
+            "answer": "We recommend completing your profile first, uploading an avatar, then browsing featured works on the homepage and following creators you're interested in."
+          }
+        }
+      },
+      "creatingPosts": {
+        "title": "Creating Posts",
+        "questions": {
+          "howToPost": {
+            "question": "How to publish a work?",
+            "answer": "Click the 'Create' button, upload your AI artwork, fill in the title, description and Midjourney parameters, add relevant tags and publish."
+          },
+          "supportedFormats": {
+            "question": "What image formats are supported?",
+            "answer": "We support common image formats like JPG, PNG, WebP. We recommend images no larger than 10MB with resolution no less than 512x512 pixels."
+          },
+          "addingParams": {
+            "question": "How to add Midjourney parameters?",
+            "answer": "When publishing a work, fill in the complete Midjourney prompt and parameters in the 'Style Parameters' field to help other users learn and reference."
+          },
+          "editPosts": {
+            "question": "Can I edit published works?",
+            "answer": "Yes, you can click the 'Edit' button on the work detail page to modify title, description, tags and other information, but you cannot replace the image."
+          }
+        }
+      },
+      "browsing": {
+        "title": "Browsing & Discovery",
+        "questions": {
+          "howToSearch": {
+            "question": "How to search for works?",
+            "answer": "Use the search box at the top to enter keywords, you can search titles, descriptions, tags or authors. You can also use filters to filter by category, time and other conditions."
+          },
+          "usingTags": {
+            "question": "How to use tags?",
+            "answer": "Click any tag to view related works, you can also follow tags you're interested in to get relevant recommendations."
+          },
+          "featuredWorks": {
+            "question": "How are featured works selected?",
+            "answer": "Featured works are selected by our editorial team based on work quality, innovation, community response and other factors."
+          }
+        }
+      },
+      "interaction": {
+        "title": "Social Interaction",
+        "questions": {
+          "howToFavorite": {
+            "question": "How to favorite works?",
+            "answer": "Click the heart icon on the work detail page or work card to favorite it. Favorited works can be viewed in your personal center."
+          },
+          "howToFollow": {
+            "question": "How to follow other users?",
+            "answer": "Visit the user's profile page and click the 'Follow' button. After following, you'll see their latest works on your homepage."
+          },
+          "howToComment": {
+            "question": "How to comment on works?",
+            "answer": "Enter your comment in the comment section at the bottom of the work detail page and click 'Post Comment'. Please maintain friendly and constructive communication."
+          },
+          "howToShare": {
+            "question": "How to share works?",
+            "answer": "Click the 'Share' button on the work to copy the link or share to social media platforms."
+          }
+        }
+      },
+      "profile": {
+        "title": "Profile",
+        "questions": {
+          "editProfile": {
+            "question": "How to edit profile?",
+            "answer": "Go to your personal center, click the 'Edit Profile' button to modify avatar, username, bio and other information."
+          },
+          "changePassword": {
+            "question": "How to change password?",
+            "answer": "In the settings page, select 'Security Settings', click 'Change Password', enter your current password and new password."
+          },
+          "viewStats": {
+            "question": "Where to view my statistics?",
+            "answer": "In your personal center, you can view statistics like your work count, likes received, follower count, etc."
+          }
+        }
+      },
+      "midjourneyParams": {
+        "title": "Midjourney Parameters",
+        "questions": {
+          "whatAreParams": {
+            "question": "What are Midjourney parameters?",
+            "answer": "Midjourney parameters are instructions used to control the style, quality, aspect ratio and other characteristics of AI-generated images. Different parameter combinations can create unique artistic effects."
+          },
+          "basicFormat": {
+            "question": "What is the basic format of parameters?",
+            "answer": "Basic format: /imagine prompt: [description] --[parameter name] [parameter value], for example: /imagine prompt: a beautiful sunset --ar 16:9 --v 6"
+          },
+          "versionParam": {
+            "question": "What does the --v parameter do?",
+            "answer": "The --v parameter specifies the Midjourney version. Different versions have different artistic styles and characteristics, such as --v 6 for version 6."
+          },
+          "aspectRatio": {
+            "question": "How to set image aspect ratio?",
+            "answer": "Use the --ar parameter to set aspect ratio, such as --ar 16:9 (widescreen), --ar 1:1 (square), --ar 9:16 (portrait), etc."
+          }
+        }
+      }
+    },
+    "subtitle": "We are here to provide help and support whenever you need it",
+    "userGuide": "User Guide",
+    "userGuideDesc": "Detailed tutorials and operation guides",
+    "viewGuide": "View Guide",
+    "faq": "FAQ",
+    "faqDesc": "Find answers to frequently asked questions",
+    "viewFaq": "View FAQ",
+    "contactDesc": "Contact our technical support team",
+    "contactUs": "Contact Us"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "subtitle": "Please read and understand the following terms before using III.PICS services",
+    "lastUpdated": "Last updated: January 20, 2025",
+    "importantNotice": {
+      "title": "Important Notice",
+      "content": "These Terms of Service constitute a legal agreement between you and III.PICS. By using our services, you agree to comply with these terms. Please read all terms carefully and contact us if you have any questions."
+    },
+    "needHelp": {
+      "title": "Need Help?",
+      "content": "If you have any questions about the Terms of Service, please feel free to contact us",
+      "email": "Email: i@mail.iii.pics",
+      "wechat": "WeChat: RPW000"
+    },
+    "sections": {
+      "acceptance": {
+        "title": "Acceptance of Terms",
+        "content": [
+          "Welcome to III.PICS (\"the Service\", \"we\", or \"platform\"). These Terms of Service (\"Terms\") constitute a legally binding agreement between you and III.PICS.",
+          "By accessing or using our service, you acknowledge that you have read, understood, and agree to be bound by these Terms.",
+          "If you do not agree to any part of these terms, please do not use our service.",
+          "We reserve the right to modify these terms at any time. Significant changes will be notified to users in advance, and continued use of the service indicates acceptance of the modified terms."
+        ]
+      },
+      "description": {
+        "title": "Service Description",
+        "content": [
+          "III.PICS is an online platform dedicated to showcasing and sharing Midjourney AI artwork.",
+          "We provide user registration, content publishing, browsing and discovery, social interaction and other functions.",
+          "Users can upload AI artwork, share creation parameters, follow other creators, and collect favorite content.",
+          "We are committed to providing a professional and friendly creative and communication community for AI art enthusiasts.",
+          "Services may include free and paid features, with specific functions and limitations subject to actual provision."
+        ]
+      },
+      "eligibility": {
+        "title": "Eligibility",
+        "content": [
+          "You must be at least 13 years old to use our service. Users under 18 need parental or guardian consent.",
+          "You must provide accurate and complete registration information and update any changes promptly.",
+          "You are responsible for protecting your account security, including keeping your login credentials confidential.",
+          "Each user may only register one account and may not create false or duplicate accounts.",
+          "We reserve the right to refuse service, terminate accounts, or restrict access without prior notice."
+        ]
+      },
+      "content": {
+        "title": "User Content",
+        "content": [
+          "You are fully responsible for all content uploaded to the platform (\"User Content\").",
+          "You represent and warrant that you have the legal right to publish User Content or have obtained necessary permissions.",
+          "By uploading content, you grant us a non-exclusive, worldwide, royalty-free license to use, display, and distribute your content.",
+          "Your content must not contain illegal, harmful, threatening, abusive, harassing, defamatory, vulgar, obscene, or otherwise objectionable material.",
+          "We reserve the right to review, edit, or delete any User Content, but have no obligation to do so.",
+          "You may delete your content at any time, but shared content may continue to be accessible to other users."
+        ]
+      },
+      "conduct": {
+        "title": "Code of Conduct",
+        "content": [
+          "You agree not to use the service for any illegal or unauthorized purposes.",
+          "Posting spam, malware, or conducting any form of cyber attacks is prohibited.",
+          "You may not harass, threaten, or impersonate other users.",
+          "Infringement of others' intellectual property, privacy, or other rights is prohibited.",
+          "You may not attempt to bypass our security measures or interfere with the normal operation of the service.",
+          "Use of automated tools (such as bots, crawlers) to access the service without authorization is prohibited.",
+          "You may not engage in any behavior that could damage the platform's reputation or user experience."
+        ]
+      },
+      "intellectual": {
+        "title": "Intellectual Property",
+        "content": [
+          "Except for User Content, all content, features, and characteristics in the service are owned by us or our licensors.",
+          "This includes but is not limited to text, graphics, logos, icons, images, audio clips, digital downloads, data compilations, and software.",
+          "Our trademarks, service marks, and logos may not be used without our prior written consent.",
+          "You may not copy, modify, distribute, sell, or lease any part of our service.",
+          "If you believe your intellectual property has been infringed, please contact us at i@mail.iii.pics."
+        ]
+      },
+      "privacy": {
+        "title": "Privacy Protection",
+        "content": [
+          "Your privacy is important to us. Our Privacy Policy details how we collect, use, and protect your information.",
+          "Using our service indicates your agreement to our processing of your information according to the Privacy Policy.",
+          "We implement appropriate security measures to protect your personal information.",
+          "You have the right to access, correct, or delete your personal information. Please refer to our Privacy Policy for details."
+        ]
+      },
+      "termination": {
+        "title": "Service Termination",
+        "content": [
+          "You may stop using our service and delete your account at any time.",
+          "We may suspend or terminate your account for the following reasons: violation of these Terms, prolonged inactivity, technical or security reasons.",
+          "After termination, your right to use the service will immediately cease, but certain provisions of these Terms will continue to be effective.",
+          "We will handle your data retention and deletion according to the Privacy Policy."
+        ]
+      },
+      "disclaimer": {
+        "title": "Disclaimer",
+        "content": [
+          "Our service is provided \"as is\" without any express or implied warranties.",
+          "We do not guarantee that the service will be uninterrupted, error-free, or completely secure.",
+          "You use the service at your own risk.",
+          "We are not responsible for the accuracy, completeness, or legality of User Content."
+        ]
+      },
+      "limitation": {
+        "title": "Limitation of Liability",
+        "content": [
+          "To the maximum extent permitted by law, we are not liable for any indirect, incidental, special, or consequential damages.",
+          "Our total liability shall not exceed the amount you have paid to us in the past 12 months.",
+          "Some jurisdictions do not allow the exclusion or limitation of certain damages, so the above limitations may not apply to you."
+        ]
+      },
+      "governing": {
+        "title": "Governing Law",
+        "content": [
+          "These Terms are governed by the laws of the People's Republic of China.",
+          "Any disputes arising from these Terms should be resolved through friendly consultation.",
+          "If consultation fails, disputes should be submitted to the People's Court in our jurisdiction."
+        ]
+      },
+      "contact": {
+        "title": "Contact Us",
+        "content": [
+          "If you have any questions about these Terms of Service, please contact us through:",
+          "Email: i@mail.iii.pics",
+          "We will respond to your inquiry as soon as possible."
+        ]
+      }
+    }
+  },
+  "explore": {
+    "title": "Explore Amazing Works",
+    "subtitle": "Discover excellent Midjourney works from creators around the world and get creative inspiration",
+    "searchPlaceholder": "Search style parameters, titles, tags or authors...",
+    "searchButton": "Search",
+    "filters": {
+      "category": "Category",
+      "sortBy": "Sort By",
+      "timeRange": "Time Range",
+      "viewMode": "View Mode",
+      "trending": "Trending",
+      "latest": "Latest",
+      "popular": "Popular",
+      "views": "Most Viewed",
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "thisYear": "This Year",
+      "all": "All",
+      "grid": "Grid",
+      "list": "List"
+    },
+    "stats": {
+      "views": "Views",
+      "likes": "Likes",
+      "comments": "Comments"
+    },
+    "noResults": {
+      "title": "No works found",
+      "message": "Try adjusting your search criteria or browse other categories"
+    }
+  },
+  "register": {
+    "title": "Join Us",
+    "subtitle": "Create your account and start sharing beautiful AI artworks",
+    "username": "Username",
+    "usernamePlaceholder": "Enter username",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter email address",
+    "password": "Password",
+    "passwordPlaceholder": "Enter password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Enter password again",
+    "agreeToTerms": "I agree to",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "createAccount": "Create Account",
+    "registering": "Registering...",
+    "haveAccount": "Already have an account?",
+    "loginNow": "Sign In Now"
+  },
+  "emailVerification": {
+    "title": "Verify Email",
+    "subtitle": "Please enter the verification code sent to your email",
+    "form": {
+      "code": "Verification Code",
+      "codePlaceholder": "Enter 6-digit code",
+      "submit": "Verify Email",
+      "submitting": "Verifying...",
+      "resend": "Resend",
+      "resending": "Sending..."
+    },
+    "messages": {
+      "sent": "Verification code sent to {{email}}",
+      "resendSuccess": "Verification code resent, please check your email",
+      "verifySuccess": "Email verified successfully! Redirecting...",
+      "sendFailed": "Failed to send verification code, please click resend",
+      "codeRequired": "Please enter verification code",
+      "codeLength": "Verification code must be 6 digits",
+      "verifyFailed": "Verification failed, please try again",
+      "resendFailed": "Failed to send, please try again"
+    },
+    "countdown": "Resend in {{seconds}} seconds",
+    "back": "Back to Register"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "subtitle": "Sorry, the page you are looking for might have been removed, renamed, or is temporarily unavailable.",
+    "description": "Let us help you find the right direction!",
+    "actions": {
+      "home": "Go Home",
+      "back": "Go Back"
+    },
+    "suggestions": {
+      "title": "Or you can visit:",
+      "create": "Create Work",
+      "dashboard": "Dashboard",
+      "health": "System Status"
+    }
+  }
+}

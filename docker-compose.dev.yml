@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  # MongoDB 数据库
+  mongodb:
+    image: mongo:5.0
+    container_name: mj-gallery-mongo-dev
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      MONGO_INITDB_DATABASE: midjourney-gallery-dev
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    networks:
+      - mj-gallery-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: mj-gallery-app-dev
+    restart: unless-stopped
+    ports:
+      - "3100:3100"  # 前端端口
+      - "5500:5500"  # 后端端口
+    volumes:
+      # 源代码热重载
+      - .:/app
+      - /app/node_modules
+      - /app/client/node_modules
+      - /app/server/node_modules
+      # 上传文件持久化
+      - uploads_data:/app/server/uploads
+      # 日志持久化
+      - logs_data:/app/logs
+    environment:
+      # 基本配置
+      - NODE_ENV=development
+      - PORT=5500
+      - CLIENT_PORT=3100
+      
+      # 数据库配置
+      - MONGODB_URI=mongodb://mongodb:27017/midjourney-gallery-dev
+      
+      # JWT配置
+      - JWT_SECRET=dev-secret-key-for-local-development-only-do-not-use-in-production
+      - JWT_EXPIRES_IN=7d
+      
+      # 客户端URL
+      - CLIENT_URL=http://localhost:3100
+      
+      # 文件上传配置
+      - MAX_FILE_SIZE=10485760
+      - UPLOAD_PATH=./server/uploads
+      
+      # 邮件配置（开发环境禁用）
+      - EMAIL_ENABLED=false
+      
+      # 管理员配置
+      - ADMIN_USERNAME=admin
+      - ADMIN_EMAIL=admin@localhost
+      - ADMIN_PASSWORD=admin123456
+      - ADMIN_AUTO_CREATE=true
+      
+      # 开发环境特定配置
+      - TRUST_PROXY=false
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX=1000
+      
+      # React 环境变量
+      - REACT_APP_API_URL=http://localhost:5500/api
+      - REACT_APP_NODE_ENV=development
+      - REACT_APP_ENABLE_ANALYTICS=false
+      - REACT_APP_ENABLE_PWA=false
+      
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - mj-gallery-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5500/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Redis (可选，用于缓存)
+  redis:
+    image: redis:7-alpine
+    container_name: mj-gallery-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mj-gallery-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - with-redis
+
+# 网络配置
+networks:
+  mj-gallery-network:
+    driver: bridge
+    name: mj-gallery-dev-network
+
+# 数据卷
+volumes:
+  mongodb_data:
+    name: mj-gallery-mongodb-dev
+  uploads_data:
+    name: mj-gallery-uploads-dev
+  logs_data:
+    name: mj-gallery-logs-dev
+  redis_data:
+    name: mj-gallery-redis-dev

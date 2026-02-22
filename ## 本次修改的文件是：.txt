@@ -1,0 +1,8 @@
+## 本次修改的文件是：
+关键的网格布局代码。在第295行，当前使用的是 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 的响应式网格布局，
+这意味着在超大屏幕(xl)上显示4列。我需要将其修改为5列。
+我发现当前页面容器使用的是max-w-7xl，这可能不足以容纳5个卡片。
+我需要将其调整为更大的容器宽度，比如max-w-screen-2xl或者去掉最大宽度限制。
+
+涉及文件
+client\src\pages\Home.js

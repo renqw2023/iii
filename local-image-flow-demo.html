@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地图片流动效果演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            font-size: 1.1rem;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+
+        /* 图片流动效果样式 */
+        .image-flow-container {
+            width: 100%;
+            height: 400px;
+            overflow: hidden;
+            position: relative;
+            margin: 20px auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #000;
+        }
+
+        .image-flow-wrapper {
+            display: flex;
+            height: 100%;
+            animation: scrollLeft 90s linear infinite;
+        }
+
+        .image-column {
+            display: flex;
+            flex-direction: column;
+            margin-right: 5px;
+            min-width: 150px;
+            height: 100%;
+        }
+
+        .image-item {
+            width: 150px;
+            height: 200px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .image-item:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .image-item:hover img {
+            transform: scale(1.1);
+        }
+
+        @keyframes scrollLeft {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            text-align: center;
+            margin: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .control-panel h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transform: scale(1.05);
+        }
+
+        .pause-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
+        }
+
+        .paused .image-flow-wrapper {
+            animation-play-state: paused;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .image-flow-container {
+                margin: 10px;
+                height: 300px;
+            }
+            
+            .image-column {
+                width: 120px;
+                height: 300px;
+            }
+            
+            .image-item {
+                width: 120px;
+                height: 150px;
+            }
+            
+            .control-panel {
+                margin: 10px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 本地图片流动效果</h1>
+        <p>使用 ImageFlow 文件夹中的精美图片素材</p>
+        <div class="stats">
+            <strong>📁 图片总数：100张</strong> | <strong>🎯 格式支持：WebP</strong>
+        </div>
+    </div>
+
+    <!-- 图片流动效果演示 -->
+    <div class="image-flow-container" id="imageFlow">
+        <div class="image-flow-wrapper" id="imageWrapper">
+            <!-- 01 系列 -->
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (1).webp" alt="艺术图片 1">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (2).webp" alt="艺术图片 2">
+                </div>
+            </div>
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (3).webp" alt="艺术图片 3">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (4).webp" alt="艺术图片 4">
+                </div>
+            </div>
+            
+            <!-- 02 系列 -->
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/02 (1).webp" alt="艺术图片 5">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/02 (2).webp" alt="艺术图片 6">
+                </div>
+            </div>
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/02 (3).webp" alt="艺术图片 7">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/02 (4).webp" alt="艺术图片 8">
+                </div>
+            </div>
+            
+            <!-- 单张图片 -->
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/03.webp" alt="艺术图片 9">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/04.webp" alt="艺术图片 10">
+                </div>
+            </div>
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/05.webp" alt="艺术图片 11">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/06.webp" alt="艺术图片 12">
+                </div>
+            </div>
+            
+            <!-- 07 系列 -->
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/07 (1).webp" alt="艺术图片 13">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/07 (2).webp" alt="艺术图片 14">
+                </div>
+            </div>
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/07 (3).webp" alt="艺术图片 15">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/08.webp" alt="艺术图片 16">
+                </div>
+            </div>
+            
+            <!-- 更多图片 -->
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/09.webp" alt="艺术图片 17">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/10.webp" alt="艺术图片 18">
+                </div>
+            </div>
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/11 (1).webp" alt="艺术图片 19">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/11 (2).webp" alt="艺术图片 20">
+                </div>
+            </div>
+            
+            <!-- 重复第一组图片实现无缝循环 -->
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (1).webp" alt="艺术图片 1">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (2).webp" alt="艺术图片 2">
+                </div>
+            </div>
+            <div class="image-column">
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (3).webp" alt="艺术图片 3">
+                </div>
+                <div class="image-item">
+                    <img src="./client/public/ImageFlow/01 (4).webp" alt="艺术图片 4">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 控制面板 -->
+    <div class="control-panel">
+        <h3>🎮 流动控制</h3>
+        <div class="control-buttons">
+            <button class="control-btn pause-btn" onclick="togglePause()">⏸️ 暂停/播放</button>
+            <button class="control-btn active" onclick="changeSpeed('slow')">🐌 慢速 (180s)</button>
+            <button class="control-btn" onclick="changeSpeed('normal')">🚶 正常 (90s)</button>
+            <button class="control-btn" onclick="changeSpeed('fast')">🏃 快速 (45s)</button>
+        </div>
+    </div>
+
+    <script>
+        let isPaused = false;
+        const speeds = {
+            slow: '180s',
+            normal: '90s',  
+            fast: '45s'
+        };
+
+        function togglePause() {
+            const container = document.getElementById('imageFlow');
+            isPaused = !isPaused;
+            
+            if (isPaused) {
+                container.classList.add('paused');
+            } else {
+                container.classList.remove('paused');
+            }
+        }
+
+        function changeSpeed(speed) {
+            const wrapper = document.getElementById('imageWrapper');
+            wrapper.style.animationDuration = speeds[speed];
+            
+            // 更新按钮状态
+            document.querySelectorAll('.control-btn:not(.pause-btn)').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case ' ':
+                    e.preventDefault();
+                    togglePause();
+                    break;
+                case '1':
+                    changeSpeed('slow');
+                    break;
+                case '2':
+                    changeSpeed('normal');
+                    break;
+                case '3':
+                    changeSpeed('fast');
+                    break;
+            }
+        });
+
+        // 鼠标悬停暂停
+        document.getElementById('imageFlow').addEventListener('mouseenter', function() {
+            if (!isPaused) {
+                this.classList.add('paused');
+            }
+        });
+
+        document.getElementById('imageFlow').addEventListener('mouseleave', function() {
+            if (!isPaused) {
+                this.classList.remove('paused');
+            }
+        });
+    </script>
+</body>
+</html>

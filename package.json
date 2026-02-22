@@ -1,0 +1,44 @@
+{
+  "name": "iii-pics",
+  "version": "1.0.0",
+  "private": true,
+  "description": "III.PICS - 专业AI视觉艺术平台，激发灵感(Inspire)、释放想象(Imagine)、推动创新(Innovate)。汇聚全球创作者的精美作品，发现无限创意可能",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "server-only": "cd server && npm install && npm run setup && npm run dev",
+    "client-only": "cd client && npm install && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "start": "node start-clean.js",
+    "start-with-data": "node start.js",
+    "setup": "npm run install-all && cd server && npm run setup",
+    "setup-with-data": "npm run install-all && cd server && npm run setup-with-data"
+  },
+  "keywords": [
+    "iii-pics",
+    "ai-art",
+    "visual-art",
+    "midjourney",
+    "creative-platform",
+    "inspire",
+    "imagine",
+    "innovate",
+    "gallery",
+    "react",
+    "node"
+  ],
+  "author": "III.PICS Team",
+  "license": "MIT",
+  "homepage": "https://iii.pics",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "geoip-lite": "^1.4.10",
+    "ua-parser-js": "^2.0.4"
+  }
+}

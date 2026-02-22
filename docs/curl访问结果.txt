@@ -1,0 +1,6 @@
+https://iii.pics/api/seo/sitemap/status
+"success":false,"message":"Failed to generate sitemaps","error":"Cannot read properties of undefined (reading 'baseUrl')"}
+https://iii.pics/api/seo/sitemap/generate
+{"success":false,"message":"Failed to generate sitemaps","error":"Cannot read properties of undefined (reading 'baseUrl')"}
+https://iii.pics/api/seo/meta/home
+{"success":false,"message":"Failed to get meta data","error":"Cannot read properties of undefined (reading 'baseUrl')"}

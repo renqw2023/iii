@@ -1,0 +1,352 @@
+# III.PICS 项目重构 — 详细执行计划
+
+## 一、项目现状总结
+
+| 维度 | 现状 |
+|------|------|
+| **前端** | React 18 + TailwindCSS + Framer Motion + react-query + i18next |
+| **后端** | Express.js + Mongoose/MongoDB + JWT 认证 |
+| **数据模型** | [User](file:///e:/pm01/client/src/services/api.js#111-112) · [Post](file:///e:/pm01/client/src/services/api.js#90-91)（MJ 风格帖） · `PromptPost`（MJ 提示词） · `Notification` |
+| **路由** | 8 套 API：auth / users / posts / prompts / admin / upload / notifications / seo |
+| **前端页面** | 28+ 页面，含完整的 Prompt CRUD（列表/详情/创建）、Home、Explore、Favorites 等 |
+| **核心特色** | Midjourney `--sref` 风格参数系统、ImageFlow 瀑布流、国际化、管理员后台 |
+
+---
+
+## 二、对需求文档的理解与补充
+
+### 用户原始需求概要
+1. **保留** Midjourney 风格功能
+2. **重构** 提示词功能 → 仿照 [meigen.ai](https://www.meigen.ai/) 的"AI 提示词画廊"模式
+3. **新增** Seedance 2.0 视频提示词板块
+4. 数据源整合：meigen.ai + [awesome-nano-banana-pro-prompts](https://github.com/YouMind-OpenLab/awesome-nano-banana-pro-prompts) + [awesome-seedance-2-prompts](https://github.com/YouMind-OpenLab/awesome-seedance-2-prompts)
+5. 最终整合测试
+
+---
+
+## 三、竞品分析发现
+
+### meigen.ai 关键功能点
+| 功能 | 说明 |
+|------|------|
+| **模型切换** | 顶部按 AI 模型过滤：All / NanoBanana Pro / Midjourney / GPT Image |
+| **标签筛选** | 按内容标签过滤：Product / Photograph / Food / Girl / 3D |
+| **卡片画廊** | 每张卡片展示：预览图 + 提示词文本(截断) + 作者(@Twitter) + ❤️ likes + 👁️ views + 模型标签 |
+| **详情页** | 完整提示词 + 一键复制 + 相关推荐 |
+| **搜索** | 支持 `⌘K` 快捷键全局搜索 |
+| **无需登录** | 纯浏览型，不需要用户注册 |
+
+### youmind.com/seedance 关键功能点
+| 功能 | 说明 |
+|------|------|
+| **视频卡片** | 每个提示词配有在线可播放的视频预览 |
+| **标题+描述** | 展示简要概述，点击查看完整 prompt |
+| **每日更新** | 标注 "Updated daily" |
+
+### 数据源结构分析
+| 数据源 | 格式 | 规模 |
+|--------|------|------|
+| awesome-nano-banana-pro-prompts | Markdown（README.md, 337KB）+ `scripts/` + `public/` | **9716 条**，按用途和风格分 41 个子类 |
+| awesome-seedance-2-prompts | Markdown + **`video-urls.json`**（39KB，结构化数据） | **200+ 条** 视频提示词 |
+
+> [!IMPORTANT]
+> **NanoBanana 数据没有现成的 JSON 文件**，需要编写 Markdown 解析脚本从 README 中提取。Seedance 有现成的 `video-urls.json` 可直接使用。
+
+---
+
+## 四、详细执行计划
+
+### 阶段 0️⃣ — 准备工作（预计 0.5 天）
+
+#### 步骤 0.1：Git 分支管理
+- 在当前项目中创建 `feature/prompt-rebuild` 分支，隔离开发
+
+#### 步骤 0.2：数据源获取
+- Clone `awesome-nano-banana-pro-prompts` 仓库到本地临时目录
+- Clone `awesome-seedance-2-prompts` 仓库到本地临时目录
+
+---
+
+### 阶段 1️⃣ — 数据层重构（预计 2 天）
+
+#### 步骤 1.1：设计新的 MongoDB 数据模型
+
+##### [NEW] `server/models/GalleryPrompt.js` — 通用画廊提示词模型
+用于存储从 meigen.ai 和 nano-banana-pro 导入的**图像生成**提示词。
+
+```javascript
+// 核心字段设计
+{
+  title: String,            // 提示词标题（从 prompt 前 80 字符截取或用 Markdown 标题）
+  prompt: String,           // 完整提示词文本
+  description: String,      // 简要描述/摘要
+  model: {                  // AI 模型标识
+    type: String,
+    enum: ['nanobanana', 'midjourney', 'gptimage', 'other']
+  },
+  // 分类系统（对齐 nano-banana 的 41 个子类 + meigen 的标签）
+  useCase: String,          // 用途类别：profile-avatar, social-media, infographic 等
+  style: String,            // 风格类别：photography, anime, 3d-render, illustration 等
+  subject: String,          // 主题类别：portrait, product, food, landscape 等
+  tags: [String],           // 自由标签
+  // 媒体
+  previewImage: String,     // 预览图 URL（来自 GitHub public/ 或外部链接）
+  // 作者信息（外部来源）
+  sourceAuthor: String,     // 原作者名称
+  sourceUrl: String,        // 来源链接
+  sourcePlatform: String,   // 来源平台 (twitter, github, meigen 等)
+  // 互动数据
+  likes: Number,
+  views: Number,
+  copyCount: Number,
+  // 元数据
+  dataSource: {             // 数据来源标识
+    type: String,
+    enum: ['meigen', 'nano-banana-pro', 'user-created', 'other']
+  },
+  isFeatured: Boolean,
+  isPublic: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+##### [NEW] `server/models/SeedancePrompt.js` — 视频提示词模型
+用于存储 Seedance 2.0 视频生成提示词。
+
+```javascript
+{
+  title: String,            // 视频提示词标题
+  prompt: String,           // 完整提示词文本
+  description: String,      // 简要描述
+  videoUrl: String,         // 视频预览 URL（来自 video-urls.json）
+  thumbnailUrl: String,     // 视频缩略图
+  // 分类
+  category: String,         // 类别
+  tags: [String],           
+  // 互动
+  views: Number,
+  likes: Number,
+  copyCount: Number,
+  // 元数据
+  sourceUrl: String,        // 原始来源
+  isFeatured: Boolean,
+  duration: String,         // 视频时长描述
+  createdAt: Date
+}
+```
+
+> [!WARNING]
+> 现有的 `PromptPost` 模型（MJ 风格专用）**不做修改，原样保留**，因为它有完整的用户关联、评论系统、收藏系统。新模型是为了承接**外部数据源的只读展示数据**。
+
+---
+
+#### 步骤 1.2：编写数据导入脚本
+
+##### [NEW] `server/scripts/importNanoBanana.js`
+- 解析 `awesome-nano-banana-pro-prompts/README.md`
+- 使用正则提取每条提示词的：编号、类别、标题、正文、图片 URL
+- 映射到 `GalleryPrompt` Schema 并批量写入 MongoDB
+- 支持 `--dry-run` 预览模式
+
+##### [NEW] `server/scripts/importSeedance.js`
+- 读取 `awesome-seedance-2-prompts/video-urls.json`（已有结构化数据）
+- 解析 [README.md](file:///e:/pm01/docs/README.md) 补充描述内容
+- 映射到 `SeedancePrompt` Schema 并写入 MongoDB
+
+##### [NEW] `server/scripts/importMeigen.js`（可选/后续）
+- 通过浏览器访问 meigen.ai 进行数据分析
+- 考虑 API 抓取或静态页面解析，提取热门提示词
+
+---
+
+#### 步骤 1.3：新增 API 路由
+
+##### [NEW] `server/routes/gallery.js` — 画廊提示词 API
+```
+GET /api/gallery                 // 列表（支持 model/useCase/style/subject/tags 过滤 + 分页 + 排序）
+GET /api/gallery/featured        // 精选推荐
+GET /api/gallery/:id             // 详情
+GET /api/gallery/tags/popular    // 热门标签
+GET /api/gallery/search          // 全文搜索
+POST /api/gallery/:id/copy       // 记录复制次数
+POST /api/gallery/:id/like       // 点赞（可选，需登录）
+```
+
+##### [NEW] `server/routes/seedance.js` — Seedance 视频 API
+```
+GET /api/seedance                // 列表（支持 category/tags 过滤 + 分页）
+GET /api/seedance/featured       // 精选
+GET /api/seedance/:id            // 详情
+GET /api/seedance/search         // 搜索
+POST /api/seedance/:id/copy      // 记录复制
+```
+
+##### [MODIFY] [server/index.js](file:///e:/pm01/server/index.js)
+- 注册新路由：`/api/gallery` 和 `/api/seedance`
+
+---
+
+### 阶段 2️⃣ — 前端页面重构（预计 3-4 天）
+
+#### 步骤 2.1：导航栏改版
+
+##### [MODIFY] [client/src/components/Layout/Header.js](file:///e:/pm01/client/src/components/Layout/Header.js)
+将导航从现在的简单链接改为三大板块入口：
+
+| 导航项 | 路由 | 说明 |
+|--------|------|------|
+| 🎨 MJ 风格 | `/` (首页) | 保留原有 Midjourney 风格展示 |
+| 📝 提示词库 | `/gallery` | 新的 meigen 风格画廊 |
+| 🎬 Seedance | `/seedance` | 新的视频提示词板块 |
+
+---
+
+#### 步骤 2.2：提示词画廊页面（仿 meigen.ai）
+
+##### [NEW] `client/src/pages/Gallery/GalleryList.js` — 画廊主页
+仿照 meigen.ai 的整体布局：
+- **顶部模型筛选栏**：All / NanoBanana Pro / Midjourney / GPT Image（横向 Tab 切换）
+- **标签筛选行**：Product / Photograph / Food / 3D 等（横向滚动 Tag 按钮）
+- **卡片瀑布流/网格**：每张卡片展示预览图、标题截断、作者、likes、views、模型标签
+- **无限滚动加载** 或分页
+- **全局搜索** (`⌘K` / `Ctrl+K` 快捷搜索)
+
+##### [NEW] `client/src/pages/Gallery/GalleryDetail.js` — 画廊详情页
+- 大图预览
+- 完整提示词文本 + **一键复制按钮**
+- 模型标识 & 分类标签
+- 来源信息（作者、原始链接）
+- 相关推荐提示词（同类/同标签）
+
+##### [NEW] `client/src/components/Gallery/GalleryCard.js` — 画廊卡片组件
+- 预览图（带懒加载 + 渐入动画）
+- 提示词截断预览
+- 模型 Badge 标签
+- 作者名 + likes/views 统计
+- Hover 效果：显示"查看详情"/"复制提示词"按钮
+
+##### [NEW] `client/src/components/Gallery/ModelFilter.js` — 模型过滤器
+##### [NEW] `client/src/components/Gallery/TagFilter.js` — 标签过滤器
+
+##### [NEW] `client/src/services/galleryApi.js` — 画廊 API 服务
+
+---
+
+#### 步骤 2.3：Seedance 2.0 视频板块
+
+##### [NEW] `client/src/pages/Seedance/SeedanceList.js` — Seedance 主页
+结合 youmind.com/seedance 的视频展示 + meigen.ai 的 UI 风格：
+- **视频卡片网格**：每张卡片展示视频缩略图/封面
+- **Hover 自动播放**：鼠标悬停时自动静音播放视频预览（使用 Intersection Observer）
+- 分类筛选
+- 搜索功能
+
+##### [NEW] `client/src/pages/Seedance/SeedanceDetail.js` — 视频详情页
+- 视频播放器（大尺寸）
+- 完整提示词文本 + 一键复制
+- 相关视频推荐
+
+##### [NEW] `client/src/components/Seedance/VideoCard.js` — 视频卡片组件
+- 视频封面缩略图
+- Hover 时自动播放预览（`<video>` 标签 + IntersectionObserver 控制）
+- 播放按钮叠层
+- 标题 + 分类标签
+
+##### [NEW] `client/src/services/seedanceApi.js` — Seedance API 服务
+
+---
+
+#### 步骤 2.4：路由与整合
+
+##### [MODIFY] [client/src/App.js](file:///e:/pm01/client/src/App.js)
+新增路由：
+```jsx
+<Route path="gallery" element={<GalleryList />} />
+<Route path="gallery/:id" element={<GalleryDetail />} />
+<Route path="seedance" element={<SeedanceList />} />
+<Route path="seedance/:id" element={<SeedanceDetail />} />
+```
+
+##### [MODIFY] 首页 [client/src/pages/Home.js](file:///e:/pm01/client/src/pages/Home.js)
+- 在 Hero 区域下方新增"热门提示词"和"Seedance 精选"推荐区块
+- 快速入口卡片指向三大板块
+
+---
+
+### 阶段 3️⃣ — UI 风格统一与打磨（预计 1-2 天）
+
+#### 步骤 3.1：设计规范融合
+- 提取当前项目的 Tailwind 颜色/字体/圆角等 Design Token
+- 确保新画廊/Seedance 页面使用**相同的设计语言**（暗色模式适配、毛玻璃效果、Framer Motion 动画）
+
+#### 步骤 3.2：响应式适配
+- 画廊页面：桌面端 4 列网格 → 平板 2 列 → 手机 1 列
+- Seedance 页面：桌面端 3 列 → 手机 1 列
+- 视频播放器在移动端适配纵向比例
+
+#### 步骤 3.3：性能优化
+- 图片懒加载（`react-intersection-observer` 已引入）
+- 视频按需加载（仅视口内的视频 `<source>` 被挂载）
+- 搜索防抖（300ms debounce）
+
+---
+
+### 阶段 4️⃣ — 整合测试与上线（预计 1 天）
+
+#### 步骤 4.1：功能回归测试
+- ✅ 原 Midjourney 风格帖子功能（发帖、浏览、点赞、评论）照常工作
+- ✅ 原提示词 CRUD 功能（创建、列表、详情）照常工作
+- ✅ 新画廊页面：数据加载、筛选、搜索、分页、复制提示词
+- ✅ Seedance 页面：视频加载、播放、搜索、复制提示词
+- ✅ 导航在三个板块间正确切换
+- ✅ 响应式布局在移动端正常
+
+#### 步骤 4.2：数据验证
+- 验证 NanoBanana 9716 条数据导入完整性
+- 验证 Seedance 200+ 条数据导入完整性
+- 验证视频 URL 可访问
+
+#### 步骤 4.3：性能检查
+- 首屏加载时间
+- 图片/视频懒加载生效
+- API 响应速度
+
+---
+
+## 五、需要确认的关键决策
+
+> [!CAUTION]
+> 以下决策需要您确认后才能逐步执行：
+
+1. **数据本地化方式**：数据从 GitHub 仓库解析后写入 MongoDB，图片/视频的 URL **保留外部链接**而非下载本地。这样做可以节省服务器存储，但依赖外部图床可用性。您接受吗？
+2. **现有功能隔离策略**：保持 [Post](file:///e:/pm01/client/src/services/api.js#90-91)、`PromptPost` 模型和 API 完全不动，画廊和 Seedance 使用独立的新 Model + 新路由。用户创建的 MJ 提示词仍然走老流程。可以吗？
+3. **画廊社交交互**：meigen.ai 是无登录的公开浏览。画廊板块需要支持登录后 **收藏/点赞** 吗？还是先做纯浏览 + 一键复制？
+4. **导航结构**：从现有的首页"社区型"混排改为"三板块并列入口"，这会改变首页的布局。请确认您对导航调整的思路。
+
+---
+
+## 六、文件变更清单汇总
+
+| 操作 | 文件路径 | 说明 |
+|------|-----------|------|
+| NEW | `server/models/GalleryPrompt.js` | 画廊提示词数据模型 |
+| NEW | `server/models/SeedancePrompt.js` | Seedance 视频提示词数据模型 |
+| NEW | `server/routes/gallery.js` | 画廊 API |
+| NEW | `server/routes/seedance.js` | Seedance API |
+| NEW | `server/scripts/importNanoBanana.js` | NanoBanana 数据导入脚本 |
+| NEW | `server/scripts/importSeedance.js` | Seedance 数据导入脚本 |
+| MODIFY | [server/index.js](file:///e:/pm01/server/index.js) | 注册新路由 |
+| NEW | `client/src/pages/Gallery/GalleryList.js` | 画廊列表页 |
+| NEW | `client/src/pages/Gallery/GalleryDetail.js` | 画廊详情页 |
+| NEW | `client/src/pages/Seedance/SeedanceList.js` | Seedance 列表页 |
+| NEW | `client/src/pages/Seedance/SeedanceDetail.js` | Seedance 详情页 |
+| NEW | `client/src/components/Gallery/GalleryCard.js` | 画廊卡片组件 |
+| NEW | `client/src/components/Gallery/ModelFilter.js` | 模型过滤器组件 |
+| NEW | `client/src/components/Gallery/TagFilter.js` | 标签过滤器组件 |
+| NEW | `client/src/components/Seedance/VideoCard.js` | 视频卡片组件 |
+| NEW | `client/src/services/galleryApi.js` | 画廊 API 调用服务 |
+| NEW | `client/src/services/seedanceApi.js` | Seedance API 调用服务 |
+| MODIFY | [client/src/App.js](file:///e:/pm01/client/src/App.js) | 新增路由 |
+| MODIFY | [client/src/components/Layout/Header.js](file:///e:/pm01/client/src/components/Layout/Header.js) | 导航改版 |
+| MODIFY | [client/src/pages/Home.js](file:///e:/pm01/client/src/pages/Home.js) | 首页增加推荐入口 |

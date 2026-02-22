@@ -39,6 +39,10 @@ import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 import Notifications from './pages/Notifications';
 import ErrorDemo from './pages/ErrorDemo';
+import GalleryList from './pages/Gallery/GalleryList';
+import GalleryDetail from './pages/Gallery/GalleryDetail';
+import SeedanceList from './pages/Seedance/SeedanceList';
+import SeedanceDetail from './pages/Seedance/SeedanceDetail';
 
 // 路由保护组件
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -64,92 +68,97 @@ function App() {
           <ThemeProvider>
             <AuthProvider>
               <NotificationProvider>
-            <Router future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true
-            }}>
-              <ScrollToTop />
-            <div className="min-h-screen">
-              <Routes>
-                {/* 公开路由 */}
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Home />} />
-                  <Route path="login" element={<Login />} />
-                  <Route path="register" element={<Register />} />
-                  <Route path="verify-email" element={<EmailVerification />} />
-                  <Route path="forgot-password" element={<ForgotPassword />} />
-                  <Route path="reset-password" element={<ResetPassword />} />
-                  <Route path="post/:id" element={<PostDetail />} />
-                  <Route path="prompts" element={<PromptList />} />
-                  <Route path="prompt/:id" element={<PromptDetail />} />
-                  <Route path="user/:id" element={<Profile />} />
-                  <Route path="explore" element={<Explore />} />
-                  <Route path="health" element={<Health />} />
-                  <Route path="about" element={<About />} />
-                  <Route path="help" element={<Help />} />
-                  <Route path="privacy" element={<Privacy />} />
-                  <Route path="terms" element={<Terms />} />
-                  <Route path="contact" element={<Contact />} />
-                  <Route path="error-demo" element={<ErrorDemo />} />
-                </Route>
+                <Router future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true
+                }}>
+                  <ScrollToTop />
+                  <div className="min-h-screen">
+                    <Routes>
+                      {/* 公开路由 */}
+                      <Route path="/" element={<Layout />}>
+                        <Route index element={<Home />} />
+                        <Route path="login" element={<Login />} />
+                        <Route path="register" element={<Register />} />
+                        <Route path="verify-email" element={<EmailVerification />} />
+                        <Route path="forgot-password" element={<ForgotPassword />} />
+                        <Route path="reset-password" element={<ResetPassword />} />
+                        <Route path="post/:id" element={<PostDetail />} />
+                        <Route path="prompts" element={<PromptList />} />
+                        <Route path="prompt/:id" element={<PromptDetail />} />
+                        <Route path="user/:id" element={<Profile />} />
+                        <Route path="explore" element={<Explore />} />
+                        <Route path="health" element={<Health />} />
+                        <Route path="about" element={<About />} />
+                        <Route path="help" element={<Help />} />
+                        <Route path="privacy" element={<Privacy />} />
+                        <Route path="terms" element={<Terms />} />
+                        <Route path="contact" element={<Contact />} />
+                        <Route path="error-demo" element={<ErrorDemo />} />
+                        {/* 画廊与视频（公开路由） */}
+                        <Route path="gallery" element={<GalleryList />} />
+                        <Route path="gallery/:id" element={<GalleryDetail />} />
+                        <Route path="seedance" element={<SeedanceList />} />
+                        <Route path="seedance/:id" element={<SeedanceDetail />} />
+                      </Route>
 
-                {/* 需要登录的路由 */}
-                <Route path="/" element={
-                  <ProtectedRoute>
-                    <Layout />
-                  </ProtectedRoute>
-                }>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="create" element={<CreatePost />} />
-                  <Route path="create-prompt" element={<CreatePrompt />} />
-                  <Route path="favorites" element={<Favorites />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="notifications" element={<Notifications />} />
-                </Route>
+                      {/* 需要登录的路由 */}
+                      <Route path="/" element={
+                        <ProtectedRoute>
+                          <Layout />
+                        </ProtectedRoute>
+                      }>
+                        <Route path="dashboard" element={<Dashboard />} />
+                        <Route path="create" element={<CreatePost />} />
+                        <Route path="create-prompt" element={<CreatePrompt />} />
+                        <Route path="favorites" element={<Favorites />} />
+                        <Route path="settings" element={<Settings />} />
+                        <Route path="notifications" element={<Notifications />} />
+                      </Route>
 
-                {/* 管理员路由 */}
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <Layout />
-                  </AdminRoute>
-                }>
-                  <Route index element={<AdminPanel />} />
-                </Route>
+                      {/* 管理员路由 */}
+                      <Route path="/admin" element={
+                        <AdminRoute>
+                          <Layout />
+                        </AdminRoute>
+                      }>
+                        <Route index element={<AdminPanel />} />
+                      </Route>
 
-                {/* 404页面 */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                      {/* 404页面 */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
 
-              {/* 全局通知 */}
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    color: '#1e293b',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                  },
-                  success: {
-                    iconTheme: {
-                      primary: '#10b981',
-                      secondary: '#ffffff',
-                    },
-                  },
-                  error: {
-                    iconTheme: {
-                      primary: '#ef4444',
-                      secondary: '#ffffff',
-                    },
-                  },
-                }}
-              />
-            </div>
-            </Router>
+                    {/* 全局通知 */}
+                    <Toaster
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
+                        style: {
+                          background: 'rgba(255, 255, 255, 0.9)',
+                          backdropFilter: 'blur(10px)',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          borderRadius: '12px',
+                          color: '#1e293b',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                        },
+                        success: {
+                          iconTheme: {
+                            primary: '#10b981',
+                            secondary: '#ffffff',
+                          },
+                        },
+                        error: {
+                          iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#ffffff',
+                          },
+                        },
+                      }}
+                    />
+                  </div>
+                </Router>
               </NotificationProvider>
             </AuthProvider>
           </ThemeProvider>

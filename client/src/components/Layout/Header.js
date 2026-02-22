@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { 
-  Menu, 
-  X, 
-  User, 
-  LogOut, 
-  Settings, 
-  Heart, 
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  Settings,
+  Heart,
   Lightbulb,
-  Palette
+  Palette,
+  Image,
+  Film
 } from 'lucide-react';
 import NotificationDropdown from '../UI/NotificationDropdown';
 import LanguageSwitcher from '../UI/LanguageSwitcher';
@@ -36,8 +38,10 @@ const Header = () => {
 
   const navItems = [
     { path: '/', label: t('nav.home'), icon: null },
-    { path: '/explore', label: t('nav.explore'), icon: Palette },
+    { path: '/gallery', label: 'Gallery', icon: Image },
+    { path: '/seedance', label: 'Seedance', icon: Film },
     { path: '/prompts', label: t('nav.prompts'), icon: Lightbulb },
+    { path: '/explore', label: t('nav.explore'), icon: Palette },
     ...(isAuthenticated ? [
       { path: '/create', label: t('nav.create'), icon: Palette },
       { path: '/create-prompt', label: t('nav.createPrompt'), icon: Lightbulb },
@@ -60,11 +64,10 @@ const Header = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                    isActive(item.path)
-                      ? 'bg-primary-50 text-primary-600 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${isActive(item.path)
+                    ? 'bg-primary-50 text-primary-600 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
                 >
                   {Icon && <Icon className="w-4 h-4" />}
                   <span>{item.label}</span>
@@ -77,7 +80,7 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {/* 语言切换器 */}
             <LanguageSwitcher />
-            
+
             {isAuthenticated ? (
               <>
                 {/* 通知按钮 */}
@@ -112,7 +115,7 @@ const Header = () => {
                           <p className="font-medium text-slate-900">{user?.username}</p>
                           <p className="text-sm text-slate-500">{user?.email}</p>
                         </div>
-                        
+
                         <Link
                           to="/dashboard"
                           className="flex items-center space-x-2 px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors duration-200"
@@ -121,7 +124,7 @@ const Header = () => {
                           <User className="w-4 h-4" />
                           <span>{t('navigation.header.menu.profile')}</span>
                         </Link>
-                        
+
                         <Link
                           to="/favorites"
                           className="flex items-center space-x-2 px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors duration-200"
@@ -130,7 +133,7 @@ const Header = () => {
                           <Heart className="w-4 h-4" />
                           <span>{t('navigation.header.menu.favorites')}</span>
                         </Link>
-                        
+
                         <Link
                           to="/settings"
                           className="flex items-center space-x-2 px-4 py-2 text-slate-700 hover:bg-slate-50 transition-colors duration-200"
@@ -139,9 +142,9 @@ const Header = () => {
                           <Settings className="w-4 h-4" />
                           <span>{t('navigation.header.menu.settings')}</span>
                         </Link>
-                        
+
                         <hr className="my-2 border-slate-100" />
-                        
+
                         <button
                           onClick={handleLogout}
                           className="flex items-center space-x-2 w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
@@ -199,11 +202,10 @@ const Header = () => {
                       key={item.path}
                       to={item.path}
                       onClick={() => setIsMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                        isActive(item.path)
-                          ? 'bg-primary-50 text-primary-600'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${isActive(item.path)
+                        ? 'bg-primary-50 text-primary-600'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        }`}
                     >
                       {Icon && <Icon className="w-5 h-5" />}
                       <span>{item.label}</span>

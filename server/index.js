@@ -14,6 +14,8 @@ const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
 const seoRoutes = require('./routes/seo');
+const galleryRoutes = require('./routes/gallery');
+const seedanceRoutes = require('./routes/seedance');
 
 const app = express();
 // 信任代理设置
@@ -53,6 +55,8 @@ app.use('/api/prompts', promptRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/seedance', seedanceRoutes);
 app.use('/api/seo', seoRoutes);
 
 // 健康检查
@@ -63,7 +67,7 @@ app.get('/api/health', (req, res) => {
 // 错误处理中间件
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     message: '服务器内部错误',
     error: process.env.NODE_ENV === 'development' ? err.message : {}
   });

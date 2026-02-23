@@ -75,6 +75,7 @@
     "hero": {
       "title": "发现 AI 艺术的无限可能",
       "subtitle": "探索精美的 Midjourney 风格参数，激发你的创作灵感",
+      "slogan": "激发灵感 • 释放想象 • 推动创新",
       "cta": "开始探索",
       "createButton": "开始创作",
       "exploreButton": "浏览作品",
@@ -337,35 +338,35 @@
     }
   },
   "validation": {
-      "required": "此字段为必填项",
-      "checking": "检查中...",
-      "emailRequired": "请输入邮箱地址",
-      "emailInvalid": "请输入有效的邮箱地址",
-      "passwordRequired": "请输入密码",
-      "passwordMinLength": "密码长度至少6个字符",
-      "email": {
-        "required": "请输入邮箱地址",
-        "invalid": "请输入有效的邮箱地址",
-        "checkFailed": "检查邮箱失败"
-      },
-      "password": {
-        "required": "请输入密码",
-        "minLength": "密码长度至少6个字符",
-        "invalid": "请输入有效的密码",
-        "valid": "密码格式正确"
-      },
-      "username": {
-        "minLength": "用户名长度至少3个字符",
-        "maxLength": "用户名长度不能超过20个字符",
-        "format": "用户名只能包含字母、数字和下划线",
-        "invalid": "请输入有效的用户名",
-        "checkFailed": "检查用户名失败"
-      },
-      "confirmPassword": {
-        "required": "请确认密码",
-        "mismatch": "两次输入的密码不一致",
-        "valid": "密码确认正确"
-      },
+    "required": "此字段为必填项",
+    "checking": "检查中...",
+    "emailRequired": "请输入邮箱地址",
+    "emailInvalid": "请输入有效的邮箱地址",
+    "passwordRequired": "请输入密码",
+    "passwordMinLength": "密码长度至少6个字符",
+    "email": {
+      "required": "请输入邮箱地址",
+      "invalid": "请输入有效的邮箱地址",
+      "checkFailed": "检查邮箱失败"
+    },
+    "password": {
+      "required": "请输入密码",
+      "minLength": "密码长度至少6个字符",
+      "invalid": "请输入有效的密码",
+      "valid": "密码格式正确"
+    },
+    "username": {
+      "minLength": "用户名长度至少3个字符",
+      "maxLength": "用户名长度不能超过20个字符",
+      "format": "用户名只能包含字母、数字和下划线",
+      "invalid": "请输入有效的用户名",
+      "checkFailed": "检查用户名失败"
+    },
+    "confirmPassword": {
+      "required": "请确认密码",
+      "mismatch": "两次输入的密码不一致",
+      "valid": "密码确认正确"
+    },
     "minLength": "至少需要{{min}}个字符",
     "maxLength": "最多{{max}}个字符",
     "fileSize": "文件大小不能超过{{size}}MB",

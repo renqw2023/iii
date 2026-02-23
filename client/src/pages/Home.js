@@ -19,29 +19,29 @@ import Hero from '../components/Home/Hero';
 import { APP_CONFIG } from '../config/constants';
 import { useHomeSEO } from '../hooks/useSEO';
 
-const SORT_OPTIONS = [
-  { value: 'createdAt', label: '最新发布' },
-  { value: 'views', label: '最多浏览' },
-  { value: 'likes', label: '最多点赞' },
-];
-
 const Home = () => {
   const { t } = useTranslation();
 
-  // SEO配置
+  // Sort options with i18n
+  const SORT_OPTIONS = useMemo(() => [
+    { value: 'createdAt', label: t('home.sortByNewest') },
+    { value: 'views', label: t('home.sortByViews') },
+    { value: 'likes', label: t('home.sortByLikes') },
+  ], [t]);
+
   useHomeSEO();
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
 
-  // 搜索防抖
+  // Search debounce
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // ========== Gallery 精选 ==========
+  // ========== Gallery featured ==========
   const { data: galleryFeaturedData, isLoading: isGalleryLoading } = useQuery(
     'homeFeaturedGallery',
     () => galleryAPI.getFeatured(8),
@@ -49,7 +49,7 @@ const Home = () => {
   );
   const galleryFeatured = galleryFeaturedData?.data?.prompts || [];
 
-  // ========== Seedance 精选 ==========
+  // ========== Seedance featured ==========
   const { data: seedanceFeaturedData, isLoading: isSeedanceLoading } = useQuery(
     'homeFeaturedSeedance',
     () => seedanceAPI.getFeatured(6),
@@ -57,7 +57,7 @@ const Home = () => {
   );
   const seedanceFeatured = seedanceFeaturedData?.data?.prompts || [];
 
-  // ========== 最新混合内容 ==========
+  // ========== Latest combined content ==========
   const fetchCombinedData = useCallback(async ({ pageParam = 1 }) => {
     try {
       const [postsResponse, promptsResponse] = await Promise.all([
@@ -101,7 +101,7 @@ const Home = () => {
         currentPage: pageParam
       };
     } catch (error) {
-      console.error('数据获取失败:', error);
+      console.error('Data fetch failed:', error);
       return { posts: [], nextPage: undefined, currentPage: pageParam };
     }
   }, [sortBy, selectedTag, debouncedSearch]);
@@ -128,7 +128,7 @@ const Home = () => {
     }
   );
 
-  // 获取热门标签
+  // Popular tags
   const { data: styleTagsData } = useQuery(
     'stylePopularTags',
     () => enhancedPostAPI.getPopularTags(),
@@ -166,7 +166,7 @@ const Home = () => {
 
   const isLoading = status === 'loading';
 
-  // 无限滚动
+  // Infinite scroll
   const { ref, inView } = useInView({
     threshold: 0.1,
     rootMargin: '200px',
@@ -190,7 +190,7 @@ const Home = () => {
     setSelectedTag(prevTag => prevTag === tag ? '' : tag);
   }, []);
 
-  // Ctrl+K 快捷键搜索
+  // Ctrl+K shortcut
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -205,28 +205,25 @@ const Home = () => {
   if (error) {
     return (
       <div className="home-error-state">
-        <h2>{t('error.loadFailed')}</h2>
-        <p>{t('error.refreshPage')}</p>
+        <h2>{t('home.loadError.title')}</h2>
+        <p>{t('home.loadError.message')}</p>
       </div>
     );
   }
 
   return (
     <>
-      {/* Hero区域 — 保持不变 */}
       <Hero />
 
-      {/* ===== 以下为 meigen.ai 暗色风格区域 ===== */}
       <div className="home-dark-area">
-
-        {/* 三大板块快速入口 */}
+        {/* Explore collections */}
         <section className="home-section">
           <div className="home-section-header">
             <h2>
-              <span className="gradient-text">Explore</span>
-              <span className="home-section-header-text"> Our Collections</span>
+              <span className="gradient-text">{t('home.explore.title')}</span>
+              <span className="home-section-header-text"> {t('home.explore.titleSuffix')}</span>
             </h2>
-            <p className="home-section-desc">探索三大内容板块，发现无限灵感</p>
+            <p className="home-section-desc">{t('home.explore.description')}</p>
           </div>
 
           <div className="home-entry-grid">
@@ -234,8 +231,8 @@ const Home = () => {
               <div className="home-entry-icon">
                 <Palette size={28} />
               </div>
-              <h3>🎨 MJ 风格参数</h3>
-              <p>Midjourney --sref 风格代码精选集</p>
+              <h3>🎨 {t('home.explore.mj.title')}</h3>
+              <p>{t('home.explore.mj.description')}</p>
               <span className="home-entry-arrow"><ArrowRight size={16} /></span>
             </Link>
 
@@ -243,8 +240,8 @@ const Home = () => {
               <div className="home-entry-icon">
                 <BookOpen size={28} />
               </div>
-              <h3>📝 AI 提示词库</h3>
-              <p>NanoBanana · Midjourney · GPT Image 热门提示词</p>
+              <h3>📝 {t('home.explore.gallery.title')}</h3>
+              <p>{t('home.explore.gallery.description')}</p>
               <span className="home-entry-arrow"><ArrowRight size={16} /></span>
             </Link>
 
@@ -252,23 +249,23 @@ const Home = () => {
               <div className="home-entry-icon">
                 <Film size={28} />
               </div>
-              <h3>🎬 Seedance 视频</h3>
-              <p>AI 视频生成提示词 · 在线预览</p>
+              <h3>🎬 {t('home.explore.seedance.title')}</h3>
+              <p>{t('home.explore.seedance.description')}</p>
               <span className="home-entry-arrow"><ArrowRight size={16} /></span>
             </Link>
           </div>
         </section>
 
-        {/* Gallery 精选推荐 */}
+        {/* Gallery featured */}
         {galleryFeatured.length > 0 && (
           <section className="home-section">
             <div className="home-section-header">
               <h2>
-                <span className="gradient-text">Featured</span>
-                <span className="home-section-header-text"> AI Prompts</span>
+                <span className="gradient-text">{t('home.featuredGallery.title')}</span>
+                <span className="home-section-header-text"> {t('home.featuredGallery.titleSuffix')}</span>
               </h2>
               <Link to="/gallery" className="home-section-link">
-                查看全部 <ArrowRight size={14} />
+                {t('home.featuredGallery.viewAll')} <ArrowRight size={14} />
               </Link>
             </div>
 
@@ -291,21 +288,21 @@ const Home = () => {
           <section className="home-section">
             <div className="gallery-loading">
               <Loader2 size={28} className="animate-spin" />
-              <p>Loading featured prompts...</p>
+              <p>{t('home.loadingFeatured')}</p>
             </div>
           </section>
         )}
 
-        {/* Seedance 精选推荐 */}
+        {/* Seedance featured */}
         {seedanceFeatured.length > 0 && (
           <section className="home-section">
             <div className="home-section-header">
               <h2>
-                <span className="gradient-text-video">Seedance</span>
-                <span className="home-section-header-text"> 2.0 精选视频</span>
+                <span className="gradient-text-video">{t('home.featuredSeedance.title')}</span>
+                <span className="home-section-header-text"> {t('home.featuredSeedance.titleSuffix')}</span>
               </h2>
               <Link to="/seedance" className="home-section-link">
-                查看全部 <ArrowRight size={14} />
+                {t('home.featuredSeedance.viewAll')} <ArrowRight size={14} />
               </Link>
             </div>
 
@@ -328,29 +325,29 @@ const Home = () => {
           <section className="home-section">
             <div className="gallery-loading">
               <Loader2 size={28} className="animate-spin" />
-              <p>Loading Seedance videos...</p>
+              <p>{t('home.loadingFeatured')}</p>
             </div>
           </section>
         )}
 
-        {/* ===== 最新内容区域 ===== */}
+        {/* Latest content */}
         <section className="home-section home-content-section">
           <div className="home-section-header">
             <h2>
-              <span className="gradient-text">Latest</span>
-              <span className="home-section-header-text"> Content</span>
+              <span className="gradient-text">{t('home.latestContent.title')}</span>
+              <span className="home-section-header-text"> {t('home.latestContent.titleSuffix')}</span>
             </h2>
-            <p className="home-section-desc">风格参数和提示词库的最新作品</p>
+            <p className="home-section-desc">{t('home.latestContent.description')}</p>
           </div>
 
-          {/* 搜索栏 — gallery 暗色风格 */}
+          {/* Search bar */}
           <div className="gallery-search-container">
             <div className="gallery-search-box">
               <Search size={18} className="gallery-search-icon" />
               <input
                 id="home-search"
                 type="text"
-                placeholder="搜索风格参数和提示词... (Ctrl+K)"
+                placeholder={`${t('home.searchPlaceholder')} (${t('home.search.shortcut')})`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="gallery-search-input"
@@ -363,7 +360,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 筛选 + 排序 — gallery 暗色风格 */}
+          {/* Filters + Sort */}
           <div className="gallery-filters-row">
             <div className="tag-filter">
               <div className="tag-filter-scroll">
@@ -371,7 +368,7 @@ const Home = () => {
                   className={`tag-filter-btn ${!selectedTag ? 'active' : ''}`}
                   onClick={() => setSelectedTag('')}
                 >
-                  All
+                  {t('home.filters.allTags')}
                 </button>
                 {popularTags.slice(0, 12).map((tag, index) => (
                   <button
@@ -399,7 +396,7 @@ const Home = () => {
             </div>
           </div>
 
-          {/* 内容网格 */}
+          {/* Content grid */}
           {isLoading ? (
             <div className="gallery-loading">
               <LoadingSpinner size="lg" />
@@ -428,44 +425,44 @@ const Home = () => {
                 })}
               </div>
 
-              {/* 无限滚动加载 */}
+              {/* Infinite scroll */}
               {hasNextPage && (
                 <div ref={ref} className="home-load-more">
                   {isFetchingNextPage ? (
                     <div className="home-load-more-inner">
                       <Loader2 size={18} className="animate-spin" />
-                      <span>加载更多内容...</span>
+                      <span>{t('home.loadingMore')}</span>
                     </div>
                   ) : (
-                    <span className="home-load-more-hint">向下滚动加载更多</span>
+                    <span className="home-load-more-hint">{t('home.loadingMore')}</span>
                   )}
                 </div>
               )}
 
-              {/* 没有更多内容 */}
+              {/* No more content */}
               {!hasNextPage && allPosts.length > 0 && (
                 <div className="home-load-more">
-                  <span className="home-load-more-hint">已显示全部内容</span>
+                  <span className="home-load-more-hint">—</span>
                 </div>
               )}
 
-              {/* 空状态 */}
+              {/* Empty state */}
               {allPosts?.length === 0 && (
                 <div className="gallery-empty">
                   <Sparkles size={48} className="opacity-30" />
-                  <h3 style={{ color: 'var(--text-primary, #f1f5f9)', fontSize: '1.1rem', fontWeight: 600 }}>
-                    {searchTerm || selectedTag ? '没有找到相关内容' : '暂无内容'}
+                  <h3 style={{ color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 600 }}>
+                    {searchTerm || selectedTag ? t('home.noResults.title') : t('home.noContent')}
                   </h3>
                   <p>
                     {searchTerm || selectedTag
-                      ? '尝试调整搜索条件或标签筛选'
-                      : '成为第一个分享作品的人吧！'
+                      ? t('home.noResults.message')
+                      : t('home.beFirstToShare')
                     }
                   </p>
                   {!searchTerm && !selectedTag && (
                     <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                      <Link to="/create" className="detail-btn-primary">创建风格参数</Link>
-                      <Link to="/create-prompt" className="detail-btn-secondary">创建提示词</Link>
+                      <Link to="/create" className="detail-btn-primary">{t('home.createStyle')}</Link>
+                      <Link to="/create-prompt" className="detail-btn-secondary">{t('home.createPrompt')}</Link>
                     </div>
                   )}
                 </div>

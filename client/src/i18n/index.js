@@ -44,27 +44,24 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'zh-CN',
-    debug: true, // 强制开启调试模式
-    
+    fallbackLng: 'en-US',
+    debug: process.env.NODE_ENV === 'development',
+
     interpolation: {
       escapeValue: false, // React已经默认转义了
     },
-    
+
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
     },
-    
+
     react: {
       useSuspense: false,
     },
   })
   .then(() => {
-    console.log('i18n initialized successfully');
-    console.log('Current language:', i18n.language);
-    console.log('Available resources:', Object.keys(i18n.store.data));
-    console.log('postCard.messages.linkCopied translation:', i18n.t('postCard.messages.linkCopied'));
+    console.log('i18n initialized successfully, language:', i18n.language);
   })
   .catch((error) => {
     console.error('i18n initialization failed:', error);

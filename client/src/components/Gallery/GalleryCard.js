@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Eye, Bookmark } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { galleryAPI } from '../../services/galleryApi';
 import toast from 'react-hot-toast';
 
@@ -14,6 +15,7 @@ const MODEL_COLORS = {
 
 const GalleryCard = ({ prompt, onLike, onFavorite }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const modelInfo = MODEL_COLORS[prompt.model] || MODEL_COLORS.other;
 
     const handleCopy = async (e) => {
@@ -21,9 +23,9 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
         try {
             await navigator.clipboard.writeText(prompt.prompt);
             galleryAPI.recordCopy(prompt._id);
-            toast.success('提示词已复制！');
+            toast.success(t('gallery.actions.copySuccess'));
         } catch {
-            toast.error('复制失败');
+            toast.error(t('gallery.actions.copyFailed'));
         }
     };
 
@@ -67,21 +69,21 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
                     <button
                         onClick={handleCopy}
                         className="gallery-action-btn"
-                        title="复制提示词"
+                        title={t('gallery.actions.copy')}
                     >
                         <Copy size={16} />
                     </button>
                     <button
                         onClick={handleLike}
                         className={`gallery-action-btn ${prompt.isLiked ? 'text-red-400' : ''}`}
-                        title="点赞"
+                        title={t('gallery.actions.like')}
                     >
                         <Heart size={16} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                     </button>
                     <button
                         onClick={handleFavorite}
                         className={`gallery-action-btn ${prompt.isFavorited ? 'text-yellow-400' : ''}`}
-                        title="收藏"
+                        title={t('gallery.actions.favorite')}
                     >
                         <Bookmark size={16} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
                     </button>

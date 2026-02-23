@@ -2,11 +2,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Copy, Heart, Eye, Bookmark } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { seedanceAPI } from '../../services/seedanceApi';
 import toast from 'react-hot-toast';
 
 const VideoCard = ({ prompt, onLike, onFavorite }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const videoRef = useRef(null);
     const [isHovering, setIsHovering] = useState(false);
     const [isInView, setIsInView] = useState(false);
@@ -40,9 +42,9 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         try {
             await navigator.clipboard.writeText(prompt.prompt);
             seedanceAPI.recordCopy(prompt._id);
-            toast.success('提示词已复制！');
+            toast.success(t('seedance.actions.copySuccess'));
         } catch {
-            toast.error('复制失败');
+            toast.error(t('seedance.actions.copyFailed'));
         }
     };
 
@@ -98,20 +100,20 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
 
                 {/* 悬浮操作 */}
                 <div className={`video-card-actions ${isHovering ? 'opacity-100' : 'opacity-0'}`}>
-                    <button onClick={handleCopy} className="gallery-action-btn" title="复制提示词">
+                    <button onClick={handleCopy} className="gallery-action-btn" title={t('seedance.actions.copy')}>
                         <Copy size={16} />
                     </button>
                     <button
                         onClick={handleLike}
                         className={`gallery-action-btn ${prompt.isLiked ? 'text-red-400' : ''}`}
-                        title="点赞"
+                        title={t('seedance.actions.like')}
                     >
                         <Heart size={16} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                     </button>
                     <button
                         onClick={handleFavorite}
                         className={`gallery-action-btn ${prompt.isFavorited ? 'text-yellow-400' : ''}`}
-                        title="收藏"
+                        title={t('seedance.actions.favorite')}
                     >
                         <Bookmark size={16} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
                     </button>

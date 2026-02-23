@@ -31,6 +31,8 @@ import { errorDisplay } from './errorDisplay';
 import { contact } from './contact';
 import { dashboard } from './dashboard';
 import { seo } from './seo';
+import { gallery } from './gallery';
+import { seedance } from './seedance';
 
 // 合并所有翻译模块
 export const mergeTranslations = (lang) => {
@@ -70,11 +72,13 @@ export const mergeTranslations = (lang) => {
     contact: contact[lang] || {},
     dashboard: dashboard[lang] || {},
     seo: seo[lang] || {},
+    gallery: gallery[lang] || {},
+    seedance: seedance[lang] || {},
   };
-  
+
   // 特殊处理adminStats，将其内容合并到根级别
   const adminStatsData = adminStats[lang] || {};
-  
+
   return {
     ...baseTranslations,
     ...adminStatsData
@@ -87,12 +91,12 @@ export const supportedLanguages = ['zh-CN', 'en-US', 'ja-JP'];
 // 生成完整的翻译资源
 export const generateTranslationResources = () => {
   const resources = {};
-  
+
   supportedLanguages.forEach(lang => {
     resources[lang] = {
       translation: mergeTranslations(lang)
     };
   });
-  
+
   return resources;
 };

@@ -2,6 +2,8 @@
 export const navigation = {
   'zh-CN': {
     home: "首页",
+    gallery: "Gallery",
+    seedance: "Seedance",
     explore: "风格广场",
     prompts: "提示词库",
     create: "创建风格参数",
@@ -29,6 +31,8 @@ export const navigation = {
   },
   'en-US': {
     home: "Home",
+    gallery: "Gallery",
+    seedance: "Seedance",
     explore: "Style Gallery",
     prompts: "Prompt Library",
     create: "Create Style",
@@ -56,6 +60,8 @@ export const navigation = {
   },
   'ja-JP': {
     home: "ホーム",
+    gallery: "ギャラリー",
+    seedance: "Seedance",
     explore: "スタイルギャラリー",
     prompts: "プロンプトライブラリ",
     create: "スタイル作成",

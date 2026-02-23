@@ -1,0 +1,86 @@
+# 首页重构 — 使用 meigen.ai 风格 UI
+
+## 背景
+根据 [项目重构计划](file:///c:/Users/reki/.gemini/antigravity/brain/c5a68990-1e3c-4959-a96b-8a14932c58c2/implementation_plan.md.resolved) 中 **阶段 2.4** 的要求，重构首页内容展示区域，使其采用与 Gallery/Seedance 页面一致的 **meigen.ai 暗色主题 UI 风格**。
+
+### 当前状态
+- [Home.js](file:///e:/pm01/client/src/pages/Home.js)：Hero + FeaturedPosts + 搜索/标签/排序 + 混合内容网格（白色背景 Tailwind 风格）
+- [gallery.css](file:///e:/pm01/client/src/styles/gallery.css)：已实现完整的暗色 Gallery/Seedance 卡片样式系统
+- [GalleryCard.js](file:///e:/pm01/client/src/components/Gallery/GalleryCard.js) / [VideoCard.js](file:///e:/pm01/client/src/components/Seedance/VideoCard.js)：已实现 meigen 风格的暗色卡片组件
+- [galleryApi.js](file:///e:/pm01/client/src/services/galleryApi.js) / [seedanceApi.js](file:///e:/pm01/client/src/services/seedanceApi.js)：已实现 [getFeatured](file:///e:/pm01/client/src/services/seedanceApi.js#10-14) API
+
+### 核心问题
+首页内容区域仍使用白色背景 + Tailwind 浅色样式，与 Gallery/Seedance 页面的暗色风格不一致。
+
+---
+
+## Proposed Changes
+
+### 首页组件
+
+#### [MODIFY] [Home.js](file:///e:/pm01/client/src/pages/Home.js)
+
+**重构首页整体布局，分为以下区块：**
+
+1. **Hero 区域** — 保持不变（`<Hero />`）
+2. **三大板块快速入口** — 新增三张卡片（MJ风格 / 提示词库 / Seedance），使用 `gallery-card` 风格暗色 UI
+3. **Gallery 精选推荐** — 调用 `galleryAPI.getFeatured()` 获取精选提示词，使用 [GalleryCard](file:///e:/pm01/client/src/components/Gallery/GalleryCard.js#15-120) 组件展示
+4. **Seedance 精选推荐** — 调用 `seedanceAPI.getFeatured()` 获取精选视频，使用 [VideoCard](file:///e:/pm01/client/src/components/Seedance/VideoCard.js#8-141) 组件展示
+5. **最新内容区域** — 保留现有「搜索 + 标签 + 排序 + 无限滚动网格」逻辑，但样式改为暗色：
+   - 搜索框 → `gallery-search-box` 风格
+   - 标签 → `tag-filter-btn` 风格
+   - 排序 → `gallery-sort-select` 风格
+   - 内容网格 → 使用 `gallery-grid` 布局
+   - 混合卡片 → 继续使用 `LiblibStyleCard` 和 `LiblibPromptCard`
+
+**关键变更：**
+- 删除 [FeaturedPosts](file:///e:/pm01/client/src/components/Home/FeaturedPosts.js#11-191) 组件引用（替换为 Gallery/Seedance 精选）
+- 新增 `galleryAPI` 和 `seedanceAPI` 导入
+- 新增 [GalleryCard](file:///e:/pm01/client/src/components/Gallery/GalleryCard.js#15-120) 和 [VideoCard](file:///e:/pm01/client/src/components/Seedance/VideoCard.js#8-141) 导入
+- 外层容器背景从 `min-h-screen`（白底）改为暗色渐变背景
+- 所有文字颜色从 `text-slate-900` / `text-slate-600` 改为暗色系
+- 搜索/筛选/排序区域用 gallery CSS 类名替换 Tailwind
+
+---
+
+#### [NO CHANGE] [Hero.js](file:///e:/pm01/client/src/components/Home/Hero.js)
+保持现有 ImageFlow 背景动画和内容不变。
+
+---
+
+### CSS 样式
+
+#### [MODIFY] [gallery.css](file:///e:/pm01/client/src/styles/gallery.css)
+
+追加首页专用样式：
+
+```css
+/* --- Homepage Sections --- */
+.home-section { ... }          /* 首页各区块通用容器 */
+.home-section-header { ... }   /* 区块标题（gradient text） */
+.home-section-link { ... }     /* "查看更多 →" 链接 */
+.home-entry-grid { ... }       /* 三大板块快速入口网格 */
+.home-entry-card { ... }       /* 入口卡片（暗色毛玻璃风格） */
+.home-featured-scroll { ... }  /* 精选推荐横向滚动容器 */
+.home-content-area { ... }     /* 最新内容外层暗色容器 */
+```
+
+---
+
+## Verification Plan
+
+### 浏览器可视化验证
+1. 确保后端和前端开发服务器正在运行（当前已运行 `npm run dev` 和 `npx react-scripts start`）
+2. 在浏览器中导航到 `http://localhost:3100`
+3. 检查点：
+   - Hero 区域正常渲染（ImageFlow 背景动画可见）
+   - 三大板块入口卡片显示正确（MJ风格 / 提示词库 / Seedance）
+   - Gallery 精选区块加载并展示 GalleryCard 暗色卡片
+   - Seedance 精选区块加载并展示 VideoCard 暗色视频卡片
+   - 搜索框/标签/排序使用暗色 gallery 风格
+   - 最新内容网格正常加载和无限滚动
+   - 页面无 console 错误
+   - 导航到 `/gallery` 和 `/seedance` 页面仍然正常
+
+### 手动验证
+请在浏览器中确认首页的视觉效果满意。

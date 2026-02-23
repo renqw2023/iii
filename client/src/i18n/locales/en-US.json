@@ -75,6 +75,7 @@
     "hero": {
       "title": "Discover Infinite Possibilities of AI Art",
       "subtitle": "Explore beautiful Midjourney style parameters and inspire your creativity",
+      "slogan": "Inspire • Imagine • Innovate",
       "cta": "Start Exploring",
       "createButton": "Start Creating",
       "exploreButton": "Browse Works",
@@ -329,35 +330,35 @@
     }
   },
   "validation": {
-      "required": "This field is required",
-      "checking": "Checking...",
-      "emailRequired": "Please enter email address",
-      "emailInvalid": "Please enter a valid email address",
-      "passwordRequired": "Please enter password",
-      "passwordMinLength": "Password must be at least 6 characters",
-      "email": {
-        "required": "Please enter email address",
-        "invalid": "Please enter a valid email address",
-        "checkFailed": "Email check failed"
-      },
-      "password": {
-        "required": "Please enter password",
-        "minLength": "Password must be at least 6 characters",
-        "invalid": "Please enter a valid password",
-        "valid": "Password format is correct"
-      },
-      "username": {
-        "minLength": "Username must be at least 3 characters",
-        "maxLength": "Username cannot exceed 20 characters",
-        "format": "Username can only contain letters, numbers, and underscores",
-        "invalid": "Please enter a valid username",
-        "checkFailed": "Username check failed"
-      },
-      "confirmPassword": {
-        "required": "Please confirm password",
-        "mismatch": "Passwords do not match",
-        "valid": "Password confirmation is correct"
-      },
+    "required": "This field is required",
+    "checking": "Checking...",
+    "emailRequired": "Please enter email address",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Please enter password",
+    "passwordMinLength": "Password must be at least 6 characters",
+    "email": {
+      "required": "Please enter email address",
+      "invalid": "Please enter a valid email address",
+      "checkFailed": "Email check failed"
+    },
+    "password": {
+      "required": "Please enter password",
+      "minLength": "Password must be at least 6 characters",
+      "invalid": "Please enter a valid password",
+      "valid": "Password format is correct"
+    },
+    "username": {
+      "minLength": "Username must be at least 3 characters",
+      "maxLength": "Username cannot exceed 20 characters",
+      "format": "Username can only contain letters, numbers, and underscores",
+      "invalid": "Please enter a valid username",
+      "checkFailed": "Username check failed"
+    },
+    "confirmPassword": {
+      "required": "Please confirm password",
+      "mismatch": "Passwords do not match",
+      "valid": "Password confirmation is correct"
+    },
     "minLength": "Must be at least {{min}} characters",
     "maxLength": "Must be at most {{max}} characters",
     "fileSize": "File size cannot exceed {{size}}MB",
@@ -695,7 +696,11 @@
     "createAccount": "Create Account",
     "registering": "Registering...",
     "haveAccount": "Already have an account?",
-    "loginNow": "Sign In Now"
+    "loginNow": "Sign In Now",
+    "login": {
+      "text": "Already have an account?",
+      "link": "Sign In Now"
+    }
   },
   "emailVerification": {
     "title": "Verify Email",

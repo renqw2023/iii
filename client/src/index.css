@@ -1,3 +1,6 @@
+/* Theme variables must be loaded first */
+@import './styles/theme-variables.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,12 +9,15 @@
 
 @layer base {
   * {
-    @apply border-slate-200;
+    @apply border-slate-200 dark:border-slate-700;
   }
 
   body {
-    @apply bg-gradient-to-br from-slate-50 to-blue-50 text-slate-900 font-sans;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   html {
@@ -29,19 +35,45 @@
   }
 
   .btn-secondary {
-    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-slate-500 shadow-sm hover:shadow-md;
+    @apply btn border shadow-sm hover:shadow-md;
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--bg-card-hover);
   }
 
   .btn-ghost {
-    @apply btn text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:ring-slate-500;
+    color: var(--text-secondary);
+    @apply btn focus:ring-slate-500;
+  }
+
+  .btn-ghost:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
   }
 
   .card {
-    @apply bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 hover:shadow-xl transition-all duration-300;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-light);
+    @apply backdrop-blur-sm rounded-xl shadow-lg transition-all duration-300;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
   }
 
   .input {
-    @apply w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 bg-white/50 backdrop-blur-sm;
+    @apply w-full px-4 py-3 rounded-lg transition-all duration-200 backdrop-blur-sm;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+  }
+
+  .input:focus {
+    @apply border-primary-500 ring-2 ring-primary-500/20;
   }
 
   .textarea {
@@ -49,7 +81,10 @@
   }
 
   .select {
-    @apply w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200 bg-white/50 backdrop-blur-sm appearance-none cursor-pointer;
+    @apply w-full px-4 py-3 rounded-lg transition-all duration-200 backdrop-blur-sm appearance-none cursor-pointer;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 0.75rem center;
     background-repeat: no-repeat;
@@ -58,11 +93,11 @@
   }
 
   .select:hover {
-    @apply border-slate-400 bg-white/70;
+    border-color: var(--text-tertiary);
   }
 
   .select:focus {
-    @apply bg-white/80;
+    @apply border-primary-500 ring-2 ring-primary-500/20;
   }
 
   .line-clamp-2 {
@@ -73,11 +108,9 @@
   }
 
   .glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/20;
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent;
+    @apply backdrop-blur-md;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
   }
 }
 
@@ -96,7 +129,7 @@
   }
 }
 
-/* 自定义滚动条 */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -106,15 +139,15 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.5);
+  background: var(--scrollbar-thumb-hover);
 }
 
-/* 加载动画 */
+/* Loading animation */
 .loading-dots {
   display: inline-block;
 }

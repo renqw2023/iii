@@ -6,15 +6,17 @@ import { Search, X, Loader2, SlidersHorizontal } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import VideoCard from '../../components/Seedance/VideoCard';
 import { seedanceAPI } from '../../services/seedanceApi';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
 const SORT_OPTIONS = [
-    { value: 'newest', label: '最新' },
-    { value: 'popular', label: '最热门' },
-    { value: 'most-copied', label: '最多复制' },
+    { value: 'newest', labelKey: 'seedance.filters.newest' },
+    { value: 'popular', labelKey: 'seedance.filters.popular' },
+    { value: 'most-copied', labelKey: 'seedance.filters.trending' },
 ];
 
 const SeedanceList = () => {
+    const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [category, setCategory] = useState(searchParams.get('category') || 'all');
@@ -69,7 +71,7 @@ const SeedanceList = () => {
         try {
             await seedanceAPI.toggleLike(id);
         } catch {
-            toast.error('请先登录');
+            toast.error(t('seedance.actions.loginRequired'));
         }
     };
 
@@ -77,7 +79,7 @@ const SeedanceList = () => {
         try {
             await seedanceAPI.toggleFavorite(id);
         } catch {
-            toast.error('请先登录');
+            toast.error(t('seedance.actions.loginRequired'));
         }
     };
 
@@ -155,7 +157,7 @@ const SeedanceList = () => {
                             className="gallery-sort-select"
                         >
                             {SORT_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                             ))}
                         </select>
                     </div>

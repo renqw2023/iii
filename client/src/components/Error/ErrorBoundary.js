@@ -75,7 +75,7 @@ class ErrorBoundary extends React.Component {
     const { error, errorId } = this.state;
     const subject = encodeURIComponent(`Bug Report - Error ID: ${errorId}`);
     const body = encodeURIComponent(
-      `错误ID: ${errorId}\n` +
+      `Error ID: ${errorId}\n` +
       `错误信息: ${error?.message || 'Unknown error'}\n` +
       `页面URL: ${window.location.href}\n` +
       `时间: ${new Date().toLocaleString()}\n` +
@@ -112,7 +112,7 @@ class ErrorBoundary extends React.Component {
 
               {/* 错误标题 */}
               <h1 className="text-3xl font-bold text-slate-800 mb-4">
-                哎呀，出现了一些问题
+                Oops, something went wrong
               </h1>
 
               {/* 错误描述 */}
@@ -168,7 +168,7 @@ class ErrorBoundary extends React.Component {
                   className="btn btn-secondary flex items-center justify-center px-6 py-3"
                 >
                   <Home className="w-5 h-5 mr-2" />
-                  返回首页
+                  Back to Home
                 </motion.button>
 
                 <motion.button

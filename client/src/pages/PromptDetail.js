@@ -54,7 +54,7 @@ const AltTextModal = ({ isOpen, onClose, altText, imageUrl, mediaType }) => {
       <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">图片描述</h3>
+            <h3 className="text-xl font-bold text-gray-900">Image Description</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
@@ -79,7 +79,7 @@ const AltTextModal = ({ isOpen, onClose, altText, imageUrl, mediaType }) => {
               onClick={onClose}
               className="w-full bg-black text-white py-3 px-4 rounded-full font-medium hover:bg-gray-800 transition-colors"
             >
-              关闭
+              Close
             </button>
           </div>
         </div>
@@ -97,11 +97,11 @@ const ImageLightbox = ({ isOpen, onClose, imageUrl, altText, onPrev, onNext, sho
       <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
         <img 
           src={imageUrl} 
-          alt={altText || '原图'} 
+          alt={altText || 'Original'} 
           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
         />
         
-        {/* 关闭按钮 */}
+        {/* Close按钮 */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center text-white transition-all"
@@ -181,7 +181,7 @@ const PromptDetail = () => {
 
   const handleLike = async () => {
     if (!user) {
-      toast.error('请先登录');
+      toast.error(t('common.loginRequired'));
       return;
     }
 
@@ -193,13 +193,13 @@ const PromptDetail = () => {
       toast.success(message);
     } catch (error) {
       console.error('点赞操作失败:', error);
-      toast.error('操作失败，请稍后重试');
+      toast.error(t('common.operationFailed'));
     }
   };
 
   const handleBookmark = async () => {
     if (!user) {
-      toast.error('请先登录');
+      toast.error(t('common.loginRequired'));
       return;
     }
 
@@ -210,7 +210,7 @@ const PromptDetail = () => {
       toast.success(message);
     } catch (error) {
       console.error('收藏操作失败:', error);
-      toast.error('操作失败，请稍后重试');
+      toast.error(t('common.operationFailed'));
     }
   };
 
@@ -218,9 +218,9 @@ const PromptDetail = () => {
     try {
       await promptAPI.copyPrompt(id);
       setCopyCount(prev => prev + 1);
-      toast.success('提示词已复制到剪贴板');
+      toast.success(t('common.promptCopied'));
     } catch (error) {
-      toast.error('复制失败，请稍后重试');
+      toast.error(t('common.copyFailed'));
     }
   };
 
@@ -737,7 +737,7 @@ const PromptDetail = () => {
               </div>
             </div>
 
-            {/* 相关提示词 */}
+            {/* Related Prompts */}
             <RelatedPrompts promptId={id} category={prompt.category} tags={prompt.tags} />
 
             {/* 举报按钮 */}

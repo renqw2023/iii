@@ -38,7 +38,22 @@
     "more": "更多",
     "less": "收起",
     "expand": "展开",
-    "collapse": "折叠"
+    "collapse": "折叠",
+    "loginRequired": "请先登录",
+    "operationFailed": "操作失败，请稍后重试",
+    "copyFailed": "复制失败",
+    "promptCopied": "提示词已复制！",
+    "copied": "已复制！",
+    "linkCopied": "链接已复制！",
+    "commentPosted": "评论发布成功",
+    "commentFailed": "发布评论失败",
+    "replyPosted": "回复发布成功",
+    "replyFailed": "发布回复失败",
+    "likeSuccess": "点赞成功",
+    "checkFormInput": "请检查表单输入",
+    "promptUpdated": "提示词更新成功",
+    "descriptionTooLong": "描述过长，请缩短后重试",
+    "serverError": "服务器错误，请稍后重试"
   },
   "nav": {
     "home": "首页",

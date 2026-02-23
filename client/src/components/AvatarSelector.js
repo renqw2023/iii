@@ -50,13 +50,13 @@ const AvatarSelector = ({ isOpen, onClose, onSelect, currentUser }) => {
             </button>
           </div>
 
-          {/* 当前选择预览 */}
+          {/* Current Selection预览 */}
           <div className="p-6 border-b border-slate-200 bg-slate-50">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <img
                   src={selectedAvatar}
-                  alt="选中的头像"
+                  alt="Selected avatar"
                   className="w-16 h-16 rounded-full object-cover border-3 border-primary-500 shadow-lg"
                   onError={(e) => {
                     e.target.src = DEFAULT_FALLBACK_AVATAR;
@@ -67,8 +67,8 @@ const AvatarSelector = ({ isOpen, onClose, onSelect, currentUser }) => {
                 </div>
               </div>
               <div>
-                <p className="font-medium text-slate-900">当前选择</p>
-                <p className="text-sm text-slate-500">这将成为你的新头像</p>
+                <p className="font-medium text-slate-900">Current Selection</p>
+                <p className="text-sm text-slate-500">This will be your new avatar</p>
               </div>
             </div>
           </div>

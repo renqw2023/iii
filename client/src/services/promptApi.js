@@ -157,7 +157,7 @@ export const promptAPI = {
     return api.get(`/prompts/search?${queryParams.toString()}`);
   },
 
-  // 获取相关提示词
+  // 获取Related Prompts
   getRelatedPrompts: (id, params = {}) => {
     const queryParams = new URLSearchParams();
     

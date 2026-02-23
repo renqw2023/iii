@@ -136,7 +136,7 @@ const Favorites = () => {
           </div>
         </motion.div>
 
-        {/* 搜索和筛选区域 */}
+        {/* 搜索和Filter区域 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

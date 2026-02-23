@@ -95,7 +95,7 @@ const EnhancedToast = ({
     if (errorId) {
       try {
         await navigator.clipboard.writeText(errorId);
-        toast.success('错误ID已复制到剪贴板', { duration: 2000 });
+        toast.success('Error ID copied', { duration: 2000 });
       } catch (err) {
         console.error('Failed to copy error ID:', err);
       }
@@ -107,7 +107,7 @@ const EnhancedToast = ({
     const content = `${title ? title + '\n' : ''}${message}`;
     try {
       await navigator.clipboard.writeText(content);
-      toast.success('消息已复制到剪贴板', { duration: 2000 });
+      toast.success('Message copied', { duration: 2000 });
     } catch (err) {
       console.error('Failed to copy message:', err);
     }
@@ -157,7 +157,7 @@ const EnhancedToast = ({
           {/* 错误ID */}
           {errorId && (
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-slate-500">错误ID:</span>
+              <span className="text-xs text-slate-500">Error ID:</span>
               <code className="text-xs font-mono bg-white px-2 py-1 rounded border">
                 {errorId}
               </code>
@@ -175,7 +175,7 @@ const EnhancedToast = ({
           {type === 'error' && retryCount > 0 && (
             <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
               <Clock className="w-3 h-3" />
-              <span>已重试 {retryCount}/{maxRetries} 次</span>
+              <span>Retried {retryCount}/{maxRetries} times</span>
             </div>
           )}
 
@@ -211,7 +211,7 @@ const EnhancedToast = ({
           )}
         </div>
 
-        {/* 关闭按钮 */}
+        {/* Close按钮 */}
         {showDismiss && (
           <button
             onClick={() => toast.dismiss(t.id)}

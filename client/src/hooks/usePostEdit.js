@@ -118,7 +118,7 @@ const usePostEdit = (onUpdateSuccess) => {
     const validation = validatePostForm(editForm);
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
-      toast.error('请检查表单输入');
+      toast.error('Please check form input');
       return;
     }
     

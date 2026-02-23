@@ -73,7 +73,7 @@ const SEOManagement = () => {
         <div className="bg-white rounded-lg p-6 shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">总页面数</p>
+              <p className="text-sm font-medium text-gray-600">Total Pages</p>
               <p className="text-2xl font-bold text-gray-900">1,234</p>
             </div>
             <FileText className="h-8 w-8 text-blue-600" />
@@ -83,7 +83,7 @@ const SEOManagement = () => {
         <div className="bg-white rounded-lg p-6 shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">已索引页面</p>
+              <p className="text-sm font-medium text-gray-600">Indexed Pages</p>
               <p className="text-2xl font-bold text-gray-900">987</p>
             </div>
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -93,7 +93,7 @@ const SEOManagement = () => {
         <div className="bg-white rounded-lg p-6 shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">平均加载时间</p>
+              <p className="text-sm font-medium text-gray-600">Avg Load Time</p>
               <p className="text-2xl font-bold text-gray-900">1.2s</p>
             </div>
             <BarChart3 className="h-8 w-8 text-yellow-600" />
@@ -103,7 +103,7 @@ const SEOManagement = () => {
         <div className="bg-white rounded-lg p-6 shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">SEO评分</p>
+              <p className="text-sm font-medium text-gray-600">SEO Score</p>
               <p className="text-2xl font-bold text-gray-900">85/100</p>
             </div>
             <Globe className="h-8 w-8 text-purple-600" />
@@ -112,7 +112,7 @@ const SEOManagement = () => {
       </div>
 
       <div className="bg-white rounded-lg p-6 shadow-sm border">
-        <h3 className="text-lg font-semibold mb-4">快速操作</h3>
+        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={handleGenerateSitemap}

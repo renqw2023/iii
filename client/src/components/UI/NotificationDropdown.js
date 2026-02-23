@@ -181,7 +181,7 @@ const NotificationDropdown = () => {
         )}
       </AnimatePresence>
 
-      {/* 点击外部关闭 */}
+      {/* 点击外部Close */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40"

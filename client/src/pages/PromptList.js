@@ -44,7 +44,7 @@ const PromptList = () => {
     limit: 12
   });
 
-  // 筛选状态
+  // Filter状态
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     category: searchParams.get('category') || '',
@@ -174,14 +174,14 @@ const PromptList = () => {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
               <Lightbulb className="w-8 h-8 text-primary-500 mr-2" />
-              <h1 className="text-3xl font-bold text-slate-900">Midjourney 提示词库</h1>
+              <h1 className="text-3xl font-bold text-slate-900">Midjourney Prompt Library</h1>
             </div>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              发现和分享优质的 Midjourney 提示词，让 AI 创作更加精彩
+              Discover and share quality Midjourney prompts for amazing AI creativity
             </p>
           </div>
 
-          {/* 搜索和筛选 */}
+          {/* 搜索和Filter */}
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             <form onSubmit={handleSearch} className="flex-1 max-w-md">
               <div className="relative">
@@ -190,7 +190,7 @@ const PromptList = () => {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="搜索提示词..."
+                  placeholder="Search prompts..."
                   className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -202,7 +202,7 @@ const PromptList = () => {
                 className="flex items-center px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <Filter className="w-4 h-4 mr-2" />
-                筛选
+                Filter
                 <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
               </button>
 
@@ -227,13 +227,13 @@ const PromptList = () => {
                   className="btn btn-primary flex items-center"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  创建提示词
+                  Create Prompt
                 </Link>
               )}
             </div>
           </div>
 
-          {/* 筛选面板 */}
+          {/* Filter面板 */}
           {showFilters && (
             <div className="mt-6 p-4 bg-slate-50 rounded-lg">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -294,7 +294,7 @@ const PromptList = () => {
                     className="w-full px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded-lg transition-colors flex items-center justify-center"
                   >
                     <X className="w-4 h-4 mr-2" />
-                    清除筛选
+                    清除Filter
                   </button>
                 </div>
               </div>
@@ -424,11 +424,11 @@ const PromptList = () => {
               </div>
             )}
 
-            {/* 快速筛选 */}
+            {/* 快速Filter */}
             <div className="card p-6">
               <h3 className="font-semibold text-slate-900 mb-4 flex items-center">
                 <Filter className="w-5 h-5 mr-2" />
-                快速筛选
+                快速Filter
               </h3>
               
               <div className="space-y-3">

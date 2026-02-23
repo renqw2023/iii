@@ -160,7 +160,7 @@ const Profile = () => {
           className="inline-flex items-center text-slate-600 hover:text-slate-900 mb-6 transition-colors duration-200"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          返回首页
+          Back to Home
         </Link>
 
         {/* 用户信息卡片 */}

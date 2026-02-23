@@ -97,7 +97,7 @@ const usePromptEdit = (onUpdateSuccess) => {
     const validation = validatePromptForm(editForm);
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
-      toast.error('请检查表单输入');
+      toast.error('Please check form input');
       return;
     }
     
@@ -118,7 +118,7 @@ const usePromptEdit = (onUpdateSuccess) => {
       
       // 重置编辑状态
       cancelEdit();
-      toast.success('提示词更新成功');
+      toast.success('Prompt updated');
       
       return response.data.prompt;
     } catch (error) {
@@ -170,12 +170,12 @@ const usePromptEdit = (onUpdateSuccess) => {
    */
   const getCategoryOptions = useCallback(() => {
     return [
-      { value: 'art', label: '艺术' },
-      { value: 'photography', label: '摄影' },
-      { value: 'design', label: '设计' },
-      { value: 'character', label: '角色' },
-      { value: 'landscape', label: '风景' },
-      { value: 'abstract', label: '抽象' },
+      { value: 'art', label: 'Art' },
+      { value: 'photography', label: 'Photography' },
+      { value: 'design', label: 'Design' },
+      { value: 'character', label: 'Character' },
+      { value: 'landscape', label: 'Landscape' },
+      { value: 'abstract', label: 'Abstract' },
       { value: 'other', label: '其他' }
     ];
   }, []);

@@ -6,6 +6,7 @@ import { Copy, Heart, Bookmark, ArrowLeft, ExternalLink, Eye, Share2 } from 'luc
 import { Helmet } from 'react-helmet-async';
 import GalleryCard from '../../components/Gallery/GalleryCard';
 import { galleryAPI } from '../../services/galleryApi';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
 const MODEL_LABELS = {
@@ -17,6 +18,7 @@ const MODEL_LABELS = {
 const GalleryDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data, isLoading } = useQuery(
         ['gallery-detail', id],
@@ -31,27 +33,27 @@ const GalleryDetail = () => {
         try {
             await navigator.clipboard.writeText(prompt.prompt);
             galleryAPI.recordCopy(id);
-            toast.success('提示词已复制到剪贴板！');
+            toast.success(t('gallery.actions.copySuccess'));
         } catch {
-            toast.error('复制失败');
+            toast.error(t('gallery.actions.copyFailed'));
         }
     };
 
     const handleLike = async () => {
         try {
             await galleryAPI.toggleLike(id);
-            toast.success(prompt.isLiked ? '已取消点赞' : '已点赞');
+            toast.success(prompt.isLiked ? t('gallery.actions.unliked') : t('gallery.actions.liked'));
         } catch {
-            toast.error('请先登录');
+            toast.error(t('gallery.actions.loginRequired'));
         }
     };
 
     const handleFavorite = async () => {
         try {
             await galleryAPI.toggleFavorite(id);
-            toast.success(prompt.isFavorited ? '已取消收藏' : '已添加收藏');
+            toast.success(prompt.isFavorited ? t('gallery.actions.unfavorited') : t('gallery.actions.favorited'));
         } catch {
-            toast.error('请先登录');
+            toast.error(t('gallery.actions.loginRequired'));
         }
     };
 
@@ -63,7 +65,7 @@ const GalleryDetail = () => {
             });
         } catch {
             navigator.clipboard.writeText(window.location.href);
-            toast.success('链接已复制');
+            toast.success(t('gallery.actions.linkCopied'));
         }
     };
 
@@ -173,21 +175,21 @@ const GalleryDetail = () => {
                         <div className="detail-actions">
                             <button onClick={handleCopy} className="detail-btn-primary">
                                 <Copy size={16} />
-                                <span>一键复制</span>
+                                <span>{t('gallery.detail.copyPrompt')}</span>
                             </button>
                             <button
                                 onClick={handleLike}
                                 className={`detail-btn-secondary ${prompt.isLiked ? 'active' : ''}`}
                             >
                                 <Heart size={16} fill={prompt.isLiked ? 'currentColor' : 'none'} />
-                                <span>{prompt.isLiked ? '已点赞' : '点赞'}</span>
+                                <span>{prompt.isLiked ? t('gallery.actions.liked') : t('gallery.actions.like')}</span>
                             </button>
                             <button
                                 onClick={handleFavorite}
                                 className={`detail-btn-secondary ${prompt.isFavorited ? 'active' : ''}`}
                             >
                                 <Bookmark size={16} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
-                                <span>{prompt.isFavorited ? '已收藏' : '收藏'}</span>
+                                <span>{prompt.isFavorited ? t('gallery.actions.favorited') : t('gallery.actions.favorite')}</span>
                             </button>
                             <button onClick={handleShare} className="detail-btn-icon">
                                 <Share2 size={16} />

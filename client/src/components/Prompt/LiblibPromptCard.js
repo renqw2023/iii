@@ -26,7 +26,7 @@ const LiblibPromptCard = ({ prompt }) => {
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      toast.error('请先登录');
+      toast.error('Please login first');
       return;
     }
 
@@ -49,7 +49,7 @@ const LiblibPromptCard = ({ prompt }) => {
       // 回滚UI状态
       setIsLiked(wasLiked);
       setLikesCount(prev => wasLiked ? prev + 1 : prev - 1);
-      toast.error('操作失败，请稍后重试');
+      toast.error('Operation failed, please try again');
     } finally {
       setIsLiking(false);
     }
@@ -60,7 +60,7 @@ const LiblibPromptCard = ({ prompt }) => {
     e.stopPropagation();
     
     if (!isAuthenticated) {
-      toast.error('请先登录');
+      toast.error('Please login first');
       return;
     }
 
@@ -70,7 +70,7 @@ const LiblibPromptCard = ({ prompt }) => {
       setIsBookmarked(newIsFavorited);
       toast.success(message);
     } catch (error) {
-      toast.error('操作失败，请稍后重试');
+      toast.error('Operation failed, please try again');
     }
   };
 
@@ -89,9 +89,9 @@ const LiblibPromptCard = ({ prompt }) => {
       // 更新复制计数
       await promptAPI.copyPrompt(prompt._id);
       setCopyCount(prev => prev + 1);
-      toast.success('提示词已复制到剪贴板');
+      toast.success('Prompt copied!');
     } catch (error) {
-      toast.error('复制失败，请稍后重试');
+      toast.error('Copy failed');
     }
   };
 
@@ -103,7 +103,7 @@ const LiblibPromptCard = ({ prompt }) => {
     
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(promptUrl).then(() => {
-        toast.success('链接已复制到剪贴板');
+        toast.success('Link copied!');
       }).catch(() => {
         fallbackCopyTextToClipboard(promptUrl);
       });
@@ -124,9 +124,9 @@ const LiblibPromptCard = ({ prompt }) => {
     
     try {
       document.execCommand('copy');
-      toast.success('已复制到剪贴板');
+      toast.success('Copied!');
     } catch (err) {
-      toast.error('复制失败');
+      toast.error('Copy failed');
     } finally {
       document.body.removeChild(textArea);
     }

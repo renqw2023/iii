@@ -55,18 +55,18 @@ const FileUpload = ({ fileUpload, formData: _formData }) => { // formData参数�
         {t('createPrompt.upload.description')}
       </p>
 
-      {/* 上传限制说明 */}
+      {/* Upload Limits */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex items-center text-blue-800">
           <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
           </svg>
-          <span className="text-sm font-medium">上传限制说明</span>
+          <span className="text-sm font-medium">Upload Limits</span>
         </div>
         <ul className="text-sm text-blue-700 mt-2 ml-6 space-y-1">
-          <li>• 最多上传 9 张图片或视频</li>
-          <li>• 单个文件最大 200MB</li>
-          <li>• 支持格式: JPG, PNG, GIF, WEBP, MP4, MOV, AVI</li>
+          <li>• Max 9 images or videos</li>
+          <li>• Max 200MB per file</li>
+          <li>• Supported: JPG, PNG, GIF, WEBP, MP4, MOV, AVI</li>
           <li>• 当前已上传：{files.length}/9 个文件</li>
         </ul>
       </div>

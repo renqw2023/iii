@@ -22,7 +22,7 @@ const PromptPreview = ({ promptPreview }) => {
         setCopiedStates(prev => ({ ...prev, [type]: false }));
       }, 2000);
     } catch (err) {
-      toast.error('复制失败，请重试');
+      toast.error(t('common.copyFailed'));
     }
   };
 

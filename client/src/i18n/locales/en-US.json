@@ -38,7 +38,22 @@
     "more": "More",
     "less": "Less",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "loginRequired": "Please login first",
+    "operationFailed": "Operation failed, please try again",
+    "copyFailed": "Copy failed",
+    "promptCopied": "Prompt copied!",
+    "copied": "Copied!",
+    "linkCopied": "Link copied!",
+    "commentPosted": "Comment posted",
+    "commentFailed": "Failed to post comment",
+    "replyPosted": "Reply posted",
+    "replyFailed": "Failed to post reply",
+    "likeSuccess": "Liked!",
+    "checkFormInput": "Please check form input",
+    "promptUpdated": "Prompt updated",
+    "descriptionTooLong": "Description too long, please shorten",
+    "serverError": "Server error, please try again later"
   },
   "nav": {
     "home": "Home",

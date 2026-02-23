@@ -111,7 +111,7 @@ const Explore = () => {
           </p>
         </motion.div>
 
-        {/* 搜索和筛选区域 */}
+        {/* 搜索和Filter区域 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -140,10 +140,10 @@ const Explore = () => {
             </div>
           </form>
 
-          {/* 筛选选项 */}
+          {/* Filter选项 */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              {/* 分类筛选 */}
+              {/* 分类Filter */}
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-slate-500" />
                 <select

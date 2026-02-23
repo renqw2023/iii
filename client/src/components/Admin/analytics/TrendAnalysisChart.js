@@ -7,7 +7,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
     return (
       <div className="analytics-chart-loading">
         <div className="loading-spinner"></div>
-        <p>加载趋势分析数据中...</p>
+        <p>Loading trend analysis...</p>
       </div>
     );
   }
@@ -15,7 +15,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
   if (!data || !data.trendAnalysis) {
     return (
       <div className="analytics-chart-empty">
-        <p>暂无趋势分析数据</p>
+        <p>No trend analysis data</p>
       </div>
     );
   }
@@ -55,14 +55,14 @@ const TrendAnalysisChart = ({ data, loading }) => {
   return (
     <div className="trend-analysis-chart">
       <div className="chart-header">
-        <h3>趋势预测分析</h3>
-        <p className="chart-subtitle">用户增长与内容发布趋势</p>
+        <h3>Trend Analysis</h3>
+        <p className="chart-subtitle">User growth and content trends</p>
       </div>
       
       <div className="chart-content">
-        {/* 用户增长趋势 */}
+        {/* User Growth Trend */}
         <div className="chart-section">
-          <h4>用户增长趋势</h4>
+          <h4>User Growth Trend</h4>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={combinedTrendData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -74,7 +74,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
               <YAxis />
               <Tooltip 
                 labelFormatter={(label) => `日期: ${formatDate(label)}`}
-                formatter={(value) => [value, '新增用户']}
+                formatter={(value) => [value, 'New Users']}
               />
               <Area 
                 type="monotone" 
@@ -82,7 +82,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
                 stroke="#8884d8" 
                 fill="#8884d8" 
                 fillOpacity={0.6}
-                name="新增用户"
+                name="New Users"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -137,7 +137,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
               <Tooltip 
                 labelFormatter={(label) => `日期: ${formatDate(label)}`}
                 formatter={(value, name) => {
-                  if (name === 'newUsers') return [value, '新增用户'];
+                  if (name === 'newUsers') return [value, 'New Users'];
                   if (name === 'newPosts') return [value, '新增帖子'];
                   return [value, name];
                 }}
@@ -147,7 +147,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
                 dataKey="newUsers" 
                 stroke="#8884d8" 
                 strokeWidth={2}
-                name="新增用户"
+                name="New Users"
               />
               <Line 
                 type="monotone" 
@@ -167,7 +167,7 @@ const TrendAnalysisChart = ({ data, loading }) => {
           <h4>趋势预测</h4>
           <div className="prediction-stats">
             <div className="prediction-item">
-              <span className="prediction-label">预测下周新增用户:</span>
+              <span className="prediction-label">预测下周New Users:</span>
               <span className="prediction-value positive">
                 +{prediction.nextWeekUsers || 0} 人
               </span>

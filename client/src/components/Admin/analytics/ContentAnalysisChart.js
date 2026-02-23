@@ -9,7 +9,7 @@ const ContentAnalysisChart = ({ data, loading }) => {
     return (
       <div className="analytics-chart-loading">
         <div className="loading-spinner"></div>
-        <p>加载内容分析数据中...</p>
+        <p>Loading content analysis...</p>
       </div>
     );
   }
@@ -17,7 +17,7 @@ const ContentAnalysisChart = ({ data, loading }) => {
   if (!data || !data.contentAnalysis) {
     return (
       <div className="analytics-chart-empty">
-        <p>暂无内容分析数据</p>
+        <p>No content analysis data</p>
       </div>
     );
   }
@@ -81,8 +81,8 @@ const ContentAnalysisChart = ({ data, loading }) => {
   return (
     <div className="content-analysis-chart">
       <div className="chart-header">
-        <h3>内容分析</h3>
-        <p className="chart-subtitle">内容质量与标签效果分析</p>
+        <h3>Content Analysis</h3>
+        <p className="chart-subtitle">Content quality and tag analysis</p>
       </div>
       
       <div className="chart-content">

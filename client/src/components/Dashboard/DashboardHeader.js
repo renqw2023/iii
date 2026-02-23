@@ -36,7 +36,7 @@ const DashboardHeader = ({ user }) => {
         <div className="flex items-center space-x-4 mb-4 md:mb-0">
           <img
             src={getUserAvatar(user)}
-            alt={user?.username || '用户头像'}
+            alt={user?.username || 'Avatar'}
             className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
             onError={(e) => {
               e.target.src = DEFAULT_FALLBACK_AVATAR;
@@ -67,7 +67,7 @@ const DashboardHeader = ({ user }) => {
             </Link>
             <Link to="/create-prompt" className="btn btn-secondary">
               <Plus className="w-4 h-4 mr-2" />
-              创建提示词
+              Create Prompt
             </Link>
           </div>
           <Link to="/settings" className="btn btn-secondary">

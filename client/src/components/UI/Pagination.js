@@ -79,9 +79,9 @@ const Pagination = ({
       {/* 分页信息 */}
       {showInfo && (
         <div className="text-sm text-slate-600">
-          显示第 <span className="font-medium text-slate-900">{startItem}</span> 到{' '}
-          <span className="font-medium text-slate-900">{endItem}</span> 项，共{' '}
-          <span className="font-medium text-slate-900">{totalItems}</span> 项
+          Showing <span className="font-medium text-slate-900">{startItem}</span> 到{' '}
+          <span className="font-medium text-slate-900">{endItem}</span> items，共{' '}
+          <span className="font-medium text-slate-900">{totalItems}</span> items
         </div>
       )}
 
@@ -99,7 +99,7 @@ const Pagination = ({
                 : 'border-slate-300 text-slate-600 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50'
             }
           `}
-          aria-label="上一页"
+          aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>

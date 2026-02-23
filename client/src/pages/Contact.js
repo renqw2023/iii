@@ -40,7 +40,7 @@ const Contact = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // 实际项目中这里应该调用后端API发送邮件
-      toast.success('消息发送成功！我们会尽快回复您。');
+      toast.success(t('contact.sendSuccess'));
       
       // 重置表单
       setFormData({
@@ -283,7 +283,7 @@ const Contact = () => {
               </div>
             </motion.div>
 
-            {/* 响应时间 */}
+            {/* Response Time */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -292,12 +292,12 @@ const Contact = () => {
             >
               <div className="flex items-center space-x-3 mb-4">
                 <Clock className="w-6 h-6" />
-                <h3 className="text-lg font-semibold">响应时间</h3>
+                <h3 className="text-lg font-semibold">Response Time</h3>
               </div>
               <div className="space-y-2 text-sm opacity-90">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4" />
-                  <span>邮件：24小时内回复</span>
+                  <span>Email: Reply within 24 hours</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="w-4 h-4" />

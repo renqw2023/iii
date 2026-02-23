@@ -5,8 +5,8 @@ import { enhancedAPI } from '../services/enhancedApi';
 
 const Health = () => {
   const [healthStatus, setHealthStatus] = useState({
-    api: { status: 'checking', message: '检查中...', timestamp: null },
-    database: { status: 'checking', message: '检查中...', timestamp: null },
+    api: { status: 'checking', message: 'Checking...', timestamp: null },
+    database: { status: 'checking', message: 'Checking...', timestamp: null },
     overall: 'checking'
   });
 
@@ -27,12 +27,12 @@ const Health = () => {
         ...prev,
         api: {
           status: 'healthy',
-          message: 'API服务正常',
+          message: 'API service OK',
           timestamp: response.data.timestamp || timestamp
         },
         database: {
           status: 'healthy',
-          message: '数据库连接正常',
+          message: 'Database connection OK',
           timestamp: timestamp
         },
         overall: 'healthy'
@@ -47,7 +47,7 @@ const Health = () => {
         },
         database: {
           status: 'unknown',
-          message: '无法检查数据库状态',
+          message: 'Unable to check database',
           timestamp: timestamp
         },
         overall: 'error'
@@ -88,8 +88,8 @@ const Health = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">系统健康状态</h1>
-          <p className="text-slate-600">实时监控系统各组件的运行状态</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">System Health Status</h1>
+          <p className="text-slate-600">Real-time monitoring of system components</p>
         </motion.div>
 
         {/* 总体状态 */}

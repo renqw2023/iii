@@ -338,7 +338,7 @@ const AdminPanel = () => {
     }
   }, [user?.id, user?.role, loadData]); // 添加loadData依赖
 
-  // 点击外部关闭下拉菜单
+  // 点击外部Close下拉菜单
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.relative')) {
@@ -353,7 +353,7 @@ const AdminPanel = () => {
     };
   }, []);
 
-  // 搜索和筛选变化时重新加载数据
+  // 搜索和Filter变化时重新加载数据
   useEffect(() => {
     if (user?.id && user.role === 'admin' && !loading) {
       if (activeTab === 'users') {
@@ -930,14 +930,14 @@ const AdminPanel = () => {
           {/* 提示词管理页面 */}
           {activeTab === 'prompts' && (
             <div className="p-6">
-              {/* 搜索和筛选 */}
+              {/* 搜索和Filter */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                     <input
                       type="text"
-                      placeholder="搜索提示词..."
+                      placeholder="Search prompts..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="input pl-10"
@@ -1205,7 +1205,7 @@ const AdminPanel = () => {
                       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                         <div>
                           <p className="text-sm text-slate-700">
-                            显示第 <span className="font-medium">{((promptPagination.current - 1) * 20) + 1}</span> 到{' '}
+                            Showing <span className="font-medium">{((promptPagination.current - 1) * 20) + 1}</span> 到{' '}
                             <span className="font-medium">{Math.min(promptPagination.current * 20, promptPagination.total)}</span> 条，
                             共 <span className="font-medium">{promptPagination.total}</span> 条记录
                           </p>
@@ -1256,7 +1256,7 @@ const AdminPanel = () => {
           {/* 用户管理页面 */}
           {activeTab === 'users' && (
             <div className="p-6">
-              {/* 搜索和筛选 */}
+              {/* 搜索和Filter */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1">
                   <div className="relative">
@@ -1539,7 +1539,7 @@ const AdminPanel = () => {
                       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                         <div>
                           <p className="text-sm text-slate-700">
-                            显示第 <span className="font-medium">{((pagination.current - 1) * 20) + 1}</span> 到{' '}
+                            Showing <span className="font-medium">{((pagination.current - 1) * 20) + 1}</span> 到{' '}
                             <span className="font-medium">{Math.min(pagination.current * 20, pagination.total)}</span> 条，
                             共 <span className="font-medium">{pagination.total}</span> 条记录
                           </p>
@@ -1590,7 +1590,7 @@ const AdminPanel = () => {
           {/* 内容管理页面 */}
           {activeTab === 'posts' && (
             <div className="p-6">
-              {/* 搜索和筛选 */}
+              {/* 搜索和Filter */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="flex-1">
                   <div className="relative">
@@ -1857,7 +1857,7 @@ const AdminPanel = () => {
                       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                         <div>
                           <p className="text-sm text-slate-700">
-                            显示第 <span className="font-medium">{((postPagination.current - 1) * 20) + 1}</span> 到{' '}
+                            Showing <span className="font-medium">{((postPagination.current - 1) * 20) + 1}</span> 到{' '}
                             <span className="font-medium">{Math.min(postPagination.current * 20, postPagination.total)}</span> 条，
                             共 <span className="font-medium">{postPagination.total}</span> 条记录
                           </p>

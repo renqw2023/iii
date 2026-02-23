@@ -25,7 +25,7 @@ const About = () => {
           </p>
         </motion.div>
 
-        {/* 项目介绍 */}
+        {/* items目介绍 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

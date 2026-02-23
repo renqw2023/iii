@@ -117,7 +117,7 @@ const CreatePost = () => {
 
     // 前端验证描述长度
     if (data.description && data.description.length > 2000) {
-      toast.error('描述不能超过2000个字符，请缩短后重试');
+      toast.error(t('common.descriptionTooLong'));
       return;
     }
 
@@ -172,12 +172,12 @@ const CreatePost = () => {
             toast.error(`${err.path}: ${err.msg}`);
           });
         } else {
-          toast.error(errorData.message || '输入数据有误，请检查后重试');
+          toast.error(errorData.message || 'Invalid input, please check and try again');
         }
       } else if (error.response?.status === 413) {
-        toast.error('文件大小超过限制，请选择较小的文件');
+        toast.error('File size exceeds limit');
       } else if (error.response?.status === 500) {
-        toast.error('服务器内部错误，请稍后重试或联系管理员');
+        toast.error(t('common.serverError'));
       } else {
         toast.error(error.response?.data?.message || t('createPost.error.publishFailed'));
       }
@@ -280,7 +280,7 @@ const CreatePost = () => {
                     {...register('description', {
                       maxLength: {
                         value: 2000,
-                        message: '描述不能超过2000个字符'
+                        message: 'Description must be under 2000 characters'
                       }
                     })}
                     rows={3}

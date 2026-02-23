@@ -44,7 +44,7 @@ class ErrorHandler {
       return {
         type: ERROR_TYPES.UNKNOWN,
         severity: ERROR_SEVERITY.LOW,
-        message: '未知错误'
+        message: 'Unknown error'
       };
     }
 
@@ -54,7 +54,7 @@ class ErrorHandler {
         type: ERROR_TYPES.NETWORK,
         severity: ERROR_SEVERITY.HIGH,
         message: config.errorMessages.networkError,
-        suggestion: '请检查网络连接后重试'
+        suggestion: 'Please check your network and try again'
       };
     }
 
@@ -68,7 +68,7 @@ class ErrorHandler {
           severity: ERROR_SEVERITY.LOW,
           message: errorData?.message || config.errorMessages.validationError,
           details: errorData?.errors,
-          suggestion: '请检查输入信息是否正确'
+          suggestion: 'Please check your input'
         };
 
       case 401:
@@ -76,7 +76,7 @@ class ErrorHandler {
           type: ERROR_TYPES.AUTHENTICATION,
           severity: ERROR_SEVERITY.MEDIUM,
           message: errorData?.message || config.errorMessages.unauthorized,
-          suggestion: '请重新登录后再试',
+          suggestion: 'Please login again',
           action: 'LOGIN_REQUIRED'
         };
 
@@ -85,7 +85,7 @@ class ErrorHandler {
           type: ERROR_TYPES.AUTHORIZATION,
           severity: ERROR_SEVERITY.MEDIUM,
           message: errorData?.message || config.errorMessages.forbidden,
-          suggestion: '您没有权限执行此操作'
+          suggestion: 'You do not have permission'
         };
 
       case 404:
@@ -93,7 +93,7 @@ class ErrorHandler {
           type: ERROR_TYPES.NOT_FOUND,
           severity: ERROR_SEVERITY.LOW,
           message: errorData?.message || config.errorMessages.notFound,
-          suggestion: '请确认访问的资源是否存在'
+          suggestion: 'Resource not found'
         };
 
       case 413:

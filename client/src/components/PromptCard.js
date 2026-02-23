@@ -31,7 +31,7 @@ const PromptCard = ({ prompt, viewMode = 'grid', compact = false }) => {
     e.stopPropagation();
     
     if (!user) {
-      toast.error('请先登录');
+      toast.error(t('common.loginRequired'));
       return;
     }
 
@@ -43,7 +43,7 @@ const PromptCard = ({ prompt, viewMode = 'grid', compact = false }) => {
       toast.success(message);
     } catch (error) {
       console.error('点赞操作失败:', error);
-      toast.error('操作失败，请稍后重试');
+      toast.error(t('common.operationFailed'));
     }
   };
 
@@ -52,7 +52,7 @@ const PromptCard = ({ prompt, viewMode = 'grid', compact = false }) => {
     e.stopPropagation();
     
     if (!user) {
-      toast.error('请先登录');
+      toast.error(t('common.loginRequired'));
       return;
     }
 
@@ -63,7 +63,7 @@ const PromptCard = ({ prompt, viewMode = 'grid', compact = false }) => {
       toast.success(message);
     } catch (error) {
       console.error('收藏操作失败:', error);
-      toast.error('操作失败，请稍后重试');
+      toast.error(t('common.operationFailed'));
     }
   };
 
@@ -74,9 +74,9 @@ const PromptCard = ({ prompt, viewMode = 'grid', compact = false }) => {
     try {
       await promptAPI.copyPrompt(prompt._id);
       setCopyCount(prev => prev + 1);
-      toast.success('提示词已复制到剪贴板');
+      toast.success(t('common.promptCopied'));
     } catch (error) {
-      toast.error('复制失败，请稍后重试');
+      toast.error(t('common.copyFailed'));
     }
   };
 

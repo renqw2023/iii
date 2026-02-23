@@ -103,11 +103,11 @@ export const validatePostForm = (formData) => {
   const errors = {};
   
   if (!formData.title?.trim()) {
-    errors.title = '标题不能为空';
+    errors.title = 'Title is required';
   }
   
   if (!formData.description?.trim()) {
-    errors.description = '描述不能为空';
+    errors.description = 'Description is required';
   }
   
   return {
@@ -125,15 +125,15 @@ export const validatePromptForm = (formData) => {
   const errors = {};
   
   if (!formData.title?.trim()) {
-    errors.title = '标题不能为空';
+    errors.title = 'Title is required';
   }
   
   if (!formData.prompt?.trim()) {
-    errors.prompt = '提示词内容不能为空';
+    errors.prompt = 'Prompt content is required';
   }
   
   if (!formData.category?.trim()) {
-    errors.category = '请选择分类';
+    errors.category = 'Please select a category';
   }
   
   return {
@@ -163,7 +163,7 @@ export const formatNumber = (num) => {
  * @param {string} defaultMessage - 默认错误消息
  * @returns {string} 错误消息
  */
-export const handleApiError = (error, defaultMessage = '操作失败') => {
+export const handleApiError = (error, defaultMessage = 'Operation failed') => {
   if (error.response?.data?.message) {
     return error.response.data.message;
   }

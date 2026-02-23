@@ -6,11 +6,13 @@ import { Copy, Heart, Bookmark, ArrowLeft, Eye, Share2, Film } from 'lucide-reac
 import { Helmet } from 'react-helmet-async';
 import VideoCard from '../../components/Seedance/VideoCard';
 import { seedanceAPI } from '../../services/seedanceApi';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
 const SeedanceDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const { data, isLoading } = useQuery(
         ['seedance-detail', id],
@@ -25,9 +27,9 @@ const SeedanceDetail = () => {
         try {
             await navigator.clipboard.writeText(prompt.prompt);
             seedanceAPI.recordCopy(id);
-            toast.success('提示词已复制到剪贴板！');
+            toast.success(t('seedance.actions.copySuccess'));
         } catch {
-            toast.error('复制失败');
+            toast.error(t('seedance.actions.copyFailed'));
         }
     };
 
@@ -35,7 +37,7 @@ const SeedanceDetail = () => {
         try {
             await seedanceAPI.toggleLike(id);
         } catch {
-            toast.error('请先登录');
+            toast.error(t('seedance.actions.loginRequired'));
         }
     };
 
@@ -43,7 +45,7 @@ const SeedanceDetail = () => {
         try {
             await seedanceAPI.toggleFavorite(id);
         } catch {
-            toast.error('请先登录');
+            toast.error(t('seedance.actions.loginRequired'));
         }
     };
 
@@ -52,7 +54,7 @@ const SeedanceDetail = () => {
             await navigator.share({ title: prompt.title, url: window.location.href });
         } catch {
             navigator.clipboard.writeText(window.location.href);
-            toast.success('链接已复制');
+            toast.success(t('seedance.actions.linkCopied'));
         }
     };
 
@@ -164,21 +166,21 @@ const SeedanceDetail = () => {
                     <div className="detail-actions">
                         <button onClick={handleCopy} className="detail-btn-primary seedance-primary">
                             <Copy size={16} />
-                            <span>一键复制</span>
+                            <span>{t('seedance.detail.copyPrompt')}</span>
                         </button>
                         <button
                             onClick={handleLike}
                             className={`detail-btn-secondary ${prompt.isLiked ? 'active' : ''}`}
                         >
                             <Heart size={16} fill={prompt.isLiked ? 'currentColor' : 'none'} />
-                            <span>{prompt.isLiked ? '已点赞' : '点赞'}</span>
+                            <span>{prompt.isLiked ? t('seedance.actions.liked') : t('seedance.actions.like')}</span>
                         </button>
                         <button
                             onClick={handleFavorite}
                             className={`detail-btn-secondary ${prompt.isFavorited ? 'active' : ''}`}
                         >
                             <Bookmark size={16} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
-                            <span>{prompt.isFavorited ? '已收藏' : '收藏'}</span>
+                            <span>{prompt.isFavorited ? t('seedance.actions.favorited') : t('seedance.actions.favorite')}</span>
                         </button>
                         <button onClick={handleShare} className="detail-btn-icon">
                             <Share2 size={16} />

@@ -46,11 +46,11 @@ const CommentSection = ({ promptId }) => {
       setSubmitting(true);
       await promptAPI.addComment(promptId, { content: newComment });
       setNewComment('');
-      toast.success('评论发布成功');
+      toast.success('Comment posted');
       fetchComments();
     } catch (err) {
       console.error('发布评论失败:', err);
-      toast.error('发布评论失败');
+      toast.error('Failed to post comment');
     } finally {
       setSubmitting(false);
     }
@@ -65,11 +65,11 @@ const CommentSection = ({ promptId }) => {
       await promptAPI.replyToComment(promptId, replyTo, { content: replyContent });
       setReplyContent('');
       setReplyTo(null);
-      toast.success('回复发布成功');
+      toast.success('Reply posted');
       fetchComments();
     } catch (err) {
       console.error('发布回复失败:', err);
-      toast.error('发布回复失败');
+      toast.error('Failed to post reply');
     } finally {
       setSubmitting(false);
     }
@@ -77,13 +77,13 @@ const CommentSection = ({ promptId }) => {
 
   const handleLikeComment = async () => {
     if (!isAuthenticated) {
-      toast.error('请先登录');
+      toast.error('Please login first');
       return;
     }
 
     try {
       // 这里应该调用点赞评论的API
-      toast.success('点赞成功');
+      toast.success('Liked!');
     } catch (err) {
       console.error('点赞失败:', err);
       toast.error('点赞失败');

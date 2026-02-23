@@ -45,8 +45,8 @@ const RelatedPrompts = ({ promptId, category, tags = [], limit = 6 }) => {
         
         setRelatedPrompts(response.data.prompts || []);
       } catch (err) {
-        console.error('获取相关提示词失败:', err);
-        setError('获取相关提示词失败');
+        console.error('获取Related Prompts失败:', err);
+        setError('获取Related Prompts失败');
       } finally {
         setLoading(false);
       }
@@ -94,14 +94,14 @@ const RelatedPrompts = ({ promptId, category, tags = [], limit = 6 }) => {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-slate-900">
-              相关提示词
+              Related Prompts
             </h3>
           </div>
         </div>
         <div className="text-center py-12">
           <div className="text-4xl mb-4">🎨</div>
-          <p className="text-slate-500 mb-2">暂无相关风格参考</p>
-          <p className="text-sm text-slate-400">当有相似风格的作品时，会在这里为您推荐</p>
+          <p className="text-slate-500 mb-2">No related style references</p>
+          <p className="text-sm text-slate-400">Related works with similar styles will appear here</p>
         </div>
       </div>
     );
@@ -117,11 +117,11 @@ const RelatedPrompts = ({ promptId, category, tags = [], limit = 6 }) => {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-slate-900">
-            相关提示词
+            Related Prompts
           </h3>
         </div>
         <div className="ml-auto text-sm text-slate-500">
-          {relatedPrompts.length} 个相关作品
+          {relatedPrompts.length} related works
         </div>
       </div>
       

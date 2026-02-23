@@ -180,7 +180,7 @@ const PostDetail = () => {
             className="max-w-full max-h-[90vh] object-contain"
           />
           
-          {/* 关闭按钮 */}
+          {/* Close按钮 */}
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center text-white transition-all"

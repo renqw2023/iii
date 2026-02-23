@@ -128,7 +128,7 @@ const StatsPanel = ({ user, stats: propStats }) => {
 
   // 生成模拟的周统计数据
   const generateWeeklyStats = () => {
-    const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return days.map((day) => ({
       day,
       views: Math.floor(Math.random() * 100) + 20,
@@ -225,7 +225,7 @@ const StatsPanel = ({ user, stats: propStats }) => {
 
   const statCards = [
     {
-      title: '总浏览量',
+      title: 'Total Views',
       value: stats.totalViews,
       icon: Eye,
       color: 'text-blue-600',
@@ -233,12 +233,12 @@ const StatsPanel = ({ user, stats: propStats }) => {
       growth: stats.monthlyGrowth.views,
       growthType: stats.monthlyGrowth.views > 0 ? 'up' : 'down',
       details: [
-        { label: '格式参考', value: stats.formatReference.views },
-        { label: '提示词', value: stats.prompts.views }
+        { label: 'Format Ref', value: stats.formatReference.views },
+        { label: 'Prompts', value: stats.prompts.views }
       ]
     },
     {
-      title: '总点赞数',
+      title: 'Total Likes',
       value: stats.totalLikes,
       icon: Heart,
       color: 'text-red-600',
@@ -246,12 +246,12 @@ const StatsPanel = ({ user, stats: propStats }) => {
       growth: stats.monthlyGrowth.likes,
       growthType: stats.monthlyGrowth.likes > 0 ? 'up' : 'down',
       details: [
-        { label: '格式参考', value: stats.formatReference.likes },
-        { label: '提示词', value: stats.prompts.likes }
+        { label: 'Format Ref', value: stats.formatReference.likes },
+        { label: 'Prompts', value: stats.prompts.likes }
       ]
     },
     {
-      title: '粉丝数量',
+      title: 'Followers',
       value: stats.totalFollowers,
       icon: Users,
       color: 'text-green-600',
@@ -260,7 +260,7 @@ const StatsPanel = ({ user, stats: propStats }) => {
       growthType: stats.monthlyGrowth.followers > 0 ? 'up' : 'down'
     },
     {
-      title: '作品数量',
+      title: 'Works',
       value: stats.totalPosts,
       icon: FileText,
       color: 'text-purple-600',
@@ -268,8 +268,8 @@ const StatsPanel = ({ user, stats: propStats }) => {
       growth: stats.monthlyGrowth.posts,
       growthType: stats.monthlyGrowth.posts > 0 ? 'up' : 'down',
       details: [
-        { label: '格式参考', value: stats.formatReference.posts },
-        { label: '提示词', value: stats.prompts.posts }
+        { label: 'Format Ref', value: stats.formatReference.posts },
+        { label: 'Prompts', value: stats.prompts.posts }
       ]
     }
   ];

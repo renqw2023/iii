@@ -13,7 +13,7 @@ export const getValidationRules = (t) => {
       required: t('createPrompt.basicInfo.titleRequired'),
       maxLength: {
         value: 100,
-        message: '标题不能超过100个字符'
+        message: 'Title must be under 100 characters'
       }
     },
     prompt: {
@@ -30,19 +30,19 @@ export const getValidationRules = (t) => {
     description: {
       maxLength: {
         value: 2000,
-        message: '描述不能超过2000个字符'
+        message: 'Description must be under 2000 characters'
       }
     },
     expectedResult: {
       maxLength: {
         value: 1000,
-        message: '预期效果描述不能超过1000个字符'
+        message: 'Expected effect must be under 1000 characters'
       }
     },
     tips: {
       maxLength: {
         value: 1000,
-        message: '使用技巧不能超过1000个字符'
+        message: 'Usage tips must be under 1000 characters'
       }
     }
   };

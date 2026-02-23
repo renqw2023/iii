@@ -26,12 +26,12 @@ export const handleSubmitError = (error, _t) => { // t参数暂未使用
         toast.error(userMessage);
       });
     } else {
-      toast.error(errorData.message || '输入数据有误，请检查后重试');
+      toast.error(errorData.message || 'Invalid input, please check and try again');
     }
   }
   // 413错误 - 文件过大
   else if (error.response?.status === 413) {
-    toast.error('文件大小超过限制（最大200MB），请选择较小的文件');
+    toast.error('File size exceeds limit (max 200MB)');
   }
   // 500错误 - 服务器内部错误
   else if (error.response?.status === 500) {

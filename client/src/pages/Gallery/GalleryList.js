@@ -8,15 +8,17 @@ import GalleryCard from '../../components/Gallery/GalleryCard';
 import ModelFilter from '../../components/Gallery/ModelFilter';
 import TagFilter from '../../components/Gallery/TagFilter';
 import { galleryAPI } from '../../services/galleryApi';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
 const SORT_OPTIONS = [
-    { value: 'newest', label: '最新' },
-    { value: 'popular', label: '最热门' },
-    { value: 'most-copied', label: '最多复制' },
+    { value: 'newest', labelKey: 'gallery.filters.newest' },
+    { value: 'popular', labelKey: 'gallery.filters.popular' },
+    { value: 'most-copied', labelKey: 'gallery.filters.trending' },
 ];
 
 const GalleryList = () => {
+    const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
 
     // 从 URL 读取初始状态
@@ -75,7 +77,7 @@ const GalleryList = () => {
         try {
             await galleryAPI.toggleLike(id);
         } catch {
-            toast.error('请先登录');
+            toast.error(t('gallery.actions.loginRequired'));
         }
     };
 
@@ -83,7 +85,7 @@ const GalleryList = () => {
         try {
             await galleryAPI.toggleFavorite(id);
         } catch {
-            toast.error('请先登录');
+            toast.error(t('gallery.actions.loginRequired'));
         }
     };
 
@@ -155,7 +157,7 @@ const GalleryList = () => {
                             className="gallery-sort-select"
                         >
                             {SORT_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                             ))}
                         </select>
                     </div>

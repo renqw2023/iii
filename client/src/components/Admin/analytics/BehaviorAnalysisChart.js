@@ -9,7 +9,7 @@ const BehaviorAnalysisChart = ({ data, loading }) => {
     return (
       <div className="analytics-chart-loading">
         <div className="loading-spinner"></div>
-        <p>加载行为分析数据中...</p>
+        <p>Loading behavior analysis...</p>
       </div>
     );
   }
@@ -17,7 +17,7 @@ const BehaviorAnalysisChart = ({ data, loading }) => {
   if (!data || !data.behaviorAnalysis) {
     return (
       <div className="analytics-chart-empty">
-        <p>暂无行为分析数据</p>
+        <p>No behavior analysis data</p>
       </div>
     );
   }
@@ -33,7 +33,7 @@ const BehaviorAnalysisChart = ({ data, loading }) => {
 
   // 设备类型数据
   const deviceData = deviceAnalysis ? deviceAnalysis.map((item, index) => ({
-    name: item._id || '未知设备',
+    name: item._id || 'Unknown Device',
     value: item.count,
     color: COLORS[index % COLORS.length]
   })) : [];
@@ -77,7 +77,7 @@ const BehaviorAnalysisChart = ({ data, loading }) => {
   return (
     <div className="behavior-analysis-chart">
       <div className="chart-header">
-        <h3>用户行为分析</h3>
+        <h3>用户Behavior Analysis</h3>
         <p className="chart-subtitle">用户活跃度与互动行为统计</p>
       </div>
       
@@ -115,7 +115,7 @@ const BehaviorAnalysisChart = ({ data, loading }) => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [value, '用户数量']} />
+                <Tooltip formatter={(value) => [value, 'Users']} />
               </PieChart>
             </ResponsiveContainer>
           ) : (

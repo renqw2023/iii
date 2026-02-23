@@ -9,7 +9,7 @@ const GeoAnalysisChart = ({ data, loading }) => {
     return (
       <div className="analytics-chart-loading">
         <div className="loading-spinner"></div>
-        <p>加载地域分析数据中...</p>
+        <p>Loading geo analysis...</p>
       </div>
     );
   }
@@ -17,13 +17,13 @@ const GeoAnalysisChart = ({ data, loading }) => {
   if (!data || !data.geoAnalysis || data.geoAnalysis.length === 0) {
     return (
       <div className="analytics-chart-empty">
-        <p>暂无地域分析数据</p>
+        <p>No geo analysis data</p>
       </div>
     );
   }
 
   const geoData = data.geoAnalysis.map(item => ({
-    country: item._id || '未知',
+    country: item._id || 'Unknown',
     userCount: item.userCount,
     cities: item.cities ? item.cities.length : 0
   }));
@@ -37,8 +37,8 @@ const GeoAnalysisChart = ({ data, loading }) => {
   return (
     <div className="geo-analysis-chart">
       <div className="chart-header">
-        <h3>地域分析</h3>
-        <p className="chart-subtitle">用户地理分布统计</p>
+        <h3>Geo Analysis</h3>
+        <p className="chart-subtitle">User geographic distribution</p>
       </div>
       
       <div className="chart-content">
@@ -57,8 +57,8 @@ const GeoAnalysisChart = ({ data, loading }) => {
               <YAxis />
               <Tooltip 
                 formatter={(value, name) => {
-                  if (name === 'userCount') return [value, '用户数量'];
-                  if (name === 'cities') return [value, '城市数量'];
+                  if (name === 'userCount') return [value, 'Users'];
+                  if (name === 'cities') return [value, 'Cities'];
                   return [value, name];
                 }}
                 labelFormatter={(label) => `国家/地区: ${label}`}
@@ -87,7 +87,7 @@ const GeoAnalysisChart = ({ data, loading }) => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => [value, '用户数量']} />
+              <Tooltip formatter={(value) => [value, 'Users']} />
             </PieChart>
           </ResponsiveContainer>
         </div>

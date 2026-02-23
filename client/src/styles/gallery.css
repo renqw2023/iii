@@ -219,13 +219,13 @@
 /* --- Gallery Grid (Masonry-like) --- */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
 }
 
 .seedance-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
 }
 
@@ -783,13 +783,26 @@
 }
 
 /* --- Responsive --- */
+
+/* 平板 ≤1024px: Gallery 4→2 列, Seedance 3→2 列 */
+@media (max-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .seedance-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 手机 ≤768px */
 @media (max-width: 768px) {
   .gallery-title {
     font-size: 1.75rem;
   }
 
   .gallery-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
 
@@ -817,8 +830,22 @@
   .gallery-sort {
     justify-content: flex-end;
   }
+
+  /* 视频播放器移动端纵向比例适配 */
+  .seedance-video-player {
+    max-height: none;
+  }
+
+  .video-card-media {
+    aspect-ratio: 9/16;
+  }
+
+  .seedance-detail-video {
+    max-height: 70vh;
+  }
 }
 
+/* 小手机 ≤480px: Gallery 2→1 列 */
 @media (max-width: 480px) {
 
   .gallery-page,
@@ -828,7 +855,7 @@
   }
 
   .gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 0.5rem;
   }
 

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Eye, Bookmark } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useInView } from 'react-intersection-observer';
 import { galleryAPI } from '../../services/galleryApi';
 import toast from 'react-hot-toast';
 
@@ -17,6 +18,13 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const modelInfo = MODEL_COLORS[prompt.model] || MODEL_COLORS.other;
+    const [imageLoaded, setImageLoaded] = useState(false);
+
+    // 使用 react-intersection-observer 实现图片懒加载
+    const { ref, inView } = useInView({
+        triggerOnce: true,       // 进入视口后不再监听
+        rootMargin: '200px 0px', // 提前 200px 开始加载
+    });
 
     const handleCopy = async (e) => {
         e.stopPropagation();
@@ -41,6 +49,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
 
     return (
         <motion.div
+            ref={ref}
             layout
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -49,14 +58,19 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
             className="gallery-card group cursor-pointer"
             onClick={() => navigate(`/gallery/${prompt._id}`)}
         >
-            {/* 预览图 */}
+            {/* 预览图 — 仅在进入视口后才挂载 <img> */}
             <div className="gallery-card-image">
-                {prompt.previewImage ? (
+                {inView && prompt.previewImage ? (
                     <img
                         src={prompt.previewImage}
                         alt={prompt.title}
                         loading="lazy"
+                        onLoad={() => setImageLoaded(true)}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        style={{
+                            opacity: imageLoaded ? 1 : 0,
+                            transition: 'opacity 0.4s ease-in',
+                        }}
                     />
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-purple-900/50 to-blue-900/50 flex items-center justify-center">

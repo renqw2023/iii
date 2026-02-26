@@ -110,7 +110,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
                             height: 'auto',
                             display: 'block',
                             opacity: imageLoaded ? 1 : 0,
-                            transition: 'opacity 0.4s ease-in',
+                            transition: 'opacity 0.4s ease-in, transform 0.4s ease',
                         }}
                     />
                 ) : (

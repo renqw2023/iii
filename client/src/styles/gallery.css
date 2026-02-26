@@ -435,6 +435,17 @@
   border-radius: 12px;
 }
 
+.gallery-card-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.gallery-card:hover .gallery-card-image img {
+  transform: scale(1.03);
+}
+
 /* --- Hover overlay — bottom gradient with author + stats + actions --- */
 .gallery-card-overlay {
   position: absolute;

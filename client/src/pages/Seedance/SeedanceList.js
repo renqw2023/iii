@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, Loader2, SlidersHorizontal } from 'lucide-react';
+import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import VideoCard from '../../components/Seedance/VideoCard';
 import { seedanceAPI } from '../../services/seedanceApi';
@@ -18,6 +18,7 @@ const SORT_OPTIONS = [
 const SeedanceList = () => {
     const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
+    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const [category, setCategory] = useState(searchParams.get('category') || 'all');
     const [sort, setSort] = useState(searchParams.get('sort') || 'newest');
@@ -91,132 +92,158 @@ const SeedanceList = () => {
             </Helmet>
 
             <div className="seedance-page">
-                {/* 页面标题 */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="gallery-header"
-                >
-                    <h1 className="gallery-title">
-                        <span className="gradient-text-video">🎬 Seedance 2.0 Prompts</span>
-                    </h1>
-                    <p className="gallery-subtitle">
-                        Curated video generation prompts with playable previews. Hover to preview.
-                    </p>
-                </motion.div>
-
-                {/* 搜索栏 */}
-                <div className="gallery-search-container">
-                    <div className="gallery-search-box">
-                        <Search size={18} className="gallery-search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Search video prompts..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="gallery-search-input"
-                        />
-                        {searchQuery && (
-                            <button onClick={() => setSearchQuery('')} className="gallery-search-clear">
-                                <X size={16} />
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* 分类过滤 + 排序 */}
-                <div className="gallery-filters-row">
-                    <div className="tag-filter">
-                        <div className="tag-filter-scroll">
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setCategory('all')}
-                                className={`tag-filter-btn ${category === 'all' ? 'active' : ''}`}
+                <div className="gallery-layout">
+                    {/* 左侧 Sidebar */}
+                    <aside className={`gallery-sidebar ${sidebarOpen ? '' : 'closed'}`}>
+                        <div className="gallery-sidebar-header">
+                            <span className="gallery-sidebar-title">Filters</span>
+                            <button
+                                className="gallery-sidebar-close"
+                                onClick={() => setSidebarOpen(false)}
+                                title="Close sidebar"
                             >
-                                All
-                            </motion.button>
-                            {categories.map((cat) => (
-                                <motion.button
-                                    key={cat.name}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={() => setCategory(cat.name)}
-                                    className={`tag-filter-btn ${category === cat.name ? 'active' : ''}`}
+                                <ChevronLeft size={16} />
+                            </button>
+                        </div>
+
+                        {/* 搜索 */}
+                        <div className="gallery-sidebar-section">
+                            <div className="gallery-sidebar-section-label">Search</div>
+                            <div className="gallery-search-container">
+                                <div className="gallery-search-box">
+                                    <Search size={16} className="gallery-search-icon" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search video prompts..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="gallery-search-input"
+                                    />
+                                    {searchQuery && (
+                                        <button onClick={() => setSearchQuery('')} className="gallery-search-clear">
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 分类过滤 */}
+                        <div className="gallery-sidebar-section">
+                            <div className="gallery-sidebar-section-label">Category</div>
+                            <div className="tag-filter">
+                                <div className="tag-filter-scroll">
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setCategory('all')}
+                                        className={`tag-filter-btn ${category === 'all' ? 'active' : ''}`}
+                                    >
+                                        All
+                                    </motion.button>
+                                    {categories.map((cat) => (
+                                        <motion.button
+                                            key={cat.name}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={() => setCategory(cat.name)}
+                                            className={`tag-filter-btn ${category === cat.name ? 'active' : ''}`}
+                                        >
+                                            {cat.name} <span className="tag-count">{cat.count}</span>
+                                        </motion.button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 排序 */}
+                        <div className="gallery-sidebar-section">
+                            <div className="gallery-sidebar-section-label">Sort</div>
+                            <div className="gallery-sort" style={{ color: 'var(--text-secondary)' }}>
+                                <SlidersHorizontal size={13} />
+                                <select
+                                    value={sort}
+                                    onChange={(e) => setSort(e.target.value)}
+                                    className="gallery-sort-select"
+                                    style={{ flex: 1 }}
                                 >
-                                    {cat.name} <span className="tag-count">{cat.count}</span>
-                                </motion.button>
-                            ))}
+                                    {SORT_OPTIONS.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div className="gallery-sort">
-                        <SlidersHorizontal size={14} />
-                        <select
-                            value={sort}
-                            onChange={(e) => setSort(e.target.value)}
-                            className="gallery-sort-select"
-                        >
-                            {SORT_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+                    </aside>
 
-                {/* 结果统计 */}
-                <div className="gallery-results-info">
-                    <span>{pagination.total} video prompts</span>
-                    {isFetching && <Loader2 size={14} className="animate-spin ml-2" />}
-                </div>
-
-                {/* 视频网格 */}
-                {isLoading ? (
-                    <div className="gallery-loading">
-                        <Loader2 size={32} className="animate-spin" />
-                        <p>Loading video prompts...</p>
-                    </div>
-                ) : prompts.length === 0 ? (
-                    <div className="gallery-empty">
-                        <span className="text-4xl">🎥</span>
-                        <p>No video prompts found.</p>
-                    </div>
-                ) : (
-                    <AnimatePresence mode="popLayout">
-                        <div className="seedance-grid">
-                            {prompts.map((prompt) => (
-                                <VideoCard
-                                    key={prompt._id}
-                                    prompt={prompt}
-                                    onLike={handleLike}
-                                    onFavorite={handleFavorite}
-                                />
-                            ))}
+                    {/* 右侧主内容 */}
+                    <main className="gallery-main">
+                        {/* 工具栏 */}
+                        <div className="gallery-toolbar">
+                            {!sidebarOpen && (
+                                <button
+                                    className="gallery-sidebar-toggle"
+                                    onClick={() => setSidebarOpen(true)}
+                                >
+                                    <FiltersIcon size={14} />
+                                    Filters
+                                </button>
+                            )}
+                            <span className="gallery-results-info" style={{ margin: 0 }}>
+                                {pagination.total} video prompts
+                                {isFetching && <Loader2 size={13} className="animate-spin ml-2" style={{ display: 'inline', marginLeft: '0.5rem' }} />}
+                            </span>
                         </div>
-                    </AnimatePresence>
-                )}
 
-                {/* 分页 */}
-                {pagination.totalPages > 1 && (
-                    <div className="gallery-pagination">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="gallery-page-btn"
-                        >
-                            ← Previous
-                        </button>
-                        <span className="gallery-page-info">
-                            Page {page} of {pagination.totalPages}
-                        </span>
-                        <button
-                            onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                            disabled={page >= pagination.totalPages}
-                            className="gallery-page-btn"
-                        >
-                            Next →
-                        </button>
-                    </div>
-                )}
+                        {/* 视频网格 */}
+                        {isLoading ? (
+                            <div className="gallery-loading">
+                                <Loader2 size={32} className="animate-spin" />
+                                <p>Loading video prompts...</p>
+                            </div>
+                        ) : prompts.length === 0 ? (
+                            <div className="gallery-empty">
+                                <span className="text-4xl">🎥</span>
+                                <p>No video prompts found.</p>
+                            </div>
+                        ) : (
+                            <AnimatePresence mode="popLayout">
+                                <div className="seedance-grid">
+                                    {prompts.map((prompt) => (
+                                        <VideoCard
+                                            key={prompt._id}
+                                            prompt={prompt}
+                                            onLike={handleLike}
+                                            onFavorite={handleFavorite}
+                                        />
+                                    ))}
+                                </div>
+                            </AnimatePresence>
+                        )}
+
+                        {/* 分页 */}
+                        {pagination.totalPages > 1 && (
+                            <div className="gallery-pagination">
+                                <button
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                    className="gallery-page-btn"
+                                >
+                                    ← Previous
+                                </button>
+                                <span className="gallery-page-info">
+                                    Page {page} of {pagination.totalPages}
+                                </span>
+                                <button
+                                    onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                                    disabled={page >= pagination.totalPages}
+                                    className="gallery-page-btn"
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        )}
+                    </main>
+                </div>
             </div>
         </>
     );

@@ -55,7 +55,7 @@ class Config {
     
     return {
       port: parseInt(process.env.PORT) || 5500,
-      host: process.env.HOST || 'localhost',
+      host: process.env.HOST || '0.0.0.0',
       trustProxy: trustProxy,
       bodyLimit: process.env.BODY_LIMIT || '200mb',
       clientUrl: process.env.CLIENT_URL || 'http://localhost:3100',

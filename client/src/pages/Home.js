@@ -1,18 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useInfiniteQuery, useQuery } from 'react-query';
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Search, Sparkles, ArrowRight, Palette, Film, BookOpen, X, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { enhancedPostAPI } from '../services/enhancedApi';
 import { promptAPI } from '../services/promptApi';
-import { galleryAPI } from '../services/galleryApi';
-import { seedanceAPI } from '../services/seedanceApi';
 import LiblibStyleCard from '../components/Post/LiblibStyleCard';
 import LiblibPromptCard from '../components/Prompt/LiblibPromptCard';
-import GalleryCard from '../components/Gallery/GalleryCard';
-import VideoCard from '../components/Seedance/VideoCard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Hero from '../components/Home/Hero';
 
@@ -40,22 +35,6 @@ const Home = () => {
     const timer = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(timer);
   }, [searchTerm]);
-
-  // ========== Gallery featured ==========
-  const { data: galleryFeaturedData, isLoading: isGalleryLoading } = useQuery(
-    'homeFeaturedGallery',
-    () => galleryAPI.getFeatured(8),
-    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
-  );
-  const galleryFeatured = galleryFeaturedData?.data?.prompts || [];
-
-  // ========== Seedance featured ==========
-  const { data: seedanceFeaturedData, isLoading: isSeedanceLoading } = useQuery(
-    'homeFeaturedSeedance',
-    () => seedanceAPI.getFeatured(6),
-    { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
-  );
-  const seedanceFeatured = seedanceFeaturedData?.data?.prompts || [];
 
   // ========== Latest combined content ==========
   const fetchCombinedData = useCallback(async ({ pageParam = 1 }) => {
@@ -256,80 +235,6 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Gallery featured */}
-        {galleryFeatured.length > 0 && (
-          <section className="home-section">
-            <div className="home-section-header">
-              <h2>
-                <span className="gradient-text">{t('home.featuredGallery.title')}</span>
-                <span className="home-section-header-text"> {t('home.featuredGallery.titleSuffix')}</span>
-              </h2>
-              <Link to="/gallery" className="home-section-link">
-                {t('home.featuredGallery.viewAll')} <ArrowRight size={14} />
-              </Link>
-            </div>
-
-            <div className="home-featured-grid gallery-grid">
-              {galleryFeatured.map((prompt, index) => (
-                <motion.div
-                  key={prompt._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <GalleryCard prompt={prompt} />
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {isGalleryLoading && (
-          <section className="home-section">
-            <div className="gallery-loading">
-              <Loader2 size={28} className="animate-spin" />
-              <p>{t('home.loadingFeatured')}</p>
-            </div>
-          </section>
-        )}
-
-        {/* Seedance featured */}
-        {seedanceFeatured.length > 0 && (
-          <section className="home-section">
-            <div className="home-section-header">
-              <h2>
-                <span className="gradient-text-video">{t('home.featuredSeedance.title')}</span>
-                <span className="home-section-header-text"> {t('home.featuredSeedance.titleSuffix')}</span>
-              </h2>
-              <Link to="/seedance" className="home-section-link">
-                {t('home.featuredSeedance.viewAll')} <ArrowRight size={14} />
-              </Link>
-            </div>
-
-            <div className="home-featured-grid seedance-grid">
-              {seedanceFeatured.map((prompt, index) => (
-                <motion.div
-                  key={prompt._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <VideoCard prompt={prompt} />
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {isSeedanceLoading && (
-          <section className="home-section">
-            <div className="gallery-loading">
-              <Loader2 size={28} className="animate-spin" />
-              <p>{t('home.loadingFeatured')}</p>
-            </div>
-          </section>
-        )}
-
         {/* Latest content */}
         <section className="home-section home-content-section">
           <div className="home-section-header">
@@ -404,25 +309,13 @@ const Home = () => {
           ) : (
             <>
               <div className="gallery-grid">
-                {allPosts?.map((post, index) => {
-                  const shouldAnimate = index < 12;
-                  const delay = shouldAnimate ? Math.min(index * 0.05, 0.6) : 0;
-
-                  return (
-                    <motion.div
-                      key={`${post.contentType}-${post._id}`}
-                      initial={shouldAnimate ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay }}
-                    >
-                      {post.contentType === 'prompt' ? (
-                        <LiblibPromptCard prompt={post} />
-                      ) : (
-                        <LiblibStyleCard post={post} />
-                      )}
-                    </motion.div>
-                  );
-                })}
+                {allPosts?.map((post) => (
+                  post.contentType === 'prompt' ? (
+                    <LiblibPromptCard key={`prompt-${post._id}`} prompt={post} />
+                  ) : (
+                    <LiblibStyleCard key={`style-${post._id}`} post={post} />
+                  )
+                ))}
               </div>
 
               {/* Infinite scroll */}

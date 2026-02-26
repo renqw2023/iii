@@ -110,25 +110,47 @@ function extractSubject(title, prompt) {
 
 /**
  * 解析 README.md 中的提示词
+ *
+ * README 有两种条目结构：
+ *   Featured 区:  ### No. 1: Wide quote card with portrait...
+ *   All Prompts:  ### No. 1: Profile / Avatar - Ultra-Realistic...
+ *
+ * 图片使用 HTML <img src="..."> 格式，不是 Markdown ![](url)
+ * 作者信息格式: - **Author:** [Name](url)
  */
 function parseNanoBananaReadme(readmePath) {
     console.log('📖 正在解析 README.md...');
     const content = fs.readFileSync(readmePath, 'utf-8');
     const prompts = [];
 
-    // 匹配模式: "No. X: Category - Title" 格式
-    // 示例: "No. 1: Profile / Avatar - Photorealistic Night Selfie Prompt"
-    const promptRegex = /^#{2,4}\s*No\.\s*(\d+):\s*(.+?)(?:\s*-\s*(.+))?$/gm;
+    // 匹配所有 ### No. X: ... 级别的标题（同时支持 Featured 和 All Prompts 两种区块）
+    const promptRegex = /^#{2,4}\s*No\.\s*(\d+):\s*(.+)$/gm;
 
     let match;
     const positions = [];
+    let globalIdx = 0;
 
     while ((match = promptRegex.exec(content)) !== null) {
+        const fullTitle = match[2].trim();
+        // 判断是否带分类前缀格式: "Category - Title"
+        // 分类前缀由已知用途关键词组成，用 " - " 分隔
+        const separatorIdx = fullTitle.indexOf(' - ');
+        let categoryRaw = '';
+        let title = fullTitle;
+        if (separatorIdx !== -1) {
+            categoryRaw = fullTitle.substring(0, separatorIdx).trim();
+            title = fullTitle.substring(separatorIdx + 3).trim();
+        }
+
+        globalIdx++;
         positions.push({
             index: match.index,
+            globalIdx,           // 全局序号，用于生成唯一 sourceId
             number: parseInt(match[1]),
-            categoryRaw: match[2].trim(),
-            title: match[3] ? match[3].trim() : match[2].trim()
+            categoryRaw,
+            title,
+            fullTitle,
+            rawLine: match[0]
         });
     }
 
@@ -142,69 +164,105 @@ function parseNanoBananaReadme(readmePath) {
         const endIndex = nextPos ? nextPos.index : content.length;
         const sectionContent = content.substring(pos.index, endIndex);
 
-        // 提取提示词正文（代码块或段落文本）
+        // --- 提取提示词正文 ---
         let promptText = '';
-        let imageUrl = '';
 
-        // 查找代码块
+        // 优先：代码块 ```...```
         const codeBlockMatch = sectionContent.match(/```(?:\w+)?\n([\s\S]*?)```/);
         if (codeBlockMatch) {
             promptText = codeBlockMatch[1].trim();
         }
 
-        // 如果没有代码块，则从段落中提取
+        // 退路：从 #### 📝 Prompt 小节后的普通段落提取
         if (!promptText) {
-            const lines = sectionContent.split('\n');
-            const textLines = [];
-            let skipNext = false;
-
-            for (const line of lines) {
-                if (line.startsWith('#') || line.startsWith('|') || line.startsWith('---') ||
-                    line.startsWith('![') || line.startsWith('<') || line.startsWith('>')) {
-                    continue;
-                }
-                if (line.trim() && !line.startsWith('[')) {
-                    textLines.push(line.trim());
-                }
+            const promptSectionMatch = sectionContent.match(/####\s*📝\s*Prompt\s*\n([\s\S]*?)(?=\n####|\n###|$)/);
+            if (promptSectionMatch) {
+                promptText = promptSectionMatch[1]
+                    .split('\n')
+                    .filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('![') && !l.startsWith('<') && !l.startsWith('>') && !l.startsWith('|') && !l.startsWith('---'))
+                    .map(l => l.trim())
+                    .join('\n')
+                    .trim();
             }
-
-            promptText = textLines.join('\n').trim();
-        }
-
-        // 查找预览图URL
-        const imgMatch = sectionContent.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/);
-        if (imgMatch) {
-            imageUrl = imgMatch[1];
         }
 
         if (!promptText || promptText.length < 10) continue;
 
-        const useCase = extractUseCase(pos.categoryRaw);
+        // --- 提取预览图 URL ---
+        // README 使用 HTML <img src="..."> 格式
+        let imageUrl = '';
+        const htmlImgMatch = sectionContent.match(/<img\s+src="(https?:\/\/[^"]+)"/i);
+        if (htmlImgMatch) {
+            imageUrl = htmlImgMatch[1];
+        }
+        // 兼容：也匹配 Markdown ![](url) 格式（排除 badge shields.io）
+        if (!imageUrl) {
+            const mdImgMatch = sectionContent.match(/!\[(?!Language|Featured|Raycast)[^\]]*\]\((https?:\/\/(?!img\.shields)[^\s)]+)\)/);
+            if (mdImgMatch) {
+                imageUrl = mdImgMatch[1];
+            }
+        }
+
+        // --- 提取作者信息 ---
+        let sourceAuthor = '';
+        let sourceUrl = 'https://github.com/YouMind-OpenLab/awesome-nano-banana-pro-prompts';
+        const authorMatch = sectionContent.match(/\*\*Author:\*\*\s*\[([^\]]+)\]\((https?:\/\/[^)]+)\)/i);
+        if (authorMatch) {
+            sourceAuthor = authorMatch[1].trim();
+            sourceUrl = authorMatch[2].trim();
+        }
+
+        // --- 提取描述 ---
+        let description = '';
+        const descMatch = sectionContent.match(/####\s*📖\s*Description\s*\n([\s\S]*?)(?=\n####|\n###|$)/);
+        if (descMatch) {
+            description = descMatch[1]
+                .split('\n')
+                .filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('![') && !l.startsWith('<') && !l.startsWith('>') && !l.startsWith('|'))
+                .map(l => l.trim())
+                .join(' ')
+                .trim()
+                .substring(0, 500);
+        }
+        if (!description) description = promptText.substring(0, 300);
+
+        // --- 检测 Featured 标记 ---
+        const isFeaturedByBadge = sectionContent.includes('⭐-Featured') || sectionContent.includes('Featured-gold');
+
+        // --- 分类提取 ---
+        const useCase = extractUseCase(pos.categoryRaw || pos.fullTitle);
         const style = extractStyle(pos.title, promptText);
         const subject = extractSubject(pos.title, promptText);
 
-        // 提取标签
-        const tags = new Set();
-        tags.add('nanobanana-pro');
+        // --- 标签 ---
+        const tags = new Set(['nanobanana-pro']);
         if (useCase !== 'other') tags.add(useCase);
         if (style !== 'other') tags.add(style);
         if (subject !== 'other') tags.add(subject);
 
+        // sourceId 使用全局序号保证唯一，避免 Featured 和 All Prompts 两个区都有 No.1 冲突
+        const sourceId = `nanobanana-g${pos.globalIdx}`;
+
+        const displayTitle = pos.categoryRaw
+            ? `${pos.categoryRaw} - ${pos.title}`
+            : pos.title;
+
         prompts.push({
-            title: `${pos.categoryRaw} - ${pos.title}`.substring(0, 200),
+            title: displayTitle.substring(0, 200),
             prompt: promptText.substring(0, 10000),
-            description: promptText.substring(0, 500),
+            description,
             model: 'nanobanana',
             useCase,
             style,
             subject,
             tags: Array.from(tags),
             previewImage: imageUrl,
-            sourceUrl: `https://github.com/YouMind-OpenLab/awesome-nano-banana-pro-prompts`,
-            sourcePlatform: 'github',
+            sourceAuthor,
+            sourceUrl,
+            sourcePlatform: sourceAuthor ? 'twitter' : 'github',
             dataSource: 'nano-banana-pro',
-            sourceId: `nanobanana-${pos.number}`,
-            isFeatured: pos.number <= 9 // README中标记为Featured的前9个
+            sourceId,
+            isFeatured: isFeaturedByBadge,
         });
     }
 

@@ -29,3 +29,6 @@ liblib_*.json
 
 # Temp
 *.tmp
+.claude/
+*.png
+*.jpg

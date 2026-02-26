@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Eye, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import '../Post/LiblibStyleCard.css';
 
 const ROW_HEIGHT = 8;
 const ROW_GAP = 8;
@@ -69,7 +70,7 @@ const SrefCard = ({ sref }) => {
       className="liblib-card"
       onClick={() => navigate(`/explore/${sref._id}`)}
     >
-      <div className="liblib-card-image" style={{ cursor: 'pointer', aspectRatio: imageLoaded ? undefined : '1/1' }}>
+      <div className="liblib-card-image" style={{ cursor: 'pointer' }}>
         {sref.previewImage ? (
           <img
             src={sref.previewImage}

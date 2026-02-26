@@ -147,6 +147,14 @@ router.get('/:id', optionalAuth, async (req, res) => {
             .select('-likes -__v')
             .lean({ virtuals: true });
 
+        // 手动补充 related 的虚拟字段
+        related.forEach(r => {
+            if (!r.previewImage && r.images && r.images.length > 0) {
+                r.previewImage = `/output/sref_${r.srefCode}/images/${r.images[0]}`;
+            }
+            if (r.likesCount === undefined) r.likesCount = 0;
+        });
+
         res.json({ post: sref, related });
     } catch (error) {
         console.error('Sref 详情错误:', error);

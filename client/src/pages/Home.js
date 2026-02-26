@@ -4,10 +4,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Search, Sparkles, ArrowRight, Palette, Film, BookOpen, X, SlidersHorizontal, Loader2 } from 'lucide-react';
-import { enhancedPostAPI } from '../services/enhancedApi';
-import { promptAPI } from '../services/promptApi';
-import LiblibStyleCard from '../components/Post/LiblibStyleCard';
-import LiblibPromptCard from '../components/Prompt/LiblibPromptCard';
+import { srefAPI } from '../services/srefApi';
+import SrefCard from '../components/Sref/SrefCard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Hero from '../components/Home/Hero';
 
@@ -21,7 +19,6 @@ const Home = () => {
   const SORT_OPTIONS = useMemo(() => [
     { value: 'createdAt', label: t('home.sortByNewest') },
     { value: 'views', label: t('home.sortByViews') },
-    { value: 'likes', label: t('home.sortByLikes') },
   ], [t]);
 
   useHomeSEO();
@@ -36,55 +33,7 @@ const Home = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // ========== Latest combined content ==========
-  const fetchCombinedData = useCallback(async ({ pageParam = 1 }) => {
-    try {
-      const [postsResponse, promptsResponse] = await Promise.all([
-        enhancedPostAPI.getPosts({
-          page: pageParam,
-          limit: APP_CONFIG.PAGINATION.DEFAULT_PAGE_SIZE,
-          sort: sortBy,
-          order: 'desc',
-          tag: selectedTag,
-          search: debouncedSearch
-        }),
-        promptAPI.getPrompts({
-          page: pageParam,
-          limit: APP_CONFIG.PAGINATION.DEFAULT_PAGE_SIZE,
-          sort: sortBy,
-          order: 'desc',
-          tag: selectedTag,
-          search: debouncedSearch
-        })
-      ]);
-
-      const stylePosts = postsResponse?.data?.posts || [];
-      const prompts = promptsResponse?.data?.prompts || [];
-
-      const postsWithType = stylePosts.map(post => ({ ...post, contentType: 'style' }));
-      const promptsWithType = prompts.map(prompt => ({ ...prompt, contentType: 'prompt' }));
-
-      const allContent = [...postsWithType, ...promptsWithType]
-        .sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.created_at || 0);
-          const dateB = new Date(b.createdAt || b.created_at || 0);
-          return dateB - dateA;
-        });
-
-      const hasMorePosts = postsResponse?.data?.pagination?.pages > pageParam;
-      const hasMorePrompts = promptsResponse?.data?.pagination?.pages > pageParam;
-
-      return {
-        posts: allContent,
-        nextPage: (hasMorePosts || hasMorePrompts) ? pageParam + 1 : undefined,
-        currentPage: pageParam
-      };
-    } catch (error) {
-      console.error('Data fetch failed:', error);
-      return { posts: [], nextPage: undefined, currentPage: pageParam };
-    }
-  }, [sortBy, selectedTag, debouncedSearch]);
-
+  // ========== Sref 无限滚动 ==========
   const {
     data,
     error,
@@ -94,54 +43,39 @@ const Home = () => {
     isFetchingNextPage,
     status
   } = useInfiniteQuery(
-    ['homePosts', { sort: sortBy, tag: selectedTag, search: debouncedSearch }],
-    fetchCombinedData,
+    ['homeSrefs', { sort: sortBy, tag: selectedTag, search: debouncedSearch }],
+    ({ pageParam = 1 }) => srefAPI.getPosts({
+      page: pageParam,
+      limit: 24,
+      sort: sortBy,
+      ...(selectedTag && { tags: selectedTag }),
+      ...(debouncedSearch && { search: debouncedSearch }),
+    }),
     {
-      getNextPageParam: (lastPage) => lastPage.nextPage,
+      getNextPageParam: (lastPage) => {
+        const { page, pages } = lastPage?.data?.pagination || {};
+        return page < pages ? page + 1 : undefined;
+      },
       staleTime: APP_CONFIG.CACHE.POSTS_STALE_TIME * 2,
-      cacheTime: APP_CONFIG.CACHE.POSTS_STALE_TIME * 4,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: 2,
-      retryDelay: 1000
     }
   );
 
-  // Popular tags
-  const { data: styleTagsData } = useQuery(
-    'stylePopularTags',
-    () => enhancedPostAPI.getPopularTags(),
-    { staleTime: 30 * 60 * 1000, refetchOnWindowFocus: false }
-  );
-
-  const { data: promptTagsData } = useQuery(
-    'promptPopularTags',
-    () => promptAPI.getPopularTags(),
+  // 热门标签（来自 srefAPI）
+  const { data: tagsData } = useQuery(
+    'homeSrefTags',
+    () => srefAPI.getPopularTags(20),
     { staleTime: 30 * 60 * 1000, refetchOnWindowFocus: false }
   );
 
   const allPosts = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap(page => page.posts || []);
+    return data.pages.flatMap(p => p?.data?.posts || []);
   }, [data]);
 
   const popularTags = useMemo(() => {
-    const styleTags = styleTagsData?.data?.tags || [];
-    const promptTags = promptTagsData?.data?.tags || [];
-    const allTags = [...styleTags, ...promptTags];
-    const tagMap = new Map();
-    allTags.forEach(tag => {
-      const tagName = tag.name || tag.tag;
-      if (tagName) {
-        if (tagMap.has(tagName)) {
-          tagMap.get(tagName).count += tag.count;
-        } else {
-          tagMap.set(tagName, { name: tagName, count: tag.count });
-        }
-      }
-    });
-    return Array.from(tagMap.values()).sort((a, b) => b.count - a.count);
-  }, [styleTagsData, promptTagsData]);
+    return tagsData?.data?.tags || [];
+  }, [tagsData]);
 
   const isLoading = status === 'loading';
 
@@ -152,18 +86,11 @@ const Home = () => {
     triggerOnce: false
   });
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage && !isFetching) {
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage && !isFetching) {
       fetchNextPage();
     }
-  }, [hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
-
-  useEffect(() => {
-    if (inView) {
-      const timer = setTimeout(loadMore, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [inView, loadMore]);
+  }, [inView, hasNextPage, isFetchingNextPage, isFetching, fetchNextPage]);
 
   const handleTagSelect = useCallback((tag) => {
     setSelectedTag(prevTag => prevTag === tag ? '' : tag);
@@ -310,11 +237,7 @@ const Home = () => {
             <>
               <div className="gallery-grid">
                 {allPosts?.map((post) => (
-                  post.contentType === 'prompt' ? (
-                    <LiblibPromptCard key={`prompt-${post._id}`} prompt={post} />
-                  ) : (
-                    <LiblibStyleCard key={`style-${post._id}`} post={post} />
-                  )
+                  <SrefCard key={post._id} sref={post} />
                 ))}
               </div>
 
@@ -352,12 +275,6 @@ const Home = () => {
                       : t('home.beFirstToShare')
                     }
                   </p>
-                  {!searchTerm && !selectedTag && (
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                      <Link to="/create" className="detail-btn-primary">{t('home.createStyle')}</Link>
-                      <Link to="/create-prompt" className="detail-btn-secondary">{t('home.createPrompt')}</Link>
-                    </div>
-                  )}
                 </div>
               )}
             </>

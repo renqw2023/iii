@@ -69,7 +69,7 @@ const SrefCard = ({ sref }) => {
       className="liblib-card"
       onClick={() => navigate(`/explore/${sref._id}`)}
     >
-      <div className="liblib-card-image" style={{ cursor: 'pointer' }}>
+      <div className="liblib-card-image" style={{ cursor: 'pointer', aspectRatio: imageLoaded ? undefined : '1/1' }}>
         {sref.previewImage ? (
           <img
             src={sref.previewImage}

@@ -22,7 +22,6 @@
   position: relative;
   overflow: hidden;
   background: #0f172a;
-  min-height: 120px; /* 图片加载前的占位，防止 overlay/badge 裸露 */
 }
 
 .liblib-card-image img {

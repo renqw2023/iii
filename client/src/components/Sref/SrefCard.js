@@ -85,26 +85,30 @@ const SrefCard = ({ sref }) => {
         )}
 
         {/* Sref 代码 badge */}
-        <span className="liblib-style-tag">--sref {sref.srefCode}</span>
+        {imageLoaded && (
+          <span className="liblib-style-tag">--sref {sref.srefCode}</span>
+        )}
 
         {/* Hover overlay */}
-        <div className="liblib-card-overlay">
-          <div className="liblib-overlay-right">
-            <span className="liblib-overlay-stats">
-              <Heart size={11} /> {sref.likesCount || 0}
-              <Eye size={11} style={{ marginLeft: '0.3rem' }} /> {sref.views || 0}
-            </span>
-            <div className="liblib-overlay-actions">
-              <button
-                onClick={handleCopy}
-                className="liblib-action-btn"
-                title="Copy --sref code"
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-              </button>
+        {imageLoaded && (
+          <div className="liblib-card-overlay">
+            <div className="liblib-overlay-right">
+              <span className="liblib-overlay-stats">
+                <Heart size={11} /> {sref.likesCount || 0}
+                <Eye size={11} style={{ marginLeft: '0.3rem' }} /> {sref.views || 0}
+              </span>
+              <div className="liblib-overlay-actions">
+                <button
+                  onClick={handleCopy}
+                  className="liblib-action-btn"
+                  title="Copy --sref code"
+                >
+                  {copied ? <Check size={13} /> : <Copy size={13} />}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );

@@ -16,6 +16,7 @@ const notificationRoutes = require('./routes/notifications');
 const seoRoutes = require('./routes/seo');
 const galleryRoutes = require('./routes/gallery');
 const seedanceRoutes = require('./routes/seedance');
+const srefRoutes = require('./routes/sref');
 
 const app = express();
 // 信任代理设置
@@ -46,6 +47,8 @@ app.use('/Circle', (req, res, next) => {
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // 为Circle头像文件提供静态服务（从client/public目录）
 app.use('/Circle', express.static(path.join(__dirname, '../client/public/Circle')));
+// Sref output 静态文件服务（图片/视频）
+app.use('/output', express.static(path.join(__dirname, '../output'), { maxAge: '7d' }));
 
 // 路由
 app.use('/api/auth', authRoutes);
@@ -57,6 +60,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/gallery', galleryRoutes);
 app.use('/api/seedance', seedanceRoutes);
+app.use('/api/sref', srefRoutes);
 app.use('/api/seo', seoRoutes);
 
 // 健康检查

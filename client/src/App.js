@@ -30,6 +30,7 @@ import AdminPanel from './pages/AdminPanel';
 import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 import Explore from './pages/Explore';
+import SrefDetail from './pages/SrefDetail';
 import Favorites from './pages/Favorites';
 import Settings from './pages/Settings';
 import About from './pages/About';
@@ -88,6 +89,7 @@ function App() {
                         <Route path="prompt/:id" element={<PromptDetail />} />
                         <Route path="user/:id" element={<Profile />} />
                         <Route path="explore" element={<Explore />} />
+                        <Route path="explore/:id" element={<SrefDetail />} />
                         <Route path="health" element={<Health />} />
                         <Route path="about" element={<About />} />
                         <Route path="help" element={<Help />} />

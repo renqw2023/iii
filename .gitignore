@@ -32,3 +32,4 @@ liblib_*.json
 .claude/
 *.png
 *.jpg
+output/

@@ -1,69 +1,90 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from 'react-query';
+import React, { useState, useEffect, useRef } from 'react';
+import { useInfiniteQuery, useQuery } from 'react-query';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import { useTranslation } from 'react-i18next';
-import LiblibStyleCard from '../components/Post/LiblibStyleCard';
-import { enhancedPostAPI } from '../services/enhancedApi';
-import { APP_CONFIG } from '../config/constants';
+import { useSearchParams } from 'react-router-dom';
+import SrefCard from '../components/Sref/SrefCard';
+import { srefAPI } from '../services/srefApi';
 
 const SORT_OPTIONS = [
-  { value: 'views',      label: '最热' },
-  { value: 'createdAt',  label: '最新' },
-  { value: 'likes',      label: '最赞' },
+  { value: 'createdAt', label: '最新' },
+  { value: 'views',     label: '最热' },
 ];
 
 const Explore = () => {
-  // eslint-disable-next-line no-unused-vars
-  const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [category, setCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('views');
-  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  const [activeTag, setActiveTag] = useState(searchParams.get('tag') || 'all');
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'createdAt');
+  const sentinelRef = useRef(null);
 
-  // 搜索防抖
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // 重置到第一页
   useEffect(() => {
-    setPage(1);
-  }, [category, sortBy, debouncedSearch]);
+    const params = {};
+    if (activeTag !== 'all') params.tag = activeTag;
+    if (sortBy !== 'createdAt') params.sort = sortBy;
+    if (debouncedSearch) params.q = debouncedSearch;
+    setSearchParams(params, { replace: true });
+  }, [activeTag, sortBy, debouncedSearch, setSearchParams]);
 
-  // 热门标签作为分类
+  // 热门标签
   const { data: tagsData } = useQuery(
-    'explore-categories',
-    () => enhancedPostAPI.getPopularTags(),
-    { staleTime: APP_CONFIG.CACHE.TAGS_STALE_TIME }
+    'sref-tags',
+    () => srefAPI.getPopularTags(40),
+    { staleTime: 5 * 60 * 1000 }
   );
-  const categories = tagsData?.data?.tags?.map(tag => ({ id: tag.name, name: tag.name, count: tag.count })) || [];
+  const tags = tagsData?.data?.tags || [];
 
-  // 帖子数据
-  const { data: postsData, isLoading, isFetching } = useQuery(
-    ['explore-posts', { page, sort: sortBy, category, search: debouncedSearch }],
-    () => enhancedPostAPI.getPosts({
-      page,
-      limit: 24,
-      sort: sortBy,
-      order: 'desc',
-      ...(category !== 'all' && { tag: category }),
-      ...(debouncedSearch && { search: debouncedSearch }),
-    }),
-    { keepPreviousData: true, staleTime: APP_CONFIG.CACHE.POSTS_STALE_TIME }
+  // 无限滚动加载
+  const buildParams = (page) => {
+    const p = { page, limit: 24, sort: sortBy };
+    if (activeTag !== 'all') p.tags = activeTag;
+    if (debouncedSearch) p.search = debouncedSearch;
+    return p;
+  };
+
+  const {
+    data, isLoading, isFetching, isFetchingNextPage, fetchNextPage, hasNextPage,
+  } = useInfiniteQuery(
+    ['sref-list', activeTag, sortBy, debouncedSearch],
+    ({ pageParam = 1 }) => srefAPI.getPosts(buildParams(pageParam)),
+    {
+      getNextPageParam: (lastPage) => {
+        const { page, pages } = lastPage?.data?.pagination || {};
+        return page < pages ? page + 1 : undefined;
+      },
+      staleTime: 30000,
+    }
   );
 
-  const posts = postsData?.data?.posts || [];
-  const pagination = postsData?.data?.pagination || { total: 0, pages: 1, current: 1 };
+  const srefs = data?.pages?.flatMap(p => p?.data?.posts || []) || [];
+  const total = data?.pages?.[0]?.data?.pagination?.total || 0;
+
+  // 滚动到底部自动加载
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
+      },
+      { rootMargin: '300px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   return (
     <>
       <Helmet>
-        <title>Style Gallery - AI Art Works</title>
-        <meta name="description" content="Explore amazing AI-generated works from creators worldwide. Browse Midjourney styles, prompts, and creative inspiration." />
+        <title>Style Gallery - Midjourney Sref Styles</title>
+        <meta name="description" content="Browse 1300+ Midjourney --sref style references. Find your perfect style code." />
       </Helmet>
 
       <div className="gallery-page">
@@ -86,7 +107,7 @@ const Explore = () => {
                   <Search size={16} className="gallery-search-icon" />
                   <input
                     type="text"
-                    placeholder="Search works..."
+                    placeholder="Search styles..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="gallery-search-input"
@@ -100,25 +121,25 @@ const Explore = () => {
               </div>
             </div>
 
-            {/* 分类 */}
+            {/* 标签过滤 */}
             <div className="gallery-sidebar-section">
-              <div className="gallery-sidebar-section-label">Category</div>
+              <div className="gallery-sidebar-section-label">Style</div>
               <div className="tag-filter">
                 <div className="tag-filter-scroll">
                   <button
-                    className={`tag-filter-btn ${category === 'all' ? 'active' : ''}`}
-                    onClick={() => setCategory('all')}
+                    className={`tag-filter-btn ${activeTag === 'all' ? 'active' : ''}`}
+                    onClick={() => setActiveTag('all')}
                   >
                     All
                   </button>
-                  {categories.map((cat) => (
+                  {tags.map((tag) => (
                     <button
-                      key={cat.id}
-                      className={`tag-filter-btn ${category === cat.id ? 'active' : ''}`}
-                      onClick={() => setCategory(cat.id)}
+                      key={tag.name}
+                      className={`tag-filter-btn ${activeTag === tag.name ? 'active' : ''}`}
+                      onClick={() => setActiveTag(tag.name)}
                     >
-                      {cat.name}
-                      <span className="tag-count">{cat.count}</span>
+                      {tag.name}
+                      <span className="tag-count">{tag.count}</span>
                     </button>
                   ))}
                 </div>
@@ -144,9 +165,8 @@ const Explore = () => {
             </div>
           </aside>
 
-          {/* 右侧主内容 */}
+          {/* 主内容 */}
           <main className="gallery-main">
-            {/* 工具栏 */}
             <div className="gallery-toolbar">
               {!sidebarOpen && (
                 <button className="gallery-sidebar-toggle" onClick={() => setSidebarOpen(true)}>
@@ -155,50 +175,40 @@ const Explore = () => {
                 </button>
               )}
               <span className="gallery-results-info" style={{ margin: 0 }}>
-                {pagination.total} works
-                {isFetching && <Loader2 size={13} className="animate-spin" style={{ display: 'inline', marginLeft: '0.5rem' }} />}
+                {total} styles
+                {isFetching && !isFetchingNextPage && (
+                  <Loader2 size={13} className="animate-spin" style={{ display: 'inline', marginLeft: '0.5rem' }} />
+                )}
               </span>
             </div>
 
-            {/* 作品网格 */}
             {isLoading ? (
               <div className="gallery-loading">
                 <Loader2 size={32} className="animate-spin" />
-                <p>Loading works...</p>
+                <p>Loading styles...</p>
               </div>
-            ) : posts.length === 0 ? (
+            ) : srefs.length === 0 ? (
               <div className="gallery-empty">
                 <span className="text-4xl">🎨</span>
-                <p>No works found. Try adjusting your filters.</p>
+                <p>No styles found. Try adjusting your filters.</p>
               </div>
             ) : (
               <div className="gallery-grid">
-                {posts.map((post) => (
-                  <LiblibStyleCard key={post._id} post={post} />
+                {srefs.map((sref) => (
+                  <SrefCard key={sref._id} sref={sref} />
                 ))}
               </div>
             )}
 
-            {/* 分页 */}
-            {pagination.pages > 1 && (
-              <div className="gallery-pagination">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="gallery-page-btn"
-                >
-                  ← Previous
-                </button>
-                <span className="gallery-page-info">
-                  Page {page} of {pagination.pages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
-                  disabled={page >= pagination.pages}
-                  className="gallery-page-btn"
-                >
-                  Next →
-                </button>
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {isFetchingNextPage && (
+              <div className="gallery-loading" style={{ padding: '1.5rem 0' }}>
+                <Loader2 size={24} className="animate-spin" />
+              </div>
+            )}
+            {!hasNextPage && srefs.length > 0 && (
+              <div className="home-load-more">
+                <span className="home-load-more-hint">—</span>
               </div>
             )}
           </main>

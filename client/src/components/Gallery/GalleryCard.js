@@ -120,6 +120,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
                 )}
 
                 {/* 底部渐变遮罩 hover overlay */}
+                {imageLoaded && (
                 <div className="gallery-card-overlay">
                     {/* 左侧：作者 */}
                     {prompt.sourceAuthor && (
@@ -159,11 +160,14 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* 模型标签 — 左上角，常驻显示 */}
+                {imageLoaded && (
                 <span className={`gallery-model-badge ${modelInfo.bg} ${modelInfo.text}`}>
                     {modelInfo.label}
                 </span>
+                )}
             </div>
         </motion.div>
     );

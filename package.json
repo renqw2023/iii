@@ -34,7 +34,8 @@
   "license": "MIT",
   "homepage": "https://iii.pics",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "csv-parse": "^6.1.0"
   },
   "dependencies": {
     "dotenv": "^17.2.0",

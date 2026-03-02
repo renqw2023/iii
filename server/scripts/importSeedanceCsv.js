@@ -1,6 +1,10 @@
 /**
- * 从 CSV 数据导入 Seedance 2.0 提示词
- * CSV 数据源包含完整的提示词文本、作者信息、视频URL等
+ * 从 CSV 数据导入 Seedance 2.0 提示词 (v2)
+ * 
+ * 修复:
+ * 1. 使用 csv-parse 正确处理多行引号字段
+ * 2. 优先使用 Twitter 源视频(有声音)，而非 GitHub Releases(无声音)
+ * 3. content 字段映射到 prompt（完整提示词），description 字段映射到 description
  * 
  * 用法: node scripts/importSeedanceCsv.js [--dry-run] [--clear] [--csv <path>]
  */
@@ -8,9 +12,9 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+const { parse } = require('csv-parse/sync');
 const config = require('../config');
 
-// 默认 CSV 路径
 const DEFAULT_CSV = path.join(__dirname, '../../seedance-2-0-prompts-20260302.csv');
 
 const args = process.argv.slice(2);
@@ -21,95 +25,26 @@ const csvPath = args.includes('--csv')
     : DEFAULT_CSV;
 
 /**
- * 简易 CSV 解析器（支持多行字段和引号转义）
- */
-function parseCSV(filePath) {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    const rows = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < content.length; i++) {
-        const ch = content[i];
-        if (ch === '"') {
-            if (inQuotes && i + 1 < content.length && content[i + 1] === '"') {
-                current += '"';
-                i++; // 跳过转义的双引号
-            } else {
-                inQuotes = !inQuotes;
-            }
-        } else if (ch === '\n' && !inQuotes) {
-            if (current.trim()) rows.push(current);
-            current = '';
-        } else {
-            current += ch;
-        }
-    }
-    if (current.trim()) rows.push(current);
-
-    // 解析 header
-    const header = parseRow(rows[0]);
-    const records = [];
-
-    for (let i = 1; i < rows.length; i++) {
-        const fields = parseRow(rows[i]);
-        if (fields.length < header.length) continue;
-        const obj = {};
-        for (let j = 0; j < header.length; j++) {
-            obj[header[j]] = fields[j] || '';
-        }
-        records.push(obj);
-    }
-
-    return records;
-}
-
-function parseRow(row) {
-    const fields = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < row.length; i++) {
-        const ch = row[i];
-        if (ch === '"') {
-            if (inQuotes && i + 1 < row.length && row[i + 1] === '"') {
-                current += '"';
-                i++;
-            } else {
-                inQuotes = !inQuotes;
-            }
-        } else if (ch === ',' && !inQuotes) {
-            fields.push(current);
-            current = '';
-        } else {
-            current += ch;
-        }
-    }
-    fields.push(current);
-    return fields;
-}
-
-/**
  * 根据标题和内容猜测分类
  */
 function guessCategory(title, content) {
     const text = (title + ' ' + content).toLowerCase();
-    if (text.includes('fight') || text.includes('battle') || text.includes('combat') || text.includes('warrior') || text.includes('duel')) return 'fight';
-    if (text.includes('anime') || text.includes('manga') || text.includes('guoman')) return 'anime';
-    if (text.includes('dance') || text.includes('dancing') || text.includes('k-pop') || text.includes('hip-hop') || text.includes('choreograph')) return 'dance';
+    if (text.includes('fight') || text.includes('battle') || text.includes('combat') || text.includes('warrior') || text.includes('duel') || text.includes('martial')) return 'fight';
+    if (text.includes('anime') || text.includes('manga') || text.includes('guoman') || text.includes('动漫')) return 'anime';
+    if (text.includes('dance') || text.includes('dancing') || text.includes('k-pop') || text.includes('hip-hop') || text.includes('choreograph') || text.includes('舞')) return 'dance';
     if (text.includes('horror') || text.includes('scary') || text.includes('zombie') || text.includes('hostage')) return 'horror';
-    if (text.includes('chase') || text.includes('drift') || text.includes('racing') || text.includes('need for speed')) return 'chase';
-    if (text.includes('transform') || text.includes('morph') || text.includes('mecha') || text.includes('robot')) return 'transformation';
-    if (text.includes('commercial') || text.includes('ad ') || text.includes('product') || text.includes('promotional') || text.includes('brand')) return 'commercial';
+    if (text.includes('chase') || text.includes('drift') || text.includes('racing') || text.includes('need for speed') || text.includes('赛车') || text.includes('漂移')) return 'chase';
+    if (text.includes('transform') || text.includes('morph') || text.includes('mecha') || text.includes('robot') || text.includes('变形') || text.includes('机甲')) return 'transformation';
+    if (text.includes('commercial') || text.includes('ad ') || text.includes('product') || text.includes('promotional') || text.includes('brand') || text.includes('广告')) return 'commercial';
     if (text.includes('meme') || text.includes('comedy') || text.includes('funny') || text.includes('humorous')) return 'comedy';
-    if (text.includes('sci-fi') || text.includes('futuristic') || text.includes('cyberpunk') || text.includes('alien')) return 'sci-fi';
-    if (text.includes('fantasy') || text.includes('dragon') || text.includes('magic') || text.includes('wuxia') || text.includes('mythology') || text.includes('lord of the rings')) return 'fantasy';
-    if (text.includes('cinematic') || text.includes('film') || text.includes('movie') || text.includes('noir')) return 'cinematic';
-    if (text.includes('vlog') || text.includes('selfie') || text.includes('pov') || text.includes('girlfriend')) return 'vlog';
+    if (text.includes('sci-fi') || text.includes('futuristic') || text.includes('cyberpunk') || text.includes('alien') || text.includes('赛博朋克')) return 'sci-fi';
+    if (text.includes('fantasy') || text.includes('dragon') || text.includes('magic') || text.includes('wuxia') || text.includes('mythology') || text.includes('仙') || text.includes('武侠')) return 'fantasy';
+    if (text.includes('cinematic') || text.includes('film') || text.includes('movie') || text.includes('noir') || text.includes('电影')) return 'cinematic';
+    if (text.includes('vlog') || text.includes('selfie') || text.includes('pov') || text.includes('girlfriend') || text.includes('男友视角')) return 'vlog';
     if (text.includes('music') || text.includes('mv ') || text.includes('ktv')) return 'music-video';
     if (text.includes('action') || text.includes('ronin') || text.includes('samurai')) return 'action';
-    if (text.includes('paper-cut') || text.includes('ink') || text.includes('painting') || text.includes('calligraphy') || text.includes('gongbi')) return 'art';
-    if (text.includes('travel') || text.includes('city') || text.includes('promotional video')) return 'travel';
+    if (text.includes('paper-cut') || text.includes('ink') || text.includes('painting') || text.includes('calligraphy') || text.includes('gongbi') || text.includes('水墨') || text.includes('剪纸')) return 'art';
+    if (text.includes('travel') || text.includes('city') || text.includes('旅拍')) return 'travel';
     return 'other';
 }
 
@@ -136,51 +71,50 @@ function extractTags(title, content) {
 }
 
 /**
- * 从 sourceVideos JSON 中提取视频 URL
+ * 从 sourceVideos JSON 中提取视频 URL 和缩略图
+ * 优先使用 Twitter 源视频（有声音），而非 GitHub Releases（无声音）
  */
-function extractVideoUrl(sourceVideosStr, promptId) {
-    // 优先: GitHub Releases 视频（来自 video-urls.json）
+function extractVideoInfo(sourceVideosStr, promptId) {
+    let twitterUrl = '';
+    let twitterThumb = '';
+
+    // 从 sourceVideos (Twitter) 提取
+    if (sourceVideosStr && sourceVideosStr.trim().length > 5) {
+        try {
+            const videos = JSON.parse(sourceVideosStr);
+            if (Array.isArray(videos) && videos.length > 0) {
+                twitterUrl = videos[0].url || '';
+                twitterThumb = videos[0].thumbnail || '';
+            }
+        } catch (e) { /* ignore JSON parse error */ }
+    }
+
+    // GitHub Releases 视频（无声音，仅供备选）
+    let githubUrl = '';
     const videoUrlsJsonPath = path.join(__dirname, '../../_data_sources/seedance/video-urls.json');
     if (fs.existsSync(videoUrlsJsonPath)) {
         try {
             const videoUrls = JSON.parse(fs.readFileSync(videoUrlsJsonPath, 'utf-8'));
             if (videoUrls.prompts && videoUrls.prompts[String(promptId)]) {
-                return videoUrls.prompts[String(promptId)];
+                githubUrl = videoUrls.prompts[String(promptId)];
             }
         } catch (e) { /* ignore */ }
     }
 
-    // 备选: Twitter 视频
-    if (sourceVideosStr) {
-        try {
-            const videos = JSON.parse(sourceVideosStr.replace(/""/g, '"'));
-            if (Array.isArray(videos) && videos.length > 0) {
-                return videos[0].url || '';
-            }
-        } catch (e) { /* ignore */ }
-    }
-    return '';
-}
-
-/**
- * 提取缩略图
- */
-function extractThumbnail(sourceVideosStr) {
-    if (!sourceVideosStr) return '';
-    try {
-        const videos = JSON.parse(sourceVideosStr.replace(/""/g, '"'));
-        if (Array.isArray(videos) && videos.length > 0) {
-            return videos[0].thumbnail || '';
-        }
-    } catch (e) { /* ignore */ }
-    return '';
+    return {
+        // 优先 Twitter 视频（有声音），备选 GitHub Releases（无声音）
+        videoUrl: twitterUrl || githubUrl,
+        thumbnailUrl: twitterThumb,
+        // 同时保留 GitHub URL 作为备用
+        githubVideoUrl: githubUrl
+    };
 }
 
 /**
  * 主导入函数
  */
 async function importFromCSV() {
-    console.log('🎬 Seedance 2.0 CSV 数据导入脚本');
+    console.log('🎬 Seedance 2.0 CSV 数据导入脚本 (v2 - 修复内容解析 & 视频声音)');
     console.log(`📁 CSV: ${csvPath}`);
     console.log(`${isDryRun ? '🧪 干跑模式' : '💾 正式导入'}`);
     if (shouldClear) console.log('⚠️ 将先清空现有数据');
@@ -191,35 +125,50 @@ async function importFromCSV() {
         process.exit(1);
     }
 
-    // 解析 CSV
-    const csvRecords = parseCSV(csvPath);
+    // 使用 csv-parse 正确解析（处理多行引号字段）
+    const csvContent = fs.readFileSync(csvPath, 'utf-8');
+    const csvRecords = parse(csvContent, {
+        columns: true,
+        skip_empty_lines: true,
+        relax_quotes: true,
+        relax_column_count: true
+    });
     console.log(`📝 CSV 解析完成: ${csvRecords.length} 条记录`);
 
     // 统计
     let withContent = 0;
     let withVideo = 0;
+    let withTwitterVideo = 0;
+    let withGithubVideo = 0;
     const records = [];
 
     for (const row of csvRecords) {
         const id = row.id?.trim();
-        if (!id || isNaN(parseInt(id))) continue; // 跳过非数据行
+        if (!id || isNaN(parseInt(id))) continue;
 
         const title = row.title?.trim() || `Seedance Prompt #${id}`;
         const content = row.content?.trim() || '';
         const description = row.description?.trim() || '';
-        const videoUrl = extractVideoUrl(row.sourceVideos, id);
-        const thumbnail = extractThumbnail(row.sourceVideos);
 
-        if (content.length > 5) withContent++;
-        if (videoUrl) withVideo++;
+        // 视频信息（优先 Twitter 有声视频）
+        const videoInfo = extractVideoInfo(row.sourceVideos, id);
+
+        if (content.length > 10) withContent++;
+        if (videoInfo.videoUrl) {
+            withVideo++;
+            if (videoInfo.videoUrl.includes('twimg.com')) withTwitterVideo++;
+            else if (videoInfo.videoUrl.includes('github.com')) withGithubVideo++;
+        }
 
         // 提取作者
         let authorName = '';
         let authorLink = '';
         try {
-            const authorObj = JSON.parse((row.author || '{}').replace(/""/g, '"'));
-            authorName = authorObj.name || '';
-            authorLink = authorObj.link || '';
+            if (row.author) {
+                const authorObj = JSON.parse(row.author);
+                authorName = authorObj.name || '';
+                authorLink = authorObj.link || '';
+            }
         } catch (e) { /* ignore */ }
 
         const category = guessCategory(title, content + ' ' + description);
@@ -227,34 +176,35 @@ async function importFromCSV() {
 
         records.push({
             title: title.substring(0, 300),
-            prompt: content.substring(0, 15000) || description.substring(0, 15000),
+            // prompt 使用 content（完整提示词），fallback 到 description
+            prompt: content.length > 10 ? content.substring(0, 15000) : description.substring(0, 15000),
             description: description.substring(0, 3000),
-            videoUrl: videoUrl,
-            thumbnailUrl: thumbnail,
+            videoUrl: videoInfo.videoUrl,
+            thumbnailUrl: videoInfo.thumbnailUrl,
             category,
             tags,
             sourceUrl: row.sourceLink || `https://youmind.com/en-US/seedance-2-0-prompts?id=${id}`,
             sourceId: `seedance-${id}`,
-            author: authorName,
-            authorLink: authorLink,
-            publishedAt: row.sourcePublishedAt || null,
-            isFeatured: content.length > 100, // 长提示词标记为精选
+            isFeatured: content.length > 100,
             isActive: true,
             isPublic: true
         });
     }
 
     console.log(`📊 统计:`);
-    console.log(`  有提示词内容: ${withContent}/${records.length}`);
+    console.log(`  有完整提示词内容: ${withContent}/${records.length}`);
     console.log(`  有视频 URL: ${withVideo}/${records.length}`);
+    console.log(`    Twitter 视频(有声): ${withTwitterVideo}`);
+    console.log(`    GitHub 视频(无声): ${withGithubVideo}`);
 
     if (isDryRun) {
         console.log('\n🧪 干跑 — 示例记录:');
         records.slice(0, 5).forEach((r, i) => {
-            console.log(`  [${i + 1}] ${r.title.substring(0, 60)}`);
-            console.log(`      分类: ${r.category}, 作者: ${r.author}`);
-            console.log(`      提示词: ${r.prompt.substring(0, 80)}...`);
-            console.log(`      视频: ${r.videoUrl ? r.videoUrl.substring(0, 60) + '...' : '无'}`);
+            console.log(`\n  [${i + 1}] ${r.title.substring(0, 60)}`);
+            console.log(`      分类: ${r.category}`);
+            console.log(`      提示词长度: ${r.prompt.length}`);
+            console.log(`      提示词预览: ${r.prompt.substring(0, 120)}...`);
+            console.log(`      视频: ${r.videoUrl ? r.videoUrl.substring(0, 80) + '...' : '无'}`);
         });
         console.log('\n✅ 干跑完成');
         return;

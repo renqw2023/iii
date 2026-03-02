@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Copy, Heart, Eye, Bookmark } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { seedanceAPI } from '../../services/seedanceApi';
+import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
 import toast from 'react-hot-toast';
 
 const VideoCard = ({ prompt, onLike, onFavorite }) => {
@@ -76,7 +76,7 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
                 {isInView && prompt.videoUrl ? (
                     <video
                         ref={videoRef}
-                        src={prompt.videoUrl}
+                        src={getVideoSrc(prompt.videoUrl)}
                         muted
                         loop
                         playsInline

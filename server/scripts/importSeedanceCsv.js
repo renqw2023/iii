@@ -72,13 +72,14 @@ function extractTags(title, content) {
 
 /**
  * 从 sourceVideos JSON 中提取视频 URL 和缩略图
- * 优先使用 Twitter 源视频（有声音），而非 GitHub Releases（无声音）
+ * 优先使用 GitHub Releases 视频（可跨域播放），Twitter 视频有 CORS 限制无法嵌入
+ * 缩略图使用 Twitter 源（高质量）
  */
 function extractVideoInfo(sourceVideosStr, promptId) {
     let twitterUrl = '';
     let twitterThumb = '';
 
-    // 从 sourceVideos (Twitter) 提取
+    // 从 sourceVideos (Twitter) 提取缩略图
     if (sourceVideosStr && sourceVideosStr.trim().length > 5) {
         try {
             const videos = JSON.parse(sourceVideosStr);
@@ -89,7 +90,7 @@ function extractVideoInfo(sourceVideosStr, promptId) {
         } catch (e) { /* ignore JSON parse error */ }
     }
 
-    // GitHub Releases 视频（无声音，仅供备选）
+    // GitHub Releases 视频（可跨域播放）
     let githubUrl = '';
     const videoUrlsJsonPath = path.join(__dirname, '../../_data_sources/seedance/video-urls.json');
     if (fs.existsSync(videoUrlsJsonPath)) {
@@ -102,11 +103,9 @@ function extractVideoInfo(sourceVideosStr, promptId) {
     }
 
     return {
-        // 优先 Twitter 视频（有声音），备选 GitHub Releases（无声音）
+        // 优先 Twitter 视频（有声音，通过后端代理播放），备选 GitHub Releases
         videoUrl: twitterUrl || githubUrl,
-        thumbnailUrl: twitterThumb,
-        // 同时保留 GitHub URL 作为备用
-        githubVideoUrl: githubUrl
+        thumbnailUrl: twitterThumb
     };
 }
 

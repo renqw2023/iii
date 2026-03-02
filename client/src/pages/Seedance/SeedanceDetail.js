@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Copy, Heart, Bookmark, ArrowLeft, Eye, Share2, Film } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import VideoCard from '../../components/Seedance/VideoCard';
-import { seedanceAPI } from '../../services/seedanceApi';
+import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 
@@ -108,7 +108,7 @@ const SeedanceDetail = () => {
                 >
                     {prompt.videoUrl ? (
                         <video
-                            src={prompt.videoUrl}
+                            src={getVideoSrc(prompt.videoUrl)}
                             controls
                             autoPlay
                             loop

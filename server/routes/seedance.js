@@ -172,6 +172,80 @@ router.get('/search', optionalAuth, async (req, res) => {
 });
 
 /**
+ * GET /api/seedance/proxy-video
+ * 视频代理 — 绕过 Twitter/X CORS 限制，服务器端 fetch 并 stream 转发
+ * 注意：必须在 /:id 路由之前定义，否则 Express 会把 'proxy-video' 当作 id
+ */
+router.get('/proxy-video', async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).json({ message: '缺少 url 参数' });
+        }
+
+        // 白名单验证：只允许代理已知的视频源
+        const allowedHosts = [
+            'video.twimg.com',
+            'pbs.twimg.com',
+            'github.com',
+            'objects.githubusercontent.com'
+        ];
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch {
+            return res.status(400).json({ message: '无效的 URL' });
+        }
+        if (!allowedHosts.some(h => parsedUrl.hostname.endsWith(h))) {
+            return res.status(403).json({ message: '不允许代理该域名' });
+        }
+
+        // 转发 Range 请求头（支持 seek / 进度条）
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://x.com/'
+        };
+        if (req.headers.range) {
+            headers['Range'] = req.headers.range;
+        }
+
+        const response = await fetch(url, { headers, redirect: 'follow' });
+
+        if (!response.ok && response.status !== 206) {
+            return res.status(response.status).json({ message: '视频获取失败' });
+        }
+
+        // 转发响应头
+        res.status(response.status);
+        const contentType = response.headers.get('content-type');
+        if (contentType) res.setHeader('Content-Type', contentType);
+        const contentLength = response.headers.get('content-length');
+        if (contentLength) res.setHeader('Content-Length', contentLength);
+        const contentRange = response.headers.get('content-range');
+        if (contentRange) res.setHeader('Content-Range', contentRange);
+        const acceptRanges = response.headers.get('accept-ranges');
+        if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
+
+        // 允许跨域嵌入（前端和后端端口不同）
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+
+        // 缓存 1 小时
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+
+        // Stream 转发
+        const { Readable } = require('stream');
+        const readable = Readable.fromWeb(response.body);
+        readable.pipe(res);
+    } catch (error) {
+        console.error('视频代理错误:', error.message);
+        if (!res.headersSent) {
+            res.status(500).json({ message: '代理服务器错误' });
+        }
+    }
+});
+
+/**
  * GET /api/seedance/:id
  */
 router.get('/:id', optionalAuth, async (req, res) => {
@@ -273,5 +347,6 @@ router.post('/:id/favorite', requireAuth, async (req, res) => {
         res.status(500).json({ message: '服务器错误' });
     }
 });
+
 
 module.exports = router;

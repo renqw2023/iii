@@ -1,4 +1,20 @@
 import api from './api';
+import config from '../config';
+
+/**
+ * 获取视频播放 URL
+ * Twitter/X 视频通过后端代理绕过 CORS 限制（保留声音）
+ * 其他来源（GitHub Releases 等）直接返回原 URL
+ */
+export const getVideoSrc = (url) => {
+    if (!url) return '';
+    // Twitter/X 视频需要代理
+    if (url.includes('twimg.com') || url.includes('video.twimg.com')) {
+        const baseURL = config.api.baseURL || '/api';
+        return `${baseURL}/seedance/proxy-video?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+};
 
 // Seedance 2.0 视频提示词 API
 export const seedanceAPI = {

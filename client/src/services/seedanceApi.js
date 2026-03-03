@@ -16,6 +16,19 @@ export const getVideoSrc = (url) => {
     return url;
 };
 
+/**
+ * 获取缩略图 URL
+ * Twitter 缩略图通过后端代理（更长缓存）
+ */
+export const getThumbnailSrc = (url) => {
+    if (!url) return '';
+    if (url.includes('twimg.com') || url.includes('pbs.twimg.com')) {
+        const baseURL = config.api.baseURL || '/api';
+        return `${baseURL}/seedance/proxy-thumbnail?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+};
+
 // Seedance 2.0 视频提示词 API
 export const seedanceAPI = {
     // 获取列表
@@ -56,6 +69,11 @@ export const seedanceAPI = {
     // 收藏/取消
     toggleFavorite: (id) => {
         return api.post(`/seedance/${id}/favorite`);
+    },
+
+    // 翻译提示词
+    translate: (id, targetLang = 'zh-CN') => {
+        return api.post(`/seedance/${id}/translate`, { targetLang });
     },
 };
 

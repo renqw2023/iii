@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Bookmark, ArrowLeft, Eye, Share2, Film } from 'lucide-react';
+import { Copy, Heart, Bookmark, ArrowLeft, Eye, Share2, Film, ExternalLink, User, Languages, Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import VideoCard from '../../components/Seedance/VideoCard';
 import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
@@ -12,7 +12,12 @@ import toast from 'react-hot-toast';
 const SeedanceDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+
+    // 翻译状态
+    const [showTranslated, setShowTranslated] = useState(false);
+    const [translatedText, setTranslatedText] = useState('');
+    const [isTranslating, setIsTranslating] = useState(false);
 
     const { data, isLoading } = useQuery(
         ['seedance-detail', id],
@@ -25,7 +30,8 @@ const SeedanceDetail = () => {
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(prompt.prompt);
+            const textToCopy = showTranslated && translatedText ? translatedText : prompt.prompt;
+            await navigator.clipboard.writeText(textToCopy);
             seedanceAPI.recordCopy(id);
             toast.success(t('seedance.actions.copySuccess'));
         } catch {
@@ -55,6 +61,41 @@ const SeedanceDetail = () => {
         } catch {
             navigator.clipboard.writeText(window.location.href);
             toast.success(t('seedance.actions.linkCopied'));
+        }
+    };
+
+    // 翻译切换
+    const handleTranslate = async () => {
+        if (showTranslated) {
+            // 切回原文
+            setShowTranslated(false);
+            return;
+        }
+
+        if (translatedText) {
+            // 已有翻译缓存，直接切换
+            setShowTranslated(true);
+            return;
+        }
+
+        // 调用翻译 API
+        setIsTranslating(true);
+        try {
+            // 根据当前语言确定目标语言
+            const currentLang = i18n.language || 'zh-CN';
+            const targetLang = currentLang.startsWith('zh') ? 'zh-CN' : currentLang.startsWith('ja') ? 'ja' : 'zh-CN';
+            const res = await seedanceAPI.translate(id, targetLang);
+            const translated = res?.data?.translated;
+            if (translated) {
+                setTranslatedText(translated);
+                setShowTranslated(true);
+            } else {
+                toast.error(t('seedance.detail.translateFailed'));
+            }
+        } catch {
+            toast.error(t('seedance.detail.translateFailed'));
+        } finally {
+            setIsTranslating(false);
         }
     };
 
@@ -137,8 +178,13 @@ const SeedanceDetail = () => {
 
                     <h1 className="detail-title">{prompt.title}</h1>
 
-                    {/* 统计 */}
+                    {/* 统计 + 作者 */}
                     <div className="detail-stats">
+                        {prompt.authorName && (
+                            <span className="flex items-center gap-1">
+                                <User size={14} /> {prompt.authorName}
+                            </span>
+                        )}
                         <span className="flex items-center gap-1">
                             <Eye size={14} /> {prompt.views || 0} views
                         </span>
@@ -153,14 +199,65 @@ const SeedanceDetail = () => {
                     {/* 提示词文本 */}
                     <div className="detail-prompt-box">
                         <div className="detail-prompt-header">
-                            <span>Video Prompt</span>
-                            <button onClick={handleCopy} className="detail-copy-btn">
-                                <Copy size={14} />
-                                <span>Copy</span>
-                            </button>
+                            <span>{t('seedance.detail.prompt')}</span>
+                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                {/* 翻译按钮 */}
+                                <button
+                                    onClick={handleTranslate}
+                                    className={`detail-translate-btn ${showTranslated ? 'active' : ''}`}
+                                    disabled={isTranslating}
+                                >
+                                    {isTranslating ? (
+                                        <>
+                                            <Loader2 size={12} className="animate-spin" />
+                                            <span>{t('seedance.detail.translating')}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Languages size={12} />
+                                            <span>{showTranslated ? t('seedance.detail.originalLabel') : t('seedance.detail.translateBtn')}</span>
+                                        </>
+                                    )}
+                                </button>
+                                <button onClick={handleCopy} className="detail-copy-btn">
+                                    <Copy size={14} />
+                                    <span>Copy</span>
+                                </button>
+                            </div>
                         </div>
-                        <p className="detail-prompt-text">{prompt.prompt}</p>
+                        <p className="detail-prompt-text">
+                            {showTranslated && translatedText ? translatedText : prompt.prompt}
+                        </p>
                     </div>
+
+                    {/* 来源 & 作者按钮 */}
+                    {(prompt.authorName || prompt.authorLink || prompt.sourceUrl) && (
+                        <div className="detail-source-row">
+                            {(prompt.authorName || prompt.authorLink) && (
+                                <a
+                                    href={prompt.authorLink || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="detail-source-btn author"
+                                    onClick={(e) => !prompt.authorLink && e.preventDefault()}
+                                >
+                                    <User size={14} />
+                                    {prompt.authorName || t('seedance.detail.author')}
+                                </a>
+                            )}
+                            {prompt.sourceUrl && (
+                                <a
+                                    href={prompt.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="detail-source-btn source"
+                                >
+                                    <ExternalLink size={14} />
+                                    {t('seedance.detail.sourceLink')}
+                                </a>
+                            )}
+                        </div>
+                    )}
 
                     {/* 操作按钮 */}
                     <div className="detail-actions">

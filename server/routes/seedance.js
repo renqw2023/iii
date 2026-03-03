@@ -246,6 +246,111 @@ router.get('/proxy-video', async (req, res) => {
 });
 
 /**
+ * GET /api/seedance/proxy-thumbnail
+ * 缩略图代理 — 代理 Twitter 缩略图，缓存 24 小时
+ */
+router.get('/proxy-thumbnail', async (req, res) => {
+    try {
+        const { url } = req.query;
+        if (!url) {
+            return res.status(400).json({ message: '缺少 url 参数' });
+        }
+
+        const allowedHosts = ['pbs.twimg.com', 'video.twimg.com'];
+        let parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch {
+            return res.status(400).json({ message: '无效的 URL' });
+        }
+        if (!allowedHosts.some(h => parsedUrl.hostname.endsWith(h))) {
+            return res.status(403).json({ message: '不允许代理该域名' });
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://x.com/'
+            },
+            redirect: 'follow'
+        });
+
+        if (!response.ok) {
+            return res.status(response.status).json({ message: '缩略图获取失败' });
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (contentType) res.setHeader('Content-Type', contentType);
+        const contentLength = response.headers.get('content-length');
+        if (contentLength) res.setHeader('Content-Length', contentLength);
+
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        // 缩略图缓存 24 小时
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+
+        const { Readable } = require('stream');
+        const readable = Readable.fromWeb(response.body);
+        readable.pipe(res);
+    } catch (error) {
+        console.error('缩略图代理错误:', error.message);
+        if (!res.headersSent) {
+            res.status(500).json({ message: '代理服务器错误' });
+        }
+    }
+});
+
+/**
+ * POST /api/seedance/:id/translate
+ * 翻译提示词（Google Translate 免费 API + 缓存）
+ */
+router.post('/:id/translate', async (req, res) => {
+    try {
+        const { targetLang = 'zh-CN' } = req.body;
+        const prompt = await SeedancePrompt.findById(req.params.id);
+        if (!prompt) return res.status(404).json({ message: '未找到' });
+
+        // 检查缓存
+        const cached = prompt.translations?.get(targetLang);
+        if (cached) {
+            return res.json({ translated: cached, fromCache: true });
+        }
+
+        // 调用 Google Translate 免费 API
+        const textToTranslate = prompt.prompt || prompt.description || prompt.title;
+        if (!textToTranslate) {
+            return res.status(400).json({ message: '没有可翻译的内容' });
+        }
+
+        const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(targetLang)}&dt=t&q=${encodeURIComponent(textToTranslate.substring(0, 5000))}`;
+
+        const translateRes = await fetch(translateUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        });
+
+        if (!translateRes.ok) {
+            return res.status(502).json({ message: '翻译服务不可用' });
+        }
+
+        const data = await translateRes.json();
+        // Google Translate 返回格式: [[["翻译结果", "原文", ...], ...], ...]
+        const translatedText = data[0]?.map(item => item[0]).join('') || '';
+
+        if (translatedText) {
+            // 缓存翻译结果
+            if (!prompt.translations) prompt.translations = new Map();
+            prompt.translations.set(targetLang, translatedText);
+            await prompt.save();
+        }
+
+        res.json({ translated: translatedText, fromCache: false });
+    } catch (error) {
+        console.error('翻译错误:', error.message);
+        res.status(500).json({ message: '翻译失败' });
+    }
+});
+
+/**
  * GET /api/seedance/:id
  */
 router.get('/:id', optionalAuth, async (req, res) => {

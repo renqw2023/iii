@@ -59,6 +59,14 @@ const seedancePromptSchema = new mongoose.Schema({
         unique: true,
         sparse: true
     },
+    authorName: {
+        type: String,
+        default: ''
+    },
+    authorLink: {
+        type: String,
+        default: ''
+    },
 
     // 互动数据
     likes: [{
@@ -120,6 +128,13 @@ const seedancePromptSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
         index: true
+    },
+
+    // 翻译缓存 { 'zh-CN': '翻译后的提示词', 'ja-JP': '...' }
+    translations: {
+        type: Map,
+        of: String,
+        default: new Map()
     }
 }, {
     timestamps: true,

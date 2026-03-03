@@ -232,6 +232,8 @@ function parseCSVToRecords(csvPath) {
             tags,
             sourceUrl: row.sourceLink || `https://youmind.com/en-US/seedance-2-0-prompts?id=${id}`,
             sourceId: `seedance-${id}`,
+            authorName: authorName,
+            authorLink: authorLink,
             isFeatured: content.length > 100,
             isActive: true,
             isPublic: true
@@ -316,6 +318,14 @@ async function syncSeedance() {
                 if (record.videoUrl && record.videoUrl !== existing.videoUrl) updateFields.videoUrl = record.videoUrl;
                 if (record.thumbnailUrl && !existing.thumbnailUrl) updateFields.thumbnailUrl = record.thumbnailUrl;
                 if (record.description && !existing.description) updateFields.description = record.description;
+                if (record.authorName && !existing.authorName) updateFields.authorName = record.authorName;
+                if (record.authorLink && !existing.authorLink) updateFields.authorLink = record.authorLink;
+                if (record.sourceUrl && (!existing.sourceUrl || existing.sourceUrl.includes('youmind.com'))) {
+                    // 更新 sourceUrl，优先使用非 YouMind 的来源链接
+                    if (record.sourceUrl && !record.sourceUrl.includes('youmind.com')) {
+                        updateFields.sourceUrl = record.sourceUrl;
+                    }
+                }
 
                 if (Object.keys(updateFields).length > 0) {
                     await SeedancePrompt.updateOne({ sourceId: record.sourceId }, { $set: updateFields });

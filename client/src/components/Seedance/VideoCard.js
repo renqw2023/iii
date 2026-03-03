@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Copy, Heart, Eye, Bookmark } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
+import { seedanceAPI, getVideoSrc, getThumbnailSrc } from '../../services/seedanceApi';
 import toast from 'react-hot-toast';
 
 const VideoCard = ({ prompt, onLike, onFavorite }) => {
@@ -12,7 +12,15 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
     const videoRef = useRef(null);
     const [isHovering, setIsHovering] = useState(false);
     const [isInView, setIsInView] = useState(false);
+    const [thumbLoaded, setThumbLoaded] = useState(false);
+    const [videoReady, setVideoReady] = useState(false);
     const containerRef = useRef(null);
+
+    // 缩略图 URL：优先使用 thumbnailUrl（Twitter 缩略图），否则无缩略图
+    const thumbnailSrc = prompt.thumbnailUrl ? getThumbnailSrc(prompt.thumbnailUrl) : '';
+
+    // 视频 URL（通过代理处理 CORS）
+    const videoSrc = getVideoSrc(prompt.videoUrl);
 
     // Intersection Observer for lazy loading
     useEffect(() => {
@@ -34,6 +42,7 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         } else {
             video.pause();
             video.currentTime = 0;
+            setVideoReady(false);
         }
     }, [isHovering, isInView]);
 
@@ -73,20 +82,51 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         >
             {/* 视频预览 */}
             <div className="video-card-media">
-                {isInView && prompt.videoUrl ? (
+                {/* 骨架屏 / 渐变占位 — 当无缩略图时始终显示 */}
+                {!thumbLoaded && (
+                    <div className="video-card-skeleton">
+                        <Play size={28} className="video-skeleton-icon" />
+                    </div>
+                )}
+
+                {/* 缩略图层 — 如果有 thumbnailUrl 则显示 */}
+                {thumbnailSrc && (
+                    <img
+                        src={thumbnailSrc}
+                        alt={prompt.title}
+                        className={`video-card-poster ${thumbLoaded ? 'loaded' : ''} ${isHovering && videoReady ? 'hidden' : ''}`}
+                        onLoad={() => setThumbLoaded(true)}
+                        loading="lazy"
+                    />
+                )}
+
+                {/* 视频层 — 使用 preload="metadata" 获取首帧作为 poster 替代 */}
+                {isInView && prompt.videoUrl && (
                     <video
                         ref={videoRef}
-                        src={getVideoSrc(prompt.videoUrl)}
+                        src={isHovering ? videoSrc : undefined}
                         muted
                         loop
                         playsInline
-                        preload="metadata"
-                        className="w-full h-full object-cover"
+                        preload="none"
+                        poster={thumbnailSrc || undefined}
+                        className={`video-card-video ${isHovering && videoReady ? 'playing' : ''}`}
+                        onCanPlay={() => setVideoReady(true)}
                     />
-                ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-indigo-900/50 to-purple-900/50 flex items-center justify-center">
-                        <Play size={32} className="text-white/30" />
-                    </div>
+                )}
+
+                {/* 无缩略图时，用 preload=metadata 的隐藏 video 获取首帧 */}
+                {isInView && !thumbnailSrc && prompt.videoUrl && !isHovering && (
+                    <video
+                        src={videoSrc}
+                        muted
+                        playsInline
+                        preload="metadata"
+                        className="video-card-poster-video"
+                        onLoadedData={(e) => {
+                            setThumbLoaded(true);
+                        }}
+                    />
                 )}
 
                 {/* 播放图标叠层 */}

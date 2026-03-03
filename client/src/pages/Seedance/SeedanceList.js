@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from 'react-query';
+import { useInfiniteQuery, useQuery } from 'react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -19,12 +19,12 @@ const SeedanceList = () => {
     const { t } = useTranslation();
     const [searchParams, setSearchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const sentinelRef = useRef(null);
 
     const [category, setCategory] = useState(searchParams.get('category') || 'all');
     const [sort, setSort] = useState(searchParams.get('sort') || 'newest');
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
-    const [page, setPage] = useState(1);
 
     // 搜索防抖
     useEffect(() => {
@@ -39,7 +39,6 @@ const SeedanceList = () => {
         if (sort !== 'newest') params.sort = sort;
         if (debouncedSearch) params.q = debouncedSearch;
         setSearchParams(params, { replace: true });
-        setPage(1);
     }, [category, sort, debouncedSearch, setSearchParams]);
 
     // 分类列表
@@ -51,22 +50,53 @@ const SeedanceList = () => {
     const categories = categoriesData?.data?.categories || [];
 
     // 构建查询参数
-    const buildParams = useCallback(() => {
-        const params = { page, limit: 12, sort };
+    const buildParams = useCallback((page) => {
+        const params = { page, limit: 24, sort };
         if (category !== 'all') params.category = category;
         if (debouncedSearch) params.search = debouncedSearch;
         return params;
-    }, [category, sort, page, debouncedSearch]);
+    }, [category, sort, debouncedSearch]);
 
-    // 数据查询
-    const { data, isLoading, isFetching } = useQuery(
-        ['seedance', category, sort, page, debouncedSearch],
-        () => seedanceAPI.getPrompts(buildParams()),
-        { keepPreviousData: true, staleTime: 30000 }
+    // 无限滚动查询
+    const {
+        data,
+        isLoading,
+        isFetching,
+        isFetchingNextPage,
+        fetchNextPage,
+        hasNextPage,
+    } = useInfiniteQuery(
+        ['seedance', category, sort, debouncedSearch],
+        ({ pageParam = 1 }) => seedanceAPI.getPrompts(buildParams(pageParam)),
+        {
+            getNextPageParam: (lastPage) => {
+                const { page, totalPages } = lastPage?.data?.pagination || {};
+                return page < totalPages ? page + 1 : undefined;
+            },
+            keepPreviousData: false,
+            staleTime: 30000,
+        }
     );
 
-    const prompts = data?.data?.prompts || [];
-    const pagination = data?.data?.pagination || { total: 0, totalPages: 1 };
+    // 合并所有已加载页的 prompts
+    const prompts = data?.pages?.flatMap(p => p?.data?.prompts || []) || [];
+    const total = data?.pages?.[0]?.data?.pagination?.total || 0;
+
+    // IntersectionObserver — 滚动到底部时自动加载下一页
+    useEffect(() => {
+        const el = sentinelRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    fetchNextPage();
+                }
+            },
+            { rootMargin: '300px' }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const handleLike = async (id) => {
         try {
@@ -189,12 +219,12 @@ const SeedanceList = () => {
                                 </button>
                             )}
                             <span className="gallery-results-info" style={{ margin: 0 }}>
-                                {pagination.total} video prompts
-                                {isFetching && <Loader2 size={13} className="animate-spin ml-2" style={{ display: 'inline', marginLeft: '0.5rem' }} />}
+                                {total} video prompts
+                                {isFetching && !isFetchingNextPage && <Loader2 size={13} className="animate-spin ml-2" style={{ display: 'inline', marginLeft: '0.5rem' }} />}
                             </span>
                         </div>
 
-                        {/* 视频网格 */}
+                        {/* 视频网格 — 瀑布流 */}
                         {isLoading ? (
                             <div className="gallery-loading">
                                 <Loader2 size={32} className="animate-spin" />
@@ -206,40 +236,28 @@ const SeedanceList = () => {
                                 <p>No video prompts found.</p>
                             </div>
                         ) : (
-                            <AnimatePresence mode="popLayout">
-                                <div className="seedance-grid">
-                                    {prompts.map((prompt) => (
-                                        <VideoCard
-                                            key={prompt._id}
-                                            prompt={prompt}
-                                            onLike={handleLike}
-                                            onFavorite={handleFavorite}
-                                        />
-                                    ))}
-                                </div>
-                            </AnimatePresence>
+                            <div className="seedance-grid">
+                                {prompts.map((prompt) => (
+                                    <VideoCard
+                                        key={prompt._id}
+                                        prompt={prompt}
+                                        onLike={handleLike}
+                                        onFavorite={handleFavorite}
+                                    />
+                                ))}
+                            </div>
                         )}
 
-                        {/* 分页 */}
-                        {pagination.totalPages > 1 && (
-                            <div className="gallery-pagination">
-                                <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                    className="gallery-page-btn"
-                                >
-                                    ← Previous
-                                </button>
-                                <span className="gallery-page-info">
-                                    Page {page} of {pagination.totalPages}
-                                </span>
-                                <button
-                                    onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                                    disabled={page >= pagination.totalPages}
-                                    className="gallery-page-btn"
-                                >
-                                    Next →
-                                </button>
+                        {/* 无限滚动 sentinel */}
+                        <div ref={sentinelRef} style={{ height: 1 }} />
+                        {isFetchingNextPage && (
+                            <div className="gallery-loading" style={{ padding: '1.5rem 0' }}>
+                                <Loader2 size={24} className="animate-spin" />
+                            </div>
+                        )}
+                        {!hasNextPage && prompts.length > 0 && (
+                            <div className="home-load-more">
+                                <span className="home-load-more-hint">—</span>
                             </div>
                         )}
                     </main>

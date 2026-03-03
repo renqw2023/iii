@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 const MODELS = [
     { key: 'all', label: 'All', icon: '🔥' },
     { key: 'nanobanana', label: 'NanoBanana Pro', icon: '🍌' },
-    { key: 'midjourney', label: 'Midjourney', icon: '🎨' },
     { key: 'gptimage', label: 'GPT Image', icon: '🤖' },
 ];
 

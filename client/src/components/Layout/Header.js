@@ -9,7 +9,6 @@ import {
   LogOut,
   Settings,
   Heart,
-  Lightbulb,
   Palette,
   Image,
   Film,
@@ -44,11 +43,9 @@ const Header = () => {
     { path: '/', label: t('nav.home'), icon: null },
     { path: '/gallery', label: t('nav.gallery', 'Gallery'), icon: Image },
     { path: '/seedance', label: t('nav.seedance', 'Seedance'), icon: Film },
-    { path: '/prompts', label: t('nav.prompts'), icon: Lightbulb },
     { path: '/explore', label: t('nav.explore'), icon: Palette },
     ...(isAuthenticated ? [
       { path: '/create', label: t('nav.create'), icon: Palette },
-      { path: '/create-prompt', label: t('nav.createPrompt'), icon: Lightbulb },
       { path: '/dashboard', label: t('nav.dashboard'), icon: User },
     ] : [])
   ];

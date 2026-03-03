@@ -62,7 +62,7 @@ export const useSEO = (options = {}) => {
  */
 export const useHomeSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('home.seo.title', 'III.PICS - 专业AI视觉艺术平台 | 激发灵感·释放想象·推动创新'),
     description: t('home.seo.description', 'III.PICS专业AI视觉艺术平台，激发灵感(Inspire)、释放想象(Imagine)、推动创新(Innovate)。汇聚全球创作者的精美作品，发现无限创意可能，探索AI艺术的无限魅力'),
@@ -85,7 +85,7 @@ export const useHomeSEO = () => {
  */
 export const useExploreSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('explore.seo.title', '探索 - III.PICS | 发现精美AI艺术作品'),
     description: t('explore.seo.description', '在III.PICS探索页面浏览和发现来自全球创作者的精美AI艺术作品，获取无限创作灵感，激发你的想象力'),
@@ -100,7 +100,7 @@ export const useExploreSEO = () => {
  */
 export const usePostSEO = (post) => {
   const { t } = useTranslation();
-  
+
   const title = post?.title || t('post.defaultTitle', '精美AI艺术作品');
   const description = post?.description || t('post.defaultDescription', '查看这个精美的AI艺术作品');
   const image = post?.imageUrl || post?.thumbnailUrl;
@@ -127,10 +127,10 @@ export const usePostSEO = (post) => {
  */
 export const useUserSEO = (user) => {
   const { t } = useTranslation();
-  
+
   const username = user?.username || '用户';
   const title = t('user.seo.title', { username });
-  const description = t('user.seo.description', { 
+  const description = t('user.seo.description', {
     username,
     bio: user?.bio || '查看用户的精美作品集'
   });
@@ -160,7 +160,7 @@ export const useUserSEO = (user) => {
  */
 export const useCreateSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('create.seo.title', '创作 - 分享你的AI艺术作品'),
     description: t('create.seo.description', '上传和分享你的AI艺术作品，展示创作技巧和风格参数'),
@@ -175,7 +175,7 @@ export const useCreateSEO = () => {
  */
 export const useSettingsSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('settings.seo.title', '设置 - 个人偏好配置'),
     description: t('settings.seo.description', '配置个人偏好设置，自定义使用体验'),
@@ -189,7 +189,7 @@ export const useSettingsSEO = () => {
  */
 export const useLoginSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('login.seo.title', '登录 - III.PICS'),
     description: t('login.seo.description', '登录III.PICS，开始你的AI艺术创作之旅'),
@@ -203,7 +203,7 @@ export const useLoginSEO = () => {
  */
 export const useRegisterSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('register.seo.title', '注册 - 加入III.PICS'),
     description: t('register.seo.description', '注册III.PICS账户，加入AI艺术创作社区'),
@@ -217,7 +217,7 @@ export const useRegisterSEO = () => {
  */
 export const useAboutSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('about.seo.title', '关于我们 - III.PICS'),
     description: t('about.seo.description', '了解III.PICS，专业的AI艺术创作平台的故事和使命'),
@@ -231,7 +231,7 @@ export const useAboutSEO = () => {
  */
 export const useHelpSEO = () => {
   const { t } = useTranslation();
-  
+
   useSEO({
     title: t('help.seo.title', '帮助中心 - 使用指南'),
     description: t('help.seo.description', '查看详细的使用指南和常见问题解答，快速上手III.PICS'),
@@ -240,44 +240,7 @@ export const useHelpSEO = () => {
   });
 };
 
-/**
- * 提示词页面SEO Hook
- */
-export const usePromptsSEO = () => {
-  const { t } = useTranslation();
-  
-  useSEO({
-    title: t('prompts.seo.title', '提示词库 - AI创作提示词分享'),
-    description: t('prompts.seo.description', '发现和分享优质的AI创作提示词，提升你的创作效果'),
-    keywords: t('prompts.seo.keywords', 'AI提示词,创作提示,Midjourney提示词,AI绘画'),
-    type: 'website'
-  });
-};
 
-/**
- * 提示词详情页SEO Hook
- * @param {Object} prompt - 提示词数据
- */
-export const usePromptSEO = (prompt) => {
-  const { t } = useTranslation();
-  
-  const title = prompt?.title || t('prompt.defaultTitle', '优质AI提示词');
-  const description = prompt?.description || t('prompt.defaultDescription', '查看这个优质的AI创作提示词');
-  const keywords = prompt?.tags ? prompt.tags.join(',') : '';
-
-  useSEO({
-    title,
-    description,
-    keywords,
-    type: 'article',
-    structuredData: prompt ? generateStructuredData(prompt, 'CreativeWork') : null,
-    breadcrumbs: [
-      { name: t('nav.home', '首页'), url: '/' },
-      { name: t('nav.prompts', '提示词库'), url: '/prompts' },
-      { name: title, url: prompt ? `/prompt/${prompt._id}` : '#' }
-    ]
-  });
-};
 
 export default {
   useSEO,
@@ -290,7 +253,5 @@ export default {
   useLoginSEO,
   useRegisterSEO,
   useAboutSEO,
-  useHelpSEO,
-  usePromptsSEO,
-  usePromptSEO
+  useHelpSEO
 };

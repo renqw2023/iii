@@ -134,7 +134,7 @@ const GalleryList = () => {
         <>
             <Helmet>
                 <title>AI Prompts Gallery - Trending AI Image Prompts</title>
-                <meta name="description" content="Discover trending AI prompts for NanoBanana Pro, Midjourney, GPT Image. One-click copy, no prompt engineering needed." />
+                <meta name="description" content="Discover trending AI prompts for NanoBanana Pro, GPT Image. One-click copy, no prompt engineering needed." />
             </Helmet>
 
             <div className="gallery-page">

@@ -22,9 +22,6 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import PostDetail from './pages/PostDetail';
 import CreatePost from './pages/CreatePost';
-import CreatePrompt from './pages/CreatePrompt';
-import PromptList from './pages/PromptList';
-import PromptDetail from './pages/PromptDetail';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Health from './pages/Health';
@@ -85,8 +82,6 @@ function App() {
                         <Route path="forgot-password" element={<ForgotPassword />} />
                         <Route path="reset-password" element={<ResetPassword />} />
                         <Route path="post/:id" element={<PostDetail />} />
-                        <Route path="prompts" element={<PromptList />} />
-                        <Route path="prompt/:id" element={<PromptDetail />} />
                         <Route path="user/:id" element={<Profile />} />
                         <Route path="explore" element={<Explore />} />
                         <Route path="explore/:id" element={<SrefDetail />} />
@@ -112,7 +107,6 @@ function App() {
                       }>
                         <Route path="dashboard" element={<Dashboard />} />
                         <Route path="create" element={<CreatePost />} />
-                        <Route path="create-prompt" element={<CreatePrompt />} />
                         <Route path="favorites" element={<Favorites />} />
                         <Route path="settings" element={<Settings />} />
                         <Route path="notifications" element={<Notifications />} />

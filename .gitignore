@@ -32,4 +32,5 @@ liblib_*.json
 .claude/
 *.png
 *.jpg
+!client/public/ImageFlow/gptimage/*.jpg
 output/

@@ -17,6 +17,7 @@ const seoRoutes = require('./routes/seo');
 const galleryRoutes = require('./routes/gallery');
 const seedanceRoutes = require('./routes/seedance');
 const srefRoutes = require('./routes/sref');
+const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
 
 const app = express();
 // 信任代理设置
@@ -88,6 +89,9 @@ mongoose.connect(config.database.uri, config.database.options)
     console.log('✅ MongoDB连接成功');
     app.listen(config.server.port, config.server.host, () => {
       console.log(`🚀 服务器运行在 http://${config.server.host}:${config.server.port}`);
+
+      // 启动自动同步服务
+      startGptImageSync();
     });
   })
   .catch(err => {

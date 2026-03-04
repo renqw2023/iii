@@ -68,7 +68,10 @@ const SrefCard = ({ sref }) => {
       transition={{ duration: 0.25 }}
       style={{ gridRowEnd: `span ${gridSpan}` }}
       className="liblib-card"
-      onClick={() => navigate(`/explore/${sref._id}`)}
+      onClick={() => {
+        sessionStorage.setItem('explore_scroll', String(window.scrollY));
+        navigate(`/explore/${sref._id}`);
+      }}
     >
       <div className="liblib-card-image" style={{ cursor: 'pointer' }}>
         {sref.previewImage ? (
@@ -85,10 +88,6 @@ const SrefCard = ({ sref }) => {
           </div>
         )}
 
-        {/* Sref 代码 badge */}
-        {imageLoaded && (
-          <span className="liblib-style-tag">--sref {sref.srefCode}</span>
-        )}
 
         {/* Hover overlay */}
         {imageLoaded && (

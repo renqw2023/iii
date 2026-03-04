@@ -90,7 +90,7 @@ const SrefDetail = () => {
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          onClick={() => navigate('/explore')}
+          onClick={() => navigate(-1)}
           className="detail-back-btn"
         >
           <ArrowLeft size={18} />

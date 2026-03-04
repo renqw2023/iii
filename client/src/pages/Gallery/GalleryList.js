@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigationType } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -21,6 +21,8 @@ const GalleryList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const sentinelRef = useRef(null);
+    const scrollRestoredRef = useRef(false);
+    const navigationType = useNavigationType();
 
     // 从 URL 读取初始状态
     const [model, setModel] = useState(searchParams.get('model') || 'all');
@@ -100,6 +102,24 @@ const GalleryList = () => {
         observer.observe(el);
         return () => observer.disconnect();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    // 从详情页返回时恢复滚动位置
+    useEffect(() => {
+        if (scrollRestoredRef.current) return;
+        if (navigationType !== 'POP') return;
+        if (isLoading) return;
+
+        const savedScroll = sessionStorage.getItem('gallery_scroll');
+        if (!savedScroll) return;
+
+        scrollRestoredRef.current = true;
+        sessionStorage.removeItem('gallery_scroll');
+
+        // 等待 DOM（含图片占位）渲染完成后恢复
+        setTimeout(() => {
+            window.scrollTo(0, parseInt(savedScroll, 10));
+        }, 100);
+    }, [navigationType, isLoading]);
 
     // 交互处理
     const handleLike = async (id) => {

@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigationType } from 'react-router-dom';
 import SrefCard from '../components/Sref/SrefCard';
 import { srefAPI } from '../services/srefApi';
 
 const SORT_OPTIONS = [
   { value: 'createdAt', label: '最新' },
-  { value: 'views',     label: '最热' },
+  { value: 'views', label: '最热' },
 ];
 
 const Explore = () => {
@@ -19,6 +20,8 @@ const Explore = () => {
   const [activeTag, setActiveTag] = useState(searchParams.get('tag') || 'all');
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'createdAt');
   const sentinelRef = useRef(null);
+  const scrollRestoredRef = useRef(false);
+  const navigationType = useNavigationType();
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
@@ -79,6 +82,23 @@ const Explore = () => {
     observer.observe(el);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // 从详情页返回时恢复滚动位置
+  useEffect(() => {
+    if (scrollRestoredRef.current) return;
+    if (navigationType !== 'POP') return;
+    if (isLoading) return;
+
+    const savedScroll = sessionStorage.getItem('explore_scroll');
+    if (!savedScroll) return;
+
+    scrollRestoredRef.current = true;
+    sessionStorage.removeItem('explore_scroll');
+
+    setTimeout(() => {
+      window.scrollTo(0, parseInt(savedScroll, 10));
+    }, 100);
+  }, [navigationType, isLoading]);
 
   return (
     <>

@@ -76,7 +76,10 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
             exit={{ opacity: 0, y: -20 }}
             whileHover={{ y: -4 }}
             className="video-card group cursor-pointer"
-            onClick={() => navigate(`/seedance/${prompt._id}`)}
+            onClick={() => {
+                sessionStorage.setItem('seedance_scroll', String(window.scrollY));
+                navigate(`/seedance/${prompt._id}`);
+            }}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >

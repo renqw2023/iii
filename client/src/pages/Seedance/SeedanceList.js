@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigationType } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
@@ -20,6 +20,8 @@ const SeedanceList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const sentinelRef = useRef(null);
+    const scrollRestoredRef = useRef(false);
+    const navigationType = useNavigationType();
 
     const [category, setCategory] = useState(searchParams.get('category') || 'all');
     const [sort, setSort] = useState(searchParams.get('sort') || 'newest');
@@ -97,6 +99,23 @@ const SeedanceList = () => {
         observer.observe(el);
         return () => observer.disconnect();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    // 从详情页返回时恢复滚动位置
+    useEffect(() => {
+        if (scrollRestoredRef.current) return;
+        if (navigationType !== 'POP') return;
+        if (isLoading) return;
+
+        const savedScroll = sessionStorage.getItem('seedance_scroll');
+        if (!savedScroll) return;
+
+        scrollRestoredRef.current = true;
+        sessionStorage.removeItem('seedance_scroll');
+
+        setTimeout(() => {
+            window.scrollTo(0, parseInt(savedScroll, 10));
+        }, 100);
+    }, [navigationType, isLoading]);
 
     const handleLike = async (id) => {
         try {

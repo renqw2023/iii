@@ -95,7 +95,10 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
             whileHover={{ y: -2 }}
             style={{ gridRowEnd: `span ${gridSpan}` }}
             className="gallery-card group cursor-pointer"
-            onClick={() => navigate(`/gallery/${prompt._id}`)}
+            onClick={() => {
+                sessionStorage.setItem('gallery_scroll', String(window.scrollY));
+                navigate(`/gallery/${prompt._id}`);
+            }}
         >
             {/* 预览图区域 — 自然比例，无固定 aspect-ratio */}
             <div className="gallery-card-image">
@@ -121,52 +124,45 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
 
                 {/* 底部渐变遮罩 hover overlay */}
                 {imageLoaded && (
-                <div className="gallery-card-overlay">
-                    {/* 左侧：作者 */}
-                    {prompt.sourceAuthor && (
-                        <span className="gallery-card-author-overlay">
-                            @{prompt.sourceAuthor}
-                        </span>
-                    )}
+                    <div className="gallery-card-overlay">
+                        {/* 左侧：作者 */}
+                        {prompt.sourceAuthor && (
+                            <span className="gallery-card-author-overlay">
+                                @{prompt.sourceAuthor}
+                            </span>
+                        )}
 
-                    {/* 右侧：stats + 操作按钮 */}
-                    <div className="gallery-overlay-right">
-                        <span className="gallery-card-stats-overlay">
-                            <Heart size={11} /> {prompt.likesCount || 0}
-                            <Eye size={11} style={{ marginLeft: '0.4rem' }} /> {prompt.views || 0}
-                        </span>
-                        <div className="gallery-overlay-actions">
-                            <button
-                                onClick={handleCopy}
-                                className="gallery-action-btn"
-                                title={t('gallery.actions.copy')}
-                            >
-                                <Copy size={14} />
-                            </button>
-                            <button
-                                onClick={handleLike}
-                                className={`gallery-action-btn ${prompt.isLiked ? 'text-red-400' : ''}`}
-                                title={t('gallery.actions.like')}
-                            >
-                                <Heart size={14} fill={prompt.isLiked ? 'currentColor' : 'none'} />
-                            </button>
-                            <button
-                                onClick={handleFavorite}
-                                className={`gallery-action-btn ${prompt.isFavorited ? 'text-yellow-400' : ''}`}
-                                title={t('gallery.actions.favorite')}
-                            >
-                                <Bookmark size={14} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
-                            </button>
+                        {/* 右侧：stats + 操作按钮 */}
+                        <div className="gallery-overlay-right">
+                            <span className="gallery-card-stats-overlay">
+                                <Heart size={11} /> {prompt.likesCount || 0}
+                                <Eye size={11} style={{ marginLeft: '0.4rem' }} /> {prompt.views || 0}
+                            </span>
+                            <div className="gallery-overlay-actions">
+                                <button
+                                    onClick={handleCopy}
+                                    className="gallery-action-btn"
+                                    title={t('gallery.actions.copy')}
+                                >
+                                    <Copy size={14} />
+                                </button>
+                                <button
+                                    onClick={handleLike}
+                                    className={`gallery-action-btn ${prompt.isLiked ? 'text-red-400' : ''}`}
+                                    title={t('gallery.actions.like')}
+                                >
+                                    <Heart size={14} fill={prompt.isLiked ? 'currentColor' : 'none'} />
+                                </button>
+                                <button
+                                    onClick={handleFavorite}
+                                    className={`gallery-action-btn ${prompt.isFavorited ? 'text-yellow-400' : ''}`}
+                                    title={t('gallery.actions.favorite')}
+                                >
+                                    <Bookmark size={14} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                )}
-
-                {/* 模型标签 — 左上角，常驻显示 */}
-                {imageLoaded && (
-                <span className={`gallery-model-badge ${modelInfo.bg} ${modelInfo.text}`}>
-                    {modelInfo.label}
-                </span>
                 )}
             </div>
         </motion.div>

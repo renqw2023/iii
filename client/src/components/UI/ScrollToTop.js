@@ -1,21 +1,26 @@
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router-dom';
 
 /**
  * ScrollToTop 组件
  * 在路由变化时自动滚动到页面顶部
+ * 但浏览器后退/前进（POP）时不滚动，让浏览器恢复此前的滚动位置
  */
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+  const navigationType = useNavigationType();
 
   useEffect(() => {
-    // 路由变化时滚动到顶部
+    // POP = 浏览器后退 / 前进 → 保持原有滚动位置
+    if (navigationType === 'POP') return;
+
+    // PUSH / REPLACE → 正常滚到顶部
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: 'smooth' // 平滑滚动
+      behavior: 'instant'
     });
-  }, [pathname]);
+  }, [pathname, navigationType]);
 
   return null;
 };

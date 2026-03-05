@@ -18,7 +18,12 @@ const ScrollToTop = () => {
     const isModalRoute = /\/(gallery|explore|seedance)\/[^/]+/.test(pathname);
     if (isModalRoute) return;
 
-    // PUSH / REPLACE → 正常滚到顶部
+    // 列表路由的 REPLACE 导航 = URL params 同步（filter/sort 变化）
+    // modal 关闭后 setSearchParams 会触发 REPLACE，不应滚顶
+    const isListRoute = /^\/(gallery|explore|seedance)\/?$/.test(pathname);
+    if (navigationType === 'REPLACE' && isListRoute) return;
+
+    // PUSH → 正常滚到顶部
     window.scrollTo({
       top: 0,
       left: 0,

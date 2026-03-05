@@ -25,8 +25,8 @@ const SrefModal = () => {
     };
 
     useEffect(() => {
-        document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = ''; };
+        // 不锁定 body scroll — modal 有全屏 backdrop 阻止背景交互
+        // overflow:hidden 会导致 Chrome 在移除时重置 scrollY 到 0
     }, []);
 
     const { data, isLoading } = useQuery(

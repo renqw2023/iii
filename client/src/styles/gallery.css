@@ -353,6 +353,9 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.25rem;
 }
 
 .gallery-sort {
@@ -1805,7 +1808,7 @@
 /* --- Dark Area Wrapper --- */
 .home-dark-area {
   background-color: var(--bg-primary);
-  padding: 3rem 0 4rem;
+  padding: 3rem 0 0;
   min-height: 60vh;
 }
 
@@ -1822,7 +1825,9 @@
   margin-left: 0;
   margin-right: 0;
   margin-bottom: 0;
-  padding: 0 0.75rem;
+  padding: 2.5rem 0.75rem 0;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
 }
 
 /* --- Section Header --- */
@@ -1840,6 +1845,23 @@
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.02em;
+}
+
+/* Latest Content 区域标题前加彩色竖线 accent */
+.home-content-section .home-section-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.home-content-section .home-section-header h2::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 1.4em;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #6366f1, #a855f7);
+  flex-shrink: 0;
 }
 
 .home-section-header-text {
@@ -2016,7 +2038,11 @@
 /* --- Homepage Responsive --- */
 @media (max-width: 768px) {
   .home-dark-area {
-    padding: 2rem 0 3rem;
+    padding: 2rem 0 0;
+  }
+
+  .home-content-section {
+    padding-top: 1.75rem;
   }
 
   .home-section {

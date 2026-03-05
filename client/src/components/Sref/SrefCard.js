@@ -68,10 +68,7 @@ const SrefCard = ({ sref }) => {
       transition={{ duration: 0.25 }}
       style={{ gridRowEnd: `span ${gridSpan}` }}
       className="liblib-card"
-      onClick={() => {
-        sessionStorage.setItem('explore_scroll', String(window.scrollY));
-        navigate(`/explore/${sref._id}`);
-      }}
+      onClick={() => navigate(`/explore/${sref._id}`, { state: { fromList: true } })}
     >
       <div className="liblib-card-image" style={{ cursor: 'pointer' }}>
         {sref.previewImage ? (

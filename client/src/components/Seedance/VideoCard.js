@@ -26,7 +26,7 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
     useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => setIsInView(entry.isIntersecting),
-            { threshold: 0.1 }
+            { threshold: 0.1, rootMargin: '500px 0px' }
         );
         if (containerRef.current) observer.observe(containerRef.current);
         return () => observer.disconnect();
@@ -76,10 +76,7 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
             exit={{ opacity: 0, y: -20 }}
             whileHover={{ y: -4 }}
             className="video-card group cursor-pointer"
-            onClick={() => {
-                sessionStorage.setItem('seedance_scroll', String(window.scrollY));
-                navigate(`/seedance/${prompt._id}`);
-            }}
+            onClick={() => navigate(`/seedance/${prompt._id}`, { state: { fromList: true } })}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
         >

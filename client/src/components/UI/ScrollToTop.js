@@ -14,6 +14,10 @@ const ScrollToTop = () => {
     // POP = 浏览器后退 / 前进 → 保持原有滚动位置
     if (navigationType === 'POP') return;
 
+    // Modal 路由（列表页保持挂载，不需要滚顶）
+    const isModalRoute = /\/(gallery|explore|seedance)\/[^/]+/.test(pathname);
+    if (isModalRoute) return;
+
     // PUSH / REPLACE → 正常滚到顶部
     window.scrollTo({
       top: 0,

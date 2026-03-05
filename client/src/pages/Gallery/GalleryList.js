@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigationType } from 'react-router-dom';
+import { useSearchParams, useNavigationType, Outlet } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -21,7 +21,6 @@ const GalleryList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const sentinelRef = useRef(null);
-    const scrollRestoredRef = useRef(false);
     const navigationType = useNavigationType();
 
     // 从 URL 读取初始状态
@@ -39,13 +38,18 @@ const GalleryList = () => {
 
     // 同步 URL 参数（过滤条件变化时重置）
     useEffect(() => {
+        // 如果是 POP 导航，完全跳过 URL 参数同步，避免干扰滚动恢复
+        if (navigationType === 'POP') {
+            return;
+        }
+
         const params = {};
         if (model !== 'all') params.model = model;
         if (activeTag !== 'all') params.tag = activeTag;
         if (sort !== 'newest') params.sort = sort;
         if (debouncedSearch) params.q = debouncedSearch;
         setSearchParams(params, { replace: true });
-    }, [model, activeTag, sort, debouncedSearch, setSearchParams]);
+    }, [model, activeTag, sort, debouncedSearch, setSearchParams, navigationType]);
 
     // 构建查询参数
     const buildParams = useCallback((page) => {
@@ -78,7 +82,7 @@ const GalleryList = () => {
                 const { page, totalPages } = lastPage?.data?.pagination || {};
                 return page < totalPages ? page + 1 : undefined;
             },
-            keepPreviousData: false,
+            keepPreviousData: true,
             staleTime: 30000,
         }
     );
@@ -102,24 +106,6 @@ const GalleryList = () => {
         observer.observe(el);
         return () => observer.disconnect();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-    // 从详情页返回时恢复滚动位置
-    useEffect(() => {
-        if (scrollRestoredRef.current) return;
-        if (navigationType !== 'POP') return;
-        if (isLoading) return;
-
-        const savedScroll = sessionStorage.getItem('gallery_scroll');
-        if (!savedScroll) return;
-
-        scrollRestoredRef.current = true;
-        sessionStorage.removeItem('gallery_scroll');
-
-        // 等待 DOM（含图片占位）渲染完成后恢复
-        setTimeout(() => {
-            window.scrollTo(0, parseInt(savedScroll, 10));
-        }, 100);
-    }, [navigationType, isLoading]);
 
     // 交互处理
     const handleLike = async (id) => {
@@ -284,6 +270,7 @@ const GalleryList = () => {
                     </main>
                 </div>
             </div>
+            <Outlet />
         </>
     );
 };

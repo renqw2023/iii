@@ -50,7 +50,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
     // 使用 react-intersection-observer 实现图片懒加载
     const { ref, inView } = useInView({
         triggerOnce: true,       // 进入视口后不再监听
-        rootMargin: '200px 0px', // 提前 200px 开始加载
+        rootMargin: '500px 0px', // 提前 500px 开始加载
     });
 
     const handleImageLoad = (e) => {
@@ -95,10 +95,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
             whileHover={{ y: -2 }}
             style={{ gridRowEnd: `span ${gridSpan}` }}
             className="gallery-card group cursor-pointer"
-            onClick={() => {
-                sessionStorage.setItem('gallery_scroll', String(window.scrollY));
-                navigate(`/gallery/${prompt._id}`);
-            }}
+            onClick={() => navigate(`/gallery/${prompt._id}`, { state: { fromList: true } })}
         >
             {/* 预览图区域 — 自然比例，无固定 aspect-ratio */}
             <div className="gallery-card-image">

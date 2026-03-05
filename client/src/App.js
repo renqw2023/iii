@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { HelmetProvider } from 'react-helmet-async';
@@ -27,7 +27,7 @@ import AdminPanel from './pages/AdminPanel';
 import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 import Explore from './pages/Explore';
-import SrefDetail from './pages/SrefDetail';
+import SrefModal from './pages/SrefModal';
 import Favorites from './pages/Favorites';
 import Settings from './pages/Settings';
 import About from './pages/About';
@@ -38,9 +38,9 @@ import Contact from './pages/Contact';
 import Notifications from './pages/Notifications';
 import ErrorDemo from './pages/ErrorDemo';
 import GalleryList from './pages/Gallery/GalleryList';
-import GalleryDetail from './pages/Gallery/GalleryDetail';
+import GalleryModal from './pages/Gallery/GalleryModal';
 import SeedanceList from './pages/Seedance/SeedanceList';
-import SeedanceDetail from './pages/Seedance/SeedanceDetail';
+import SeedanceModal from './pages/Seedance/SeedanceModal';
 
 // 路由保护组件
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -59,6 +59,13 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // 禁用浏览器原生滚动恢复，避免与自定义滚动恢复逻辑冲突
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <HelmetProvider>
@@ -83,8 +90,9 @@ function App() {
                         <Route path="reset-password" element={<ResetPassword />} />
                         <Route path="post/:id" element={<PostDetail />} />
                         <Route path="user/:id" element={<Profile />} />
-                        <Route path="explore" element={<Explore />} />
-                        <Route path="explore/:id" element={<SrefDetail />} />
+                        <Route path="explore" element={<Explore />}>
+                          <Route path=":id" element={<SrefModal />} />
+                        </Route>
                         <Route path="health" element={<Health />} />
                         <Route path="about" element={<About />} />
                         <Route path="help" element={<Help />} />
@@ -92,11 +100,13 @@ function App() {
                         <Route path="terms" element={<Terms />} />
                         <Route path="contact" element={<Contact />} />
                         <Route path="error-demo" element={<ErrorDemo />} />
-                        {/* 画廊与视频（公开路由） */}
-                        <Route path="gallery" element={<GalleryList />} />
-                        <Route path="gallery/:id" element={<GalleryDetail />} />
-                        <Route path="seedance" element={<SeedanceList />} />
-                        <Route path="seedance/:id" element={<SeedanceDetail />} />
+                        {/* 画廊与视频（嵌套路由 — Modal 方案） */}
+                        <Route path="gallery" element={<GalleryList />}>
+                          <Route path=":id" element={<GalleryModal />} />
+                        </Route>
+                        <Route path="seedance" element={<SeedanceList />}>
+                          <Route path=":id" element={<SeedanceModal />} />
+                        </Route>
                       </Route>
 
                       {/* 需要登录的路由 */}

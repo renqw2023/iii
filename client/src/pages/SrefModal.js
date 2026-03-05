@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, X, Eye, Check, Loader2, Play } from 'lucide-react';
+import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
 import toast from 'react-hot-toast';
@@ -15,6 +15,9 @@ const SrefModal = () => {
     const [copied, setCopied] = useState(false);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [activeIdx, setActiveIdx] = useState(0);
+    // 滚轮节流：避免单次滚轮事件触发多次切换
+    const wheelTimerRef = useRef(null);
+    const mediaLeftRef = useRef(null);
 
     const handleClose = () => {
         if (location.state?.fromList) navigate(-1);
@@ -24,13 +27,6 @@ const SrefModal = () => {
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => { document.body.style.overflow = ''; };
-    }, []);
-
-    useEffect(() => {
-        const handler = (e) => { if (e.key === 'Escape') handleClose(); };
-        document.addEventListener('keydown', handler);
-        return () => document.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const { data, isLoading } = useQuery(
@@ -43,13 +39,60 @@ const SrefModal = () => {
     const imageUrls = sref?.imageUrls || [];
     const videoUrls = sref?.videoUrls || [];
 
-    // Build unified media list: images first, then videos
+    // 图片在前，视频在后
     const mediaItems = [
         ...imageUrls.map((url) => ({ type: 'image', url })),
         ...videoUrls.map((url) => ({ type: 'video', url })),
     ];
-    const hasThumbs = mediaItems.length > 1;
+    const total = mediaItems.length;
+    const hasThumbs = total > 1;
     const active = mediaItems[activeIdx] || null;
+
+    // 切换到上一个/下一个（循环）
+    const goPrev = useCallback(() => {
+        setActiveIdx((i) => (i - 1 + total) % total);
+    }, [total]);
+
+    const goNext = useCallback(() => {
+        setActiveIdx((i) => (i + 1) % total);
+    }, [total]);
+
+    // 键盘事件：ESC 关闭（lightbox 优先）/ ← → 切换
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.key === 'Escape') {
+                if (lightboxSrc) { setLightboxSrc(null); return; }
+                handleClose();
+                return;
+            }
+            if (!hasThumbs) return;
+            if (e.key === 'ArrowLeft') { e.preventDefault(); goPrev(); }
+            if (e.key === 'ArrowRight') { e.preventDefault(); goNext(); }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [lightboxSrc, hasThumbs, goPrev, goNext]);
+
+    // 鼠标滚轮切换（左侧媒体区域）
+    const handleWheel = useCallback((e) => {
+        if (!hasThumbs) return;
+        // 如果右侧文字区域在滚动就不拦截（只拦截左侧媒体区域）
+        e.preventDefault();
+        // 节流：100ms 内只响应一次
+        if (wheelTimerRef.current) return;
+        wheelTimerRef.current = setTimeout(() => { wheelTimerRef.current = null; }, 280);
+        if (e.deltaY > 0 || e.deltaX > 0) goNext();
+        else goPrev();
+    }, [hasThumbs, goPrev, goNext]);
+
+    // 将 wheel 事件绑到左侧 div（passive:false 才能 preventDefault）
+    useEffect(() => {
+        const el = mediaLeftRef.current;
+        if (!el) return;
+        el.addEventListener('wheel', handleWheel, { passive: false });
+        return () => el.removeEventListener('wheel', handleWheel);
+    }, [handleWheel]);
 
     const handleCopy = async () => {
         try {
@@ -80,7 +123,39 @@ const SrefModal = () => {
             {/* Lightbox */}
             {lightboxSrc && (
                 <div className="dmodal-lightbox" onClick={() => setLightboxSrc(null)}>
-                    <img src={lightboxSrc} alt="Preview" />
+                    <motion.img
+                        src={lightboxSrc}
+                        alt="Preview"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.18 }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                    <button
+                        onClick={() => setLightboxSrc(null)}
+                        style={{
+                            position: 'fixed', top: 20, right: 20,
+                            background: 'rgba(255,255,255,0.12)', border: 'none',
+                            borderRadius: '50%', width: 40, height: 40,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', color: '#fff', zIndex: 1,
+                        }}
+                    >
+                        <X size={20} />
+                    </button>
+                    {/* lightbox 内也支持左右切换图片 */}
+                    {hasThumbs && mediaItems[activeIdx]?.type === 'image' && (
+                        <>
+                            <button onClick={(e) => { e.stopPropagation(); goPrev(); setLightboxSrc(mediaItems[(activeIdx - 1 + total) % total]?.url); }}
+                                style={{ position: 'fixed', left: 16, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
+                                <ChevronLeft size={22} />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); goNext(); setLightboxSrc(mediaItems[(activeIdx + 1) % total]?.url); }}
+                                style={{ position: 'fixed', right: 72, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
+                                <ChevronRight size={22} />
+                            </button>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -96,13 +171,12 @@ const SrefModal = () => {
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* ── Left: media viewer ── */}
-                    <div className="dmodal-left">
+                    <div className="dmodal-left" ref={mediaLeftRef} style={{ position: 'relative' }}>
                         {isLoading ? (
                             <div className="dmodal-loading">
                                 <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid #333', borderTopColor: '#8b5cf6', borderRadius: '50%' }} />
                             </div>
                         ) : mediaItems.length === 0 ? (
-                            /* No media at all */
                             sref?.previewImage ? (
                                 <img
                                     className="dmodal-single-img"
@@ -116,81 +190,112 @@ const SrefModal = () => {
                                 </div>
                             )
                         ) : mediaItems.length === 1 ? (
-                            /* Single media — fill left panel */
+                            /* 单媒体 */
                             active?.type === 'video' ? (
                                 <video
                                     src={active.url}
-                                    controls
-                                    autoPlay
-                                    loop
-                                    muted
-                                    playsInline
+                                    controls autoPlay loop muted playsInline
                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
                             ) : (
-                                <img
-                                    className="dmodal-single-img"
-                                    src={active?.url}
-                                    alt={`--sref ${sref?.srefCode}`}
-                                    onClick={() => setLightboxSrc(active?.url)}
-                                />
+                                <>
+                                    <img
+                                        className="dmodal-single-img"
+                                        src={active?.url}
+                                        alt={`--sref ${sref?.srefCode}`}
+                                        onClick={() => setLightboxSrc(active?.url)}
+                                        style={{ cursor: 'zoom-in' }}
+                                    />
+                                    <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.55)', borderRadius: 8, padding: '0.3rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.72rem', pointerEvents: 'none' }}>
+                                        <ZoomIn size={12} /> Zoom
+                                    </div>
+                                </>
                             )
                         ) : (
-                            /* Multiple media — main view + thumbnail strip */
+                            /* 多媒体 — 主视图 + 缩略图条 */
                             <div className="dmodal-left-gallery">
-                                {/* Main view */}
-                                <div className="dmodal-main-view">
+                                {/* 主视图 */}
+                                <div className="dmodal-main-view" style={{ position: 'relative' }}>
                                     {active?.type === 'video' ? (
                                         <video
                                             key={active.url}
                                             src={active.url}
-                                            controls
-                                            autoPlay
-                                            loop
-                                            muted
-                                            playsInline
+                                            controls autoPlay loop muted playsInline
                                         />
                                     ) : (
-                                        <img
-                                            key={active?.url}
-                                            src={active?.url}
-                                            alt={`--sref ${sref?.srefCode}`}
-                                            onClick={() => setLightboxSrc(active?.url)}
-                                        />
+                                        <>
+                                            <img
+                                                key={active?.url}
+                                                src={active?.url}
+                                                alt={`--sref ${sref?.srefCode}`}
+                                                onClick={() => setLightboxSrc(active?.url)}
+                                                style={{ cursor: 'zoom-in' }}
+                                            />
+                                            <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.55)', borderRadius: 8, padding: '0.3rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'rgba(255,255,255,0.75)', fontSize: '0.72rem', pointerEvents: 'none' }}>
+                                                <ZoomIn size={12} /> Zoom
+                                            </div>
+                                        </>
                                     )}
+
+                                    {/* 左右切换箭头（主视图内） */}
+                                    <button
+                                        className="dmodal-nav-arrow dmodal-nav-prev"
+                                        onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                                        title="Previous (←)"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button
+                                        className="dmodal-nav-arrow dmodal-nav-next"
+                                        onClick={(e) => { e.stopPropagation(); goNext(); }}
+                                        title="Next (→)"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
                                 </div>
 
-                                {/* Thumbnail strip */}
-                                {hasThumbs && (
-                                    <div className="dmodal-thumbs">
-                                        {mediaItems.map((item, i) => (
-                                            <div
-                                                key={i}
-                                                className={`dmodal-thumb ${i === activeIdx ? 'active' : ''}`}
-                                                onClick={() => setActiveIdx(i)}
-                                            >
-                                                {item.type === 'image' ? (
-                                                    <img src={item.url} alt={`thumb ${i}`} />
-                                                ) : (
-                                                    <>
-                                                        <video src={item.url} muted playsInline preload="metadata"
-                                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                        <div className="dmodal-thumb-video-icon">
-                                                            <Play size={14} fill="white" />
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                {/* 缩略图条 */}
+                                <div className="dmodal-thumbs">
+                                    {mediaItems.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className={`dmodal-thumb ${i === activeIdx ? 'active' : ''}`}
+                                            onClick={() => setActiveIdx(i)}
+                                        >
+                                            {item.type === 'image' ? (
+                                                <img src={item.url} alt={`thumb ${i}`} />
+                                            ) : (
+                                                <>
+                                                    <video src={item.url} muted playsInline preload="metadata"
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    <div className="dmodal-thumb-video-icon">
+                                                        <Play size={14} fill="white" />
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 多媒体时右上角显示进度提示 */}
+                        {hasThumbs && !isLoading && (
+                            <div style={{
+                                position: 'absolute', top: 12, left: 12, zIndex: 2,
+                                background: 'rgba(0,0,0,0.55)', borderRadius: 8,
+                                padding: '0.25rem 0.6rem', color: 'rgba(255,255,255,0.8)',
+                                fontSize: '0.72rem', pointerEvents: 'none',
+                                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                            }}>
+                                {activeIdx + 1} / {total}
+                                <span style={{ opacity: 0.6, marginLeft: 4 }}>· scroll to switch</span>
                             </div>
                         )}
                     </div>
 
                     {/* ── Right: info ── */}
                     <div className="dmodal-right">
-                        {/* Header */}
                         <div className="dmodal-right-header">
                             <div className="dmodal-right-header-left">
                                 <span style={{
@@ -208,7 +313,6 @@ const SrefModal = () => {
                             </button>
                         </div>
 
-                        {/* Body */}
                         <div className="dmodal-right-body">
                             {isLoading ? (
                                 <div className="dmodal-loading">
@@ -227,11 +331,6 @@ const SrefModal = () => {
                                     <div className="dmodal-stats">
                                         <span className="dmodal-stat"><Eye size={13} /> {sref.views || 0} views</span>
                                         <span className="dmodal-stat"><Heart size={13} /> {sref.likesCount || 0} likes</span>
-                                        {mediaItems.length > 0 && (
-                                            <span className="dmodal-stat" style={{ marginLeft: 'auto', color: 'var(--text-tertiary)' }}>
-                                                {activeIdx + 1} / {mediaItems.length}
-                                            </span>
-                                        )}
                                     </div>
 
                                     {sref.description && (
@@ -240,7 +339,6 @@ const SrefModal = () => {
                                         </p>
                                     )}
 
-                                    {/* Tags */}
                                     {sref.tags?.length > 0 && (
                                         <div className="dmodal-tags">
                                             {sref.tags.map((tag) => (
@@ -259,7 +357,6 @@ const SrefModal = () => {
                             )}
                         </div>
 
-                        {/* Footer */}
                         {sref && (
                             <div className="dmodal-right-footer">
                                 <button className="dmodal-btn-primary" onClick={handleCopy}>

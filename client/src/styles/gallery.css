@@ -1681,6 +1681,37 @@
   cursor: zoom-in;
 }
 
+/* ---- Main view navigation arrows ---- */
+.dmodal-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.18s, background 0.18s;
+  z-index: 2;
+}
+
+.dmodal-main-view:hover .dmodal-nav-arrow {
+  opacity: 1;
+}
+
+.dmodal-nav-arrow:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dmodal-nav-prev { left: 10px; }
+.dmodal-nav-next { right: 10px; }
+
 /* ---- Seedance Modal — top video, bottom info ---- */
 .dmodal-video-panel {
   display: flex;

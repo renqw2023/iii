@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useInfiniteQuery, useQuery } from 'react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigationType } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { Search, Sparkles, ArrowRight, Palette, Film, BookOpen, X, SlidersHorizontal, Loader2 } from 'lucide-react';
@@ -12,8 +12,11 @@ import Hero from '../components/Home/Hero';
 import { APP_CONFIG } from '../config/constants';
 import { useHomeSEO } from '../hooks/useSEO';
 
+const HOME_SCROLL_KEY = 'home_scrollY';
+
 const Home = () => {
   const { t } = useTranslation();
+  const navigationType = useNavigationType();
 
   // Sort options with i18n
   const SORT_OPTIONS = useMemo(() => [
@@ -22,6 +25,14 @@ const Home = () => {
   ], [t]);
 
   useHomeSEO();
+
+  // 离开首页时保存滚动位置（首页卡片导航到 /explore/:id 会卸载 Home）
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem(HOME_SCROLL_KEY, String(Math.round(window.scrollY)));
+    };
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -78,6 +89,18 @@ const Home = () => {
   }, [tagsData]);
 
   const isLoading = status === 'loading';
+
+  // POP 导航（从 /explore/:id 返回）时恢复首页滚动位置
+  useEffect(() => {
+    if (navigationType !== 'POP') return;
+    if (isLoading) return; // 等数据就绪后再恢复
+    const saved = sessionStorage.getItem(HOME_SCROLL_KEY);
+    if (!saved) return;
+    sessionStorage.removeItem(HOME_SCROLL_KEY);
+    requestAnimationFrame(() => {
+      window.scrollTo(0, parseInt(saved, 10));
+    });
+  }, [navigationType, isLoading]);
 
   // Infinite scroll
   const { ref, inView } = useInView({

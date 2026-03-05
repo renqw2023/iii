@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigationType, Outlet } from 'react-router-dom';
+import { useSearchParams, useNavigationType, useLocation, Outlet } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -22,6 +22,7 @@ const GalleryList = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const sentinelRef = useRef(null);
     const navigationType = useNavigationType();
+    const location = useLocation();
 
     // 从 URL 读取初始状态
     const [model, setModel] = useState(searchParams.get('model') || 'all');
@@ -38,18 +39,18 @@ const GalleryList = () => {
 
     // 同步 URL 参数（过滤条件变化时重置）
     useEffect(() => {
-        // 如果是 POP 导航，完全跳过 URL 参数同步，避免干扰滚动恢复
-        if (navigationType === 'POP') {
-            return;
-        }
+        // POP 导航跳过（返回时不重写 URL）
+        if (navigationType === 'POP') return;
+        // 子路由（Modal）激活时跳过，避免干扰 modal 的历史记录
+        if (location.pathname !== '/gallery') return;
 
         const params = {};
         if (model !== 'all') params.model = model;
         if (activeTag !== 'all') params.tag = activeTag;
         if (sort !== 'newest') params.sort = sort;
         if (debouncedSearch) params.q = debouncedSearch;
-        setSearchParams(params, { replace: true });
-    }, [model, activeTag, sort, debouncedSearch, setSearchParams, navigationType]);
+        setSearchParams(params, { replace: true, state: location.state });
+    }, [model, activeTag, sort, debouncedSearch, setSearchParams, navigationType, location.state, location.pathname]);
 
     // 构建查询参数
     const buildParams = useCallback((page) => {

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import { useSearchParams, useNavigationType, Outlet } from 'react-router-dom';
+import { useSearchParams, useNavigationType, useLocation, Outlet } from 'react-router-dom';
 import SrefCard from '../components/Sref/SrefCard';
 import { srefAPI } from '../services/srefApi';
 
@@ -14,6 +14,7 @@ const SORT_OPTIONS = [
 
 const Explore = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
@@ -28,23 +29,26 @@ const Explore = () => {
   }, [searchQuery]);
 
   useEffect(() => {
-    // 如果是 POP 导航，跳过 URL 参数同步
-    if (navigationType === 'POP') {
-      return;
-    }
+    // POP 导航跳过（返回时不重写 URL）
+    if (navigationType === 'POP') return;
+    // 子路由（Modal）激活时跳过，避免干扰 modal 的历史记录
+    if (location.pathname !== '/explore') return;
 
     const params = {};
     if (activeTag !== 'all') params.tag = activeTag;
     if (sortBy !== 'createdAt') params.sort = sortBy;
     if (debouncedSearch) params.q = debouncedSearch;
-    setSearchParams(params, { replace: true });
-  }, [activeTag, sortBy, debouncedSearch, setSearchParams, navigationType]);
+    setSearchParams(params, { replace: true, state: location.state });
+  }, [activeTag, sortBy, debouncedSearch, setSearchParams, navigationType, location.state, location.pathname]);
+
+  // 仅在列表页激活时才加载数据（避免从首页点击时不必要的 API 调用）
+  const isListActive = location.pathname === '/explore';
 
   // 热门标签
   const { data: tagsData } = useQuery(
     'sref-tags',
     () => srefAPI.getPopularTags(40),
-    { staleTime: 5 * 60 * 1000 }
+    { staleTime: 5 * 60 * 1000, enabled: isListActive }
   );
   const tags = tagsData?.data?.tags || [];
 
@@ -68,6 +72,7 @@ const Explore = () => {
       },
       keepPreviousData: true,
       staleTime: 30000,
+      enabled: isListActive,
     }
   );
 

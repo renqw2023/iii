@@ -68,6 +68,7 @@ const Home = () => {
         return page < pages ? page + 1 : undefined;
       },
       staleTime: APP_CONFIG.CACHE.POSTS_STALE_TIME * 2,
+      keepPreviousData: true,
       refetchOnWindowFocus: false,
     }
   );

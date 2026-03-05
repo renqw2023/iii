@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigationType, Outlet } from 'react-router-dom';
+import { useSearchParams, useNavigationType, useLocation, Outlet } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Search, X, Loader2, SlidersHorizontal, ChevronLeft, SlidersHorizontal as FiltersIcon } from 'lucide-react';
@@ -21,6 +21,7 @@ const SeedanceList = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const sentinelRef = useRef(null);
     const navigationType = useNavigationType();
+    const location = useLocation();
 
     const [category, setCategory] = useState(searchParams.get('category') || 'all');
     const [sort, setSort] = useState(searchParams.get('sort') || 'newest');
@@ -35,17 +36,17 @@ const SeedanceList = () => {
 
     // URL 同步
     useEffect(() => {
-        // 如果是 POP 导航，跳过 URL 参数同步
-        if (navigationType === 'POP') {
-            return;
-        }
+        // POP 导航跳过（返回时不重写 URL）
+        if (navigationType === 'POP') return;
+        // 子路由（Modal）激活时跳过，避免干扰 modal 的历史记录
+        if (location.pathname !== '/seedance') return;
 
         const params = {};
         if (category !== 'all') params.category = category;
         if (sort !== 'newest') params.sort = sort;
         if (debouncedSearch) params.q = debouncedSearch;
-        setSearchParams(params, { replace: true });
-    }, [category, sort, debouncedSearch, setSearchParams, navigationType]);
+        setSearchParams(params, { replace: true, state: location.state });
+    }, [category, sort, debouncedSearch, setSearchParams, navigationType, location.state, location.pathname]);
 
     // 分类列表
     const { data: categoriesData } = useQuery(

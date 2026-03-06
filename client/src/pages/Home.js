@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useQuery } from 'react-query';
-import { Link, useNavigationType } from 'react-router-dom';
+import { Link, useNavigationType, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Palette, Film, BookOpen } from 'lucide-react';
 import { srefAPI } from '../services/srefApi';
@@ -11,6 +11,7 @@ import GalleryCard from '../components/Gallery/GalleryCard';
 import VideoCard from '../components/Seedance/VideoCard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Hero from '../components/Home/Hero';
+import FanGallery from '../components/Home/FanGallery';
 
 import { useHomeSEO } from '../hooks/useSEO';
 
@@ -18,6 +19,7 @@ const HOME_SCROLL_KEY = 'home_scrollY';
 
 const Home = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const navigationType = useNavigationType();
 
   useHomeSEO();
@@ -32,12 +34,12 @@ const Home = () => {
   // ========== 三个预览查询 ==========
   const { data: srefData, status: srefStatus } = useQuery(
     ['home-sref-preview'],
-    () => srefAPI.getPosts({ page: 1, limit: 8, sort: 'createdAt' }),
+    () => srefAPI.getPosts({ page: 1, limit: 15, sort: 'createdAt' }),
     { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
   );
   const { data: galleryData, status: galleryStatus } = useQuery(
     ['home-gallery-preview'],
-    () => galleryAPI.getPrompts({ page: 1, limit: 8, sort: 'newest' }),
+    () => galleryAPI.getPrompts({ page: 1, limit: 15, sort: 'newest' }),
     { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
   );
   const { data: videoData, status: videoStatus } = useQuery(
@@ -125,9 +127,12 @@ const Home = () => {
           {srefStatus === 'loading' ? (
             <div className="gallery-loading"><LoadingSpinner size="md" /></div>
           ) : (
-            <div className="gallery-grid">
-              {srefPosts.map(post => <SrefCard key={post._id} sref={post} />)}
-            </div>
+            <FanGallery
+              items={srefPosts}
+              getImage={(post) => post.previewImage}
+              getAlt={(post) => post.srefCode || ''}
+              onItemClick={(post) => navigate(`/explore/${post._id}`, { state: { fromList: true } })}
+            />
           )}
         </section>
 
@@ -148,9 +153,12 @@ const Home = () => {
           {galleryStatus === 'loading' ? (
             <div className="gallery-loading"><LoadingSpinner size="md" /></div>
           ) : (
-            <div className="gallery-grid">
-              {galleryPrompts.map(prompt => <GalleryCard key={prompt._id} prompt={prompt} />)}
-            </div>
+            <FanGallery
+              items={galleryPrompts}
+              getImage={(prompt) => prompt.previewImage}
+              getAlt={(prompt) => prompt.title || ''}
+              onItemClick={(prompt) => navigate(`/gallery/${prompt._id}`, { state: { fromList: true } })}
+            />
           )}
         </section>
 

@@ -1,13 +1,41 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, ArrowRight, Palette, Users, TrendingUp } from 'lucide-react';
+import { Sparkles, ArrowRight, Wand2, Banana, ImageIcon, Shuffle, X } from 'lucide-react';
+
+// Count-up hook with ease-out cubic
+const useCountUp = (target, duration = 1800) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let start = null;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const elapsed = timestamp - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, duration]);
+  return count;
+};
+
+const formatCount = (val) => val >= 1000 ? Math.round(val / 1000) + 'K+' : val + '+';
 
 const Hero = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const wrapperRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
+  const [randomImg, setRandomImg] = useState(null);
+
+  // count-up targets — real data: sref=1306, nanobanana=100, gptimage=328
+  const mjCount = useCountUp(1306);
+  const nbCount = useCountUp(100);
+  const gpCount = useCountUp(328);
 
   // 页面可见性API处理
   useEffect(() => {
@@ -474,17 +502,13 @@ const Hero = () => {
             </h1>
 
             <div className="mb-4">
-              <p className="text-2xl sm:text-3xl font-semibold text-primary-600 mb-2">
-                Inspire • Imagine • Innovate
-              </p>
-              <p className="text-lg sm:text-xl text-slate-500">
+              <p className="text-lg sm:text-xl font-semibold text-primary-600 mb-2">
                 {t('home.hero.slogan')}
               </p>
+              <p className="text-base sm:text-lg text-slate-500">
+                {t('home.hero.subtitle')}
+              </p>
             </div>
-
-            <p className="text-xl sm:text-2xl text-slate-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-              {t('home.hero.subtitle')}
-            </p>
           </motion.div>
 
           <motion.div
@@ -493,20 +517,53 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
           >
-            <Link
-              to="/create"
-              className="btn btn-primary text-lg px-8 py-4 group"
+            <button
+              onClick={() => {
+                const idx = Math.floor(Math.random() * backgroundImages.length);
+                setRandomImg(backgroundImages[idx]);
+              }}
+              className="btn btn-ghost text-lg px-8 py-4 flex items-center gap-2"
+              style={{ border: '1.5px solid rgba(100,116,139,0.35)', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.7)', color: '#475569', backdropFilter: 'blur(4px)' }}
             >
-              {t('home.hero.createButton')}
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-            </Link>
-            <Link
-              to="/explore"
-              className="btn btn-secondary text-lg px-8 py-4"
-            >
-              {t('home.hero.exploreButton')}
-            </Link>
+              <Shuffle className="w-5 h-5" />
+              {t('home.hero.randomBtn')}
+            </button>
           </motion.div>
+
+          {/* Random image lightbox */}
+          {randomImg && (
+            <div
+              className="hero-lightbox"
+              onClick={() => setRandomImg(null)}
+            >
+              <div
+                className="hero-lightbox-inner"
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  className="hero-lightbox-close"
+                  onClick={() => setRandomImg(null)}
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <img
+                  src={randomImg.src}
+                  alt={randomImg.alt}
+                  className="hero-lightbox-img"
+                />
+                <div className="hero-lightbox-footer">
+                  <Link
+                    to="/explore"
+                    className="hero-lightbox-link"
+                    onClick={() => setRandomImg(null)}
+                  >
+                    {t('home.hero.exploreButton')} <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 特色数据 */}
           <motion.div
@@ -518,31 +575,31 @@ const Hero = () => {
             <div className="text-center">
               <div className="flex justify-center mb-3">
                 <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
-                  <Palette className="w-6 h-6 text-primary-600" />
+                  <Wand2 className="w-6 h-6 text-primary-600" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 mb-2">10K+</div>
-              <div className="text-slate-600">{t('home.hero.stats.posts')}</div>
+              <div className="text-3xl font-bold text-slate-900 mb-2">{formatCount(mjCount)}</div>
+              <div className="text-slate-600">{t('home.hero.stats.midjourney')}</div>
             </div>
 
             <div className="text-center">
               <div className="flex justify-center mb-3">
-                <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-secondary-600" />
+                <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                  <Banana className="w-6 h-6 text-yellow-600" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 mb-2">5K+</div>
-              <div className="text-slate-600">{t('home.hero.stats.users')}</div>
+              <div className="text-3xl font-bold text-slate-900 mb-2">{formatCount(nbCount)}</div>
+              <div className="text-slate-600">{t('home.hero.stats.nanobanana')}</div>
             </div>
 
             <div className="text-center">
               <div className="flex justify-center mb-3">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
+                  <ImageIcon className="w-6 h-6 text-green-600" />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 mb-2">100K+</div>
-              <div className="text-slate-600">{t('home.hero.stats.shares')}</div>
+              <div className="text-3xl font-bold text-slate-900 mb-2">{formatCount(gpCount)}</div>
+              <div className="text-slate-600">{t('home.hero.stats.gptimage')}</div>
             </div>
           </motion.div>
         </div>

@@ -3,16 +3,16 @@ export const home = {
   'zh-CN': {
     hero: {
       title: "发现 AI 艺术的无限可能",
-      subtitle: "探索精美的 Midjourney 风格参数，激发你的创作灵感",
-      slogan: "激发灵感 • 释放想象 • 推动创新",
+      subtitle: "每日精选更新 · 三语言支持 · 完全免费探索",
+      slogan: "风格参数 · 提示词库 · AI 视频 — 一站发现",
       cta: "开始探索",
       createButton: "开始创作",
       exploreButton: "浏览作品",
+      randomBtn: "随机发现",
       stats: {
-        posts: "精美作品",
-        users: "创作者",
-        styles: "风格参数",
-        shares: "参数分享"
+        midjourney: "Midjourney 风格",
+        nanobanana: "NanoBanana Pro",
+        gptimage: "GPT Image"
       }
     },
     featured: {
@@ -52,6 +52,24 @@ export const home = {
       titleSuffix: "内容",
       description: "风格参数和提示词库的最新作品"
     },
+    latestSref: {
+      title: '风格参数',
+      titleSuffix: '最新作品',
+      viewAll: '查看全部',
+      activity: '今日更新'
+    },
+    latestGallery: {
+      title: '提示词库',
+      titleSuffix: '最新作品',
+      viewAll: '查看全部',
+      activity: '今日更新'
+    },
+    latestVideo: {
+      title: 'AI 视频',
+      titleSuffix: '最新作品',
+      viewAll: '查看全部',
+      activity: '今日更新'
+    },
     search: {
       placeholder: "搜索风格参数和提示词...",
       shortcut: "Ctrl+K"
@@ -88,16 +106,16 @@ export const home = {
   'en-US': {
     hero: {
       title: "Discover Infinite Possibilities of AI Art",
-      subtitle: "Explore beautiful Midjourney style parameters and inspire your creativity",
-      slogan: "Inspire • Imagine • Innovate",
+      subtitle: "Curated daily · Trilingual · Free to explore",
+      slogan: "Sref Styles · Prompt Library · AI Video — All in One",
       cta: "Start Exploring",
       createButton: "Start Creating",
       exploreButton: "Browse Works",
+      randomBtn: "Surprise Me",
       stats: {
-        posts: "Beautiful Works",
-        users: "Creators",
-        styles: "Style Parameters",
-        shares: "Parameter Shares"
+        midjourney: "Midjourney Styles",
+        nanobanana: "NanoBanana Pro",
+        gptimage: "GPT Image"
       }
     },
     featured: {
@@ -137,6 +155,24 @@ export const home = {
       titleSuffix: "Content",
       description: "Latest works from style parameters and prompt library"
     },
+    latestSref: {
+      title: 'Sref',
+      titleSuffix: 'Gallery',
+      viewAll: 'View All',
+      activity: 'Updated today'
+    },
+    latestGallery: {
+      title: 'Prompt',
+      titleSuffix: 'Gallery',
+      viewAll: 'View All',
+      activity: 'Updated today'
+    },
+    latestVideo: {
+      title: 'Video',
+      titleSuffix: 'Gallery',
+      viewAll: 'View All',
+      activity: 'Updated today'
+    },
     search: {
       placeholder: "Search style parameters and prompts...",
       shortcut: "Ctrl+K"
@@ -173,15 +209,16 @@ export const home = {
   'ja-JP': {
     hero: {
       title: "AIアートの無限の可能性を発見",
-      subtitle: "美しいMidjourneyスタイルパラメータを探索し、創造性を刺激しましょう",
+      subtitle: "毎日キュレーション · 三言語対応 · 完全無料",
+      slogan: "Sref · プロンプト · AI動画 — 一箇所で発見",
       cta: "探索を開始",
       createButton: "作成を開始",
       exploreButton: "作品を閲覧",
+      randomBtn: "ランダム探索",
       stats: {
-        posts: "美しい作品",
-        users: "クリエイター",
-        styles: "スタイルパラメータ",
-        shares: "パラメータ共有"
+        midjourney: "Midjourney スタイル",
+        nanobanana: "NanoBanana Pro",
+        gptimage: "GPT Image"
       }
     },
     featured: {
@@ -220,6 +257,24 @@ export const home = {
       title: "最新",
       titleSuffix: "コンテンツ",
       description: "スタイルパラメータとプロンプトライブラリの最新作品"
+    },
+    latestSref: {
+      title: 'スタイル',
+      titleSuffix: '最新作品',
+      viewAll: 'すべて見る',
+      activity: '本日更新'
+    },
+    latestGallery: {
+      title: 'プロンプト',
+      titleSuffix: '最新作品',
+      viewAll: 'すべて見る',
+      activity: '本日更新'
+    },
+    latestVideo: {
+      title: 'AI動画',
+      titleSuffix: '最新作品',
+      viewAll: 'すべて見る',
+      activity: '本日更新'
     },
     search: {
       placeholder: "スタイルパラメータとプロンプトを検索...",

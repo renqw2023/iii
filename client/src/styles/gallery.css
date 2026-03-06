@@ -1819,7 +1819,7 @@
 /* --- Dark Area Wrapper --- */
 .home-dark-area {
   background: var(--page-bg);
-  padding: 2rem 2.5rem 4rem;
+  padding: 1.5rem 2rem 3rem;
   min-height: 60vh;
 }
 
@@ -1833,8 +1833,8 @@
 /* Latest content section — floating stage panel, matches gallery-layout style */
 .home-content-section {
   width: 100%;
-  margin: 0 0 2rem;
-  padding: 2rem;
+  margin: 0 0 1.25rem;
+  padding: 1.25rem 1.5rem;
   background: var(--stage-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -1851,6 +1851,10 @@
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.home-content-section .home-section-header {
+  margin-bottom: 0.875rem;
 }
 
 .home-section-header h2 {
@@ -2116,4 +2120,95 @@
     padding: 0;
     margin-bottom: 1.25rem;
   }
+}
+
+/* --- Hero Lightbox --- */
+.hero-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.hero-lightbox-inner {
+  position: relative;
+  background: #0f172a;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-lightbox-img {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
+}
+
+.hero-lightbox-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  z-index: 1;
+  transition: background 0.15s;
+}
+
+.hero-lightbox-close:hover {
+  background: rgba(0,0,0,0.85);
+}
+
+.hero-lightbox-footer {
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hero-lightbox-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #818cf8;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.hero-lightbox-link:hover {
+  color: #a5b4fc;
+}
+
+/* --- Activity Badge --- */
+.home-section-activity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #22c55e;
+  letter-spacing: 0.02em;
+  margin-top: 0.2rem;
 }

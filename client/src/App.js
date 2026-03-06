@@ -4,26 +4,11 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ErrorBoundary from './components/Error/ErrorBoundary';
 import LoginModal from './components/Auth/LoginModal';
-import { useAuth } from './contexts/AuthContext';
-
-// 国际化配置
-import './i18n';
-
-// Google OAuth Client ID
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
-
-// 全局 LoginModal 挂载（需要 AuthContext）
-const GlobalLoginModal = () => {
-  const { isLoginModalOpen, closeLoginModal } = useAuth();
-  return <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />;
-};
-
-// 页面组件
 import Layout from './components/Layout/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -55,11 +40,20 @@ import GalleryList from './pages/Gallery/GalleryList';
 import GalleryModal from './pages/Gallery/GalleryModal';
 import SeedanceList from './pages/Seedance/SeedanceList';
 import SeedanceModal from './pages/Seedance/SeedanceModal';
-
-// 路由保护组件
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminRoute from './components/Auth/AdminRoute';
 import ScrollToTop from './components/UI/ScrollToTop';
+// 国际化配置
+import './i18n';
+
+// Google OAuth Client ID
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+
+// 全局 LoginModal 挂载（需要 AuthContext）
+const GlobalLoginModal = () => {
+  const { isLoginModalOpen, closeLoginModal } = useAuth();
+  return <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />;
+};
 
 // 创建 React Query 客户端
 const queryClient = new QueryClient({

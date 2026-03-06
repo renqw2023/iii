@@ -8,9 +8,24 @@
 
 ## 当前进度（每次恢复工作前先读这里）
 
-**最后更新**: 2026-03-06 — 完成架构摸底，尚未开始任何实现
-**当前阶段**: Phase A 待开始
-**下一步**: 安装 google-auth-library (server) + @react-oauth/google (client)
+**最后更新**: 2026-03-06 — Phase A/B/C/D/E 全部完成，ESLint 修复完毕，MobileDock 上线
+**当前阶段**: 用户体系核心功能全部实现并验证，无控制台错误
+**下一步**:
+  1. Phase F（邀请码系统）— 注册页加邀请码字段，双方各得 200 积分
+  2. 卡片鼠标跟随光晕效果（meigen 分析 Phase D.12，低优先级）
+  3. 全局搜索 Modal（meigen 分析 Phase B，中优先级）
+
+**已完成清单（本阶段）**:
+  - ✅ ESLint import/first 错误修复（App.js 所有 import 移至顶部）
+  - ✅ ESLint 未使用变量清理（GalleryCard/VideoCard/Header/Hero/Home）
+  - ✅ GOOGLE_CLIENT_ID 环境变量已由用户配置（server/.env + client/.env）
+  - ✅ Phase A：Google OAuth + LoginModal（全局挂载，AuthContext 管理）
+  - ✅ Phase B：收藏系统（server/models/Favorite.js + routes/favorites.js + favoritesApi.js + Favorites.js 重写为 Sref/Gallery/Seedance 三 Tab）
+  - ✅ Phase C：积分系统（CreditTransaction.js + routes/credits.js + Credits.js 页面 + CreditsDisplay.js）
+  - ✅ Phase D：Dashboard 增强（积分余额卡片 + 每日签到按钮 + 收藏/历史快捷入口）
+  - ✅ Phase E：浏览历史（useBrowsingHistory.js + History.js，localStorage，GalleryModal/SeedanceModal 已接入）
+  - ✅ FavoriteButton.js（通用收藏按钮，集成到 SrefCard/GalleryCard/VideoCard）
+  - ✅ MobileDock（移动端底部悬浮导航，5 图标：首页/探索/收藏/历史/积分）
 
 ---
 
@@ -338,6 +353,35 @@ C (积分系统)  ──┘
 
 ---
 
-## Result（完成后填写）
+## Result
 
-> 未完成，待实施
+**完成日期**: 2026-03-06
+
+Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
+
+**新增文件**:
+- `server/models/Favorite.js` — 收藏数据模型
+- `server/models/CreditTransaction.js` — 积分流水模型
+- `server/routes/favorites.js` — 收藏 API
+- `server/routes/credits.js` — 积分 API
+- `client/src/services/favoritesApi.js` — 收藏服务
+- `client/src/services/creditsApi.js` — 积分服务
+- `client/src/components/Auth/LoginModal.js` — 登录弹窗
+- `client/src/components/UI/FavoriteButton.js` — 收藏按钮
+- `client/src/components/UI/CreditsDisplay.js` — 积分显示
+- `client/src/components/UI/MobileDock.js` — 移动端底部导航
+- `client/src/pages/Credits.js` — 积分页
+- `client/src/pages/History.js` — 浏览历史页
+- `client/src/hooks/useBrowsingHistory.js` — 历史 Hook
+
+**修改文件**:
+- `server/models/User.js` — 加 googleId/authProvider/credits/lastCheckinAt
+- `server/routes/auth.js` — 加 Google OAuth 路由
+- `server/index.js` — 注册新路由
+- `client/src/App.js` — GoogleOAuthProvider + GlobalLoginModal + 新路由
+- `client/src/contexts/AuthContext.js` — loginWithGoogle + modal 状态
+- `client/src/components/Layout/Header.js` — Login 按钮触发 Modal + CreditsDisplay
+- `client/src/components/Layout/Layout.js` — 集成 MobileDock
+- `client/src/pages/Favorites.js` — 重写为多类型 Tab
+- `client/src/pages/Dashboard.js` — 积分卡片 + 快捷入口
+- `client/src/pages/Home.js` — FanGallery 替换旧 gallery-grid

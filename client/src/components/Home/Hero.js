@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useRef, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, ArrowRight, Wand2, Banana, ImageIcon, Shuffle, X } from 'lucide-react';
@@ -27,7 +27,6 @@ const formatCount = (val) => val >= 1000 ? Math.round(val / 1000) + 'K+' : val +
 
 const Hero = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const wrapperRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
   const [randomImg, setRandomImg] = useState(null);

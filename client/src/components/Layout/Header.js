@@ -26,7 +26,7 @@ import { getUserAvatar } from '../../utils/avatarUtils';
 const Header = () => {
   const { t } = useTranslation();
   const { isAuthenticated, user, logout, openLoginModal } = useAuth();
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);

@@ -21,7 +21,6 @@ const ROW_GAP = 8;    // card bottom spacing accounted into span
 const GalleryCard = ({ prompt, onLike, onFavorite }) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const modelInfo = MODEL_COLORS[prompt.model] || MODEL_COLORS.other;
     const [imageLoaded, setImageLoaded] = useState(false);
     const cardRef = useRef(null);
     // Initial span reserves ~300px height; corrected on image load via natural dimensions
@@ -81,11 +80,6 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
     const handleLike = (e) => {
         e.stopPropagation();
         onLike?.(prompt._id);
-    };
-
-    const handleFavorite = (e) => {
-        e.stopPropagation();
-        onFavorite?.(prompt._id);
     };
 
     return (

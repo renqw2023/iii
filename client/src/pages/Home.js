@@ -6,8 +6,6 @@ import { ArrowRight, Palette, Film, BookOpen } from 'lucide-react';
 import { srefAPI } from '../services/srefApi';
 import { galleryAPI } from '../services/galleryApi';
 import { seedanceAPI } from '../services/seedanceApi';
-import SrefCard from '../components/Sref/SrefCard';
-import GalleryCard from '../components/Gallery/GalleryCard';
 import VideoCard from '../components/Seedance/VideoCard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Hero from '../components/Home/Hero';

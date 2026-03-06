@@ -63,11 +63,6 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         onLike?.(prompt._id);
     };
 
-    const handleFavorite = (e) => {
-        e.stopPropagation();
-        onFavorite?.(prompt._id);
-    };
-
     return (
         <motion.div
             ref={containerRef}
@@ -124,7 +119,7 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
                         playsInline
                         preload="metadata"
                         className="video-card-poster-video"
-                        onLoadedData={(e) => {
+                        onLoadedData={() => {
                             setThumbLoaded(true);
                         }}
                     />

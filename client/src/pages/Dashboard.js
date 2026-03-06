@@ -1,7 +1,12 @@
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { Coins, CheckCircle, Heart, Clock, ArrowRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { creditsAPI } from '../services/creditsApi';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import StatsPanel from '../components/Dashboard/StatsPanel';
 import DashboardHeader from '../components/Dashboard/DashboardHeader';
@@ -19,6 +24,107 @@ import usePostEdit from '../hooks/usePostEdit';
 import usePromptEdit from '../hooks/usePromptEdit';
 import { generateTabsConfig } from '../utils/dashboard/dashboardHelpers';
 import { ANIMATION_CONFIG } from '../utils/dashboard/dashboardConstants';
+
+// 积分 + 快捷入口面板
+const CreditsQuickPanel = () => {
+  const queryClient = useQueryClient();
+
+  const { data: balanceData } = useQuery(
+    ['credits-balance'],
+    () => creditsAPI.getBalance().then(r => r.data.data),
+    { staleTime: 60 * 1000 }
+  );
+
+  const checkinMutation = useMutation(
+    () => creditsAPI.checkin().then(r => r.data),
+    {
+      onSuccess: (res) => {
+        toast.success(res.message);
+        queryClient.invalidateQueries(['credits-balance']);
+      },
+      onError: (err) => {
+        toast.error(err.response?.data?.message || '签到失败');
+      },
+    }
+  );
+
+  const balance = balanceData?.credits ?? '—';
+  const checkedInToday = balanceData?.checkedInToday ?? false;
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* 积分卡片 */}
+      <div
+        className="col-span-1 sm:col-span-2 rounded-2xl p-5 flex items-center justify-between"
+        style={{
+          background: 'linear-gradient(135deg, var(--accent-primary, #6366f1), #7c3aed)',
+          color: '#fff',
+        }}
+      >
+        <div>
+          <p className="text-sm opacity-75 mb-0.5">我的积分</p>
+          <div className="flex items-center gap-2">
+            <Coins size={22} />
+            <span className="text-3xl font-bold">{balance}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => checkinMutation.mutate()}
+          disabled={checkedInToday || checkinMutation.isLoading}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all"
+          style={{
+            backgroundColor: checkedInToday ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.92)',
+            color: checkedInToday ? 'rgba(255,255,255,0.55)' : '#6366f1',
+            cursor: checkedInToday ? 'default' : 'pointer',
+          }}
+        >
+          {checkedInToday ? (
+            <><CheckCircle size={14} /> 已签到</>
+          ) : (
+            <><Coins size={14} /> {checkinMutation.isLoading ? '签到中...' : '每日签到 +10'}</>
+          )}
+        </button>
+      </div>
+
+      {/* 快捷入口 */}
+      <Link
+        to="/favorites"
+        className="rounded-2xl p-5 flex items-center justify-between group transition-colors"
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
+            <Heart size={16} style={{ color: '#ef4444' }} />
+          </div>
+          <span className="text-sm font-medium">我的收藏</span>
+        </div>
+        <ArrowRight size={16} className="opacity-40 group-hover:opacity-80 transition-opacity" />
+      </Link>
+
+      <Link
+        to="/history"
+        className="rounded-2xl p-5 flex items-center justify-between group transition-colors"
+        style={{
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-color)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(99,102,241,0.12)' }}>
+            <Clock size={16} style={{ color: '#6366f1' }} />
+          </div>
+          <span className="text-sm font-medium">浏览历史</span>
+        </div>
+        <ArrowRight size={16} className="opacity-40 group-hover:opacity-80 transition-opacity" />
+      </Link>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -260,6 +366,9 @@ const Dashboard = () => {
 
         {/* 统计面板 */}
         <StatsPanel user={user} stats={userStats} />
+
+        {/* 积分 + 快捷入口 */}
+        <CreditsQuickPanel />
 
         {/* 内容区域 */}
         <motion.div

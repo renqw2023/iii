@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const config = require('../config');
@@ -517,6 +518,111 @@ router.post('/reset-password', [
   } catch (error) {
     console.error('重置密码错误:', error);
     res.status(500).json({ message: '重置密码失败，请稍后重试' });
+  }
+});
+
+// Google OAuth 登录
+router.post('/google', [
+  body('credential').notEmpty().withMessage('Google credential 不能为空')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '参数错误', errors: errors.array() });
+    }
+
+    const { credential } = req.body;
+    const clientId = config.services.google.clientId;
+
+    if (!clientId) {
+      return res.status(503).json({ message: 'Google 登录未配置，请联系管理员' });
+    }
+
+    // 验证 Google ID Token
+    const googleClient = new OAuth2Client(clientId);
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
+      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      console.error('Google token 验证失败:', verifyErr.message);
+      return res.status(401).json({ message: 'Google 凭证无效或已过期' });
+    }
+
+    const { sub: googleId, email, name, picture } = payload;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Google 账号未提供邮箱信息' });
+    }
+
+    // 查找已有用户
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      // 尝试用邮箱匹配（可能用密码注册过）
+      user = await User.findOne({ email: email.toLowerCase() });
+
+      if (user) {
+        // 绑定 Google ID 到现有账号
+        user.googleId = googleId;
+        if (user.authProvider === 'local') {
+          // 保留 local，但标记支持 google
+        }
+        if (!user.avatar && picture) {
+          user.avatar = picture;
+        }
+        await user.save();
+      } else {
+        // 全新用户：生成唯一用户名
+        const baseUsername = (name || email.split('@')[0])
+          .replace(/[^a-zA-Z0-9_]/g, '_')
+          .substring(0, 16);
+        let username = baseUsername;
+        let suffix = 0;
+        while (await User.findOne({ username })) {
+          suffix++;
+          username = `${baseUsername}_${suffix}`;
+        }
+
+        user = new User({
+          username,
+          email: email.toLowerCase(),
+          googleId,
+          authProvider: 'google',
+          avatar: picture || '',
+          emailVerified: true,
+          isActive: true,
+          credits: 50,  // 注册奖励
+        });
+        await user.save();
+
+        console.log(`Google 新用户注册: ${email}`);
+      }
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ message: '账户已被禁用，请联系管理员' });
+    }
+
+    // 生成 JWT
+    const token = generateToken(user._id);
+
+    // 记录登录分析
+    updateLoginAnalytics(user._id, req).catch(err =>
+      console.error('更新登录分析数据失败:', err)
+    );
+
+    res.json({
+      message: '登录成功',
+      token,
+      user: user.toPublicJSON()
+    });
+  } catch (error) {
+    console.error('Google 登录错误:', error);
+    res.status(500).json({ message: 'Google 登录失败，请稍后重试' });
   }
 });
 

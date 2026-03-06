@@ -7,6 +7,7 @@ import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, Chevron
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
 import toast from 'react-hot-toast';
+import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
 
 const SrefModal = () => {
     const { id } = useParams();
@@ -38,6 +39,21 @@ const SrefModal = () => {
     const sref = data?.data?.post;
     const imageUrls = sref?.imageUrls || [];
     const videoUrls = sref?.videoUrls || [];
+
+    const { addToHistory } = useBrowsingHistory();
+    // 内容加载后记录浏览历史
+    useEffect(() => {
+      if (sref?._id) {
+        addToHistory({
+          id: sref._id,
+          type: 'sref',
+          title: `--sref ${sref.srefCode}`,
+          image: sref.previewImage || imageUrls[0] || '',
+          url: `/explore/${sref._id}`,
+        });
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sref?._id]);
 
     // 图片在前，视频在后
     const mediaItems = [

@@ -197,6 +197,9 @@ class AppConfig {
         hjid: process.env.REACT_APP_HOTJAR_ID,
         hjsv: process.env.REACT_APP_HOTJAR_SNIPPET_VERSION || '6',
       },
+      google: {
+        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || '',
+      },
     };
   }
 

@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Copy, Heart, Eye, Bookmark } from 'lucide-react';
+import { Play, Copy, Heart, Eye } from 'lucide-react';
+import FavoriteButton from '../UI/FavoriteButton';
 import { useTranslation } from 'react-i18next';
 import { seedanceAPI, getVideoSrc, getThumbnailSrc } from '../../services/seedanceApi';
 import toast from 'react-hot-toast';
@@ -150,13 +151,12 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
                     >
                         <Heart size={16} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                     </button>
-                    <button
-                        onClick={handleFavorite}
-                        className={`gallery-action-btn ${prompt.isFavorited ? 'text-yellow-400' : ''}`}
-                        title={t('seedance.actions.favorite')}
-                    >
-                        <Bookmark size={16} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
-                    </button>
+                    <FavoriteButton
+                        targetType="seedance"
+                        targetId={prompt._id}
+                        className="gallery-action-btn"
+                        size={16}
+                    />
                 </div>
 
                 {/* 分类标签 */}

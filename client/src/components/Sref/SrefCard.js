@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Eye, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import FavoriteButton from '../UI/FavoriteButton';
 import '../Post/LiblibStyleCard.css';
 
 const ROW_HEIGHT = 8;
@@ -95,6 +96,12 @@ const SrefCard = ({ sref }) => {
                 <Eye size={11} style={{ marginLeft: '0.3rem' }} /> {sref.views || 0}
               </span>
               <div className="liblib-overlay-actions">
+                <FavoriteButton
+                  targetType="sref"
+                  targetId={sref._id}
+                  className="liblib-action-btn"
+                  size={13}
+                />
                 <button
                   onClick={handleCopy}
                   className="liblib-action-btn"

@@ -16,6 +16,7 @@ import {
   Moon
 } from 'lucide-react';
 import NotificationDropdown from '../UI/NotificationDropdown';
+import CreditsDisplay from '../UI/CreditsDisplay';
 import LanguageSwitcher from '../UI/LanguageSwitcher';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,7 +25,7 @@ import { getUserAvatar } from '../../utils/avatarUtils';
 
 const Header = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, openLoginModal } = useAuth();
   const { theme, toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -125,6 +126,9 @@ const Header = () => {
 
             {isAuthenticated ? (
               <>
+                {/* 积分显示 */}
+                <CreditsDisplay />
+
                 {/* Notifications */}
                 <NotificationDropdown />
 
@@ -211,12 +215,12 @@ const Header = () => {
               </>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link
-                  to="/login"
+                <button
+                  onClick={openLoginModal}
                   className="btn btn-ghost"
                 >
                   {t('navigation.login')}
-                </Link>
+                </button>
                 <Link
                   to="/register"
                   className="btn btn-primary"

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Eye, Bookmark } from 'lucide-react';
+import { Copy, Heart, Eye } from 'lucide-react';
+import FavoriteButton from '../UI/FavoriteButton';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
 import { galleryAPI } from '../../services/galleryApi';
@@ -150,13 +151,12 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
                                 >
                                     <Heart size={14} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                                 </button>
-                                <button
-                                    onClick={handleFavorite}
-                                    className={`gallery-action-btn ${prompt.isFavorited ? 'text-yellow-400' : ''}`}
-                                    title={t('gallery.actions.favorite')}
-                                >
-                                    <Bookmark size={14} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
-                                </button>
+                                <FavoriteButton
+                                    targetType="gallery"
+                                    targetId={prompt._id}
+                                    className="gallery-action-btn"
+                                    size={14}
+                                />
                             </div>
                         </div>
                     </div>

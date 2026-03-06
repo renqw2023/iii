@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useState } from 'react';
 import { enhancedAuthAPI } from '../services/enhancedApi';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -57,6 +58,10 @@ const initialState = {
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const openLoginModal  = useCallback(() => setIsLoginModalOpen(true), []);
+  const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
 
   // 检查认证状态
   const checkAuthStatus = useCallback(async () => {
@@ -220,6 +225,24 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  // Google OAuth 登录
+  const loginWithGoogle = async (credential) => {
+    dispatch({ type: 'LOGIN_START' });
+    try {
+      const response = await axios.post('/api/auth/google', { credential });
+      const { token, user } = response.data;
+      localStorage.setItem('token', token);
+      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
+      toast.success('Google 登录成功！', { icon: '🎉', duration: 3000 });
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Google 登录失败';
+      dispatch({ type: 'LOGIN_FAILURE', payload: message });
+      toast.error(message);
+      return { success: false, message };
+    }
+  };
+
   // 直接设置认证数据（用于邮箱验证后的自动登录）
   const setAuthData = (token, user) => {
     localStorage.setItem('token', token);
@@ -233,12 +256,16 @@ export const AuthProvider = ({ children }) => {
   const value = {
     ...state,
     login,
+    loginWithGoogle,
     register,
     logout,
     updateUser,
     clearError,
     checkAuthStatus,
-    setAuthData
+    setAuthData,
+    isLoginModalOpen,
+    openLoginModal,
+    closeLoginModal,
   };
 
   return (

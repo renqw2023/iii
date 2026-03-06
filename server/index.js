@@ -17,6 +17,8 @@ const seoRoutes = require('./routes/seo');
 const galleryRoutes = require('./routes/gallery');
 const seedanceRoutes = require('./routes/seedance');
 const srefRoutes = require('./routes/sref');
+const favoritesRoutes = require('./routes/favorites');
+const creditsRoutes = require('./routes/credits');
 const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
 
 const app = express();
@@ -63,6 +65,8 @@ app.use('/api/gallery', galleryRoutes);
 app.use('/api/seedance', seedanceRoutes);
 app.use('/api/sref', srefRoutes);
 app.use('/api/seo', seoRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/credits', creditsRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

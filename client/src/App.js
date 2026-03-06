@@ -3,13 +3,25 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ErrorBoundary from './components/Error/ErrorBoundary';
+import LoginModal from './components/Auth/LoginModal';
+import { useAuth } from './contexts/AuthContext';
 
 // 国际化配置
 import './i18n';
+
+// Google OAuth Client ID
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+
+// 全局 LoginModal 挂载（需要 AuthContext）
+const GlobalLoginModal = () => {
+  const { isLoginModalOpen, closeLoginModal } = useAuth();
+  return <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />;
+};
 
 // 页面组件
 import Layout from './components/Layout/Layout';
@@ -36,6 +48,8 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 import Notifications from './pages/Notifications';
+import Credits from './pages/Credits';
+import History from './pages/History';
 import ErrorDemo from './pages/ErrorDemo';
 import GalleryList from './pages/Gallery/GalleryList';
 import GalleryModal from './pages/Gallery/GalleryModal';
@@ -70,6 +84,7 @@ function App() {
     <ErrorBoundary>
       <HelmetProvider>
         <QueryClientProvider client={queryClient}>
+          <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <ThemeProvider>
             <AuthProvider>
               <NotificationProvider>
@@ -96,6 +111,7 @@ function App() {
                         <Route path="health" element={<Health />} />
                         <Route path="about" element={<About />} />
                         <Route path="help" element={<Help />} />
+                        <Route path="history" element={<History />} />
                         <Route path="privacy" element={<Privacy />} />
                         <Route path="terms" element={<Terms />} />
                         <Route path="contact" element={<Contact />} />
@@ -120,6 +136,7 @@ function App() {
                         <Route path="favorites" element={<Favorites />} />
                         <Route path="settings" element={<Settings />} />
                         <Route path="notifications" element={<Notifications />} />
+                        <Route path="credits" element={<Credits />} />
                       </Route>
 
                       {/* 管理员路由 */}
@@ -134,6 +151,9 @@ function App() {
                       {/* 404页面 */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+
+                    {/* 全局 LoginModal */}
+                    <GlobalLoginModal />
 
                     {/* 全局通知 */}
                     <Toaster
@@ -168,6 +188,7 @@ function App() {
               </NotificationProvider>
             </AuthProvider>
           </ThemeProvider>
+          </GoogleOAuthProvider>
         </QueryClientProvider>
       </HelmetProvider>
     </ErrorBoundary>

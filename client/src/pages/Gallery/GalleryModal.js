@@ -8,6 +8,7 @@ import { Helmet } from 'react-helmet-async';
 import { galleryAPI } from '../../services/galleryApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { useBrowsingHistory } from '../../hooks/useBrowsingHistory';
 
 const MODEL_LABELS = {
     nanobanana: 'NanoBanana Pro',
@@ -52,6 +53,20 @@ const GalleryModal = () => {
     );
 
     const prompt = data?.data?.prompt;
+
+    const { addToHistory } = useBrowsingHistory();
+    useEffect(() => {
+      if (prompt?._id) {
+        addToHistory({
+          id: prompt._id,
+          type: 'gallery',
+          title: prompt.title || prompt.prompt?.substring(0, 40) || 'Gallery',
+          image: prompt.previewImage || '',
+          url: `/gallery/${prompt._id}`,
+        });
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [prompt?._id]);
 
     const handleCopy = async () => {
         try {

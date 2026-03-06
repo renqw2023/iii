@@ -21,8 +21,27 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    minlength: 6  // Google 登录用户无密码，改为 optional
+  },
+  // OAuth 支持
+  googleId: {
+    type: String,
+    default: null,
+    sparse: true   // 允许多条 null，只对非 null 值建唯一索引
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
+  },
+  // 积分系统
+  credits: {
+    type: Number,
+    default: 0
+  },
+  lastCheckinAt: {
+    type: Date,
+    default: null
   },
   avatar: {
     type: String,
@@ -254,10 +273,10 @@ const userSchema = new mongoose.Schema({
 // 索引优化 - 移除重复索引，因为unique已经创建了索引
 userSchema.index({ createdAt: -1 });
 
-// 密码加密中间件
+// 密码加密中间件（Google 用户无密码，跳过）
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
+  if (!this.isModified('password') || !this.password) return next();
+
   try {
     const salt = await bcrypt.genSalt(12);
     this.password = await bcrypt.hash(this.password, salt);

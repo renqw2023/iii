@@ -8,14 +8,18 @@
 
 ## 当前进度（每次恢复工作前先读这里）
 
-**最后更新**: 2026-03-06 — Phase A/B/C/D/E 全部完成，ESLint 修复完毕，MobileDock 上线
-**当前阶段**: 用户体系核心功能全部实现并验证，无控制台错误
+**最后更新**: 2026-03-06 — Phase A/B/C/D/E/F 全部完成，ESLint 零错误，推送至 GitHub
+**当前阶段**: 用户体系所有核心功能完成，Google OAuth 问题已定位（需重启 dev server）
 **下一步**:
-  1. Phase F（邀请码系统）— 注册页加邀请码字段，双方各得 200 积分
-  2. 卡片鼠标跟随光晕效果（meigen 分析 Phase D.12，低优先级）
+  1. 重启 React dev server 使 REACT_APP_GOOGLE_CLIENT_ID 生效（CRA 编译时注入 env）
+  2. 在 Google Cloud Console 确认 Authorized JavaScript Origins 包含 `http://localhost:3100`
   3. 全局搜索 Modal（meigen 分析 Phase B，中优先级）
+  4. 卡片鼠标跟随光晕效果（meigen 分析 Phase D.12，低优先级）
 
 **已完成清单（本阶段）**:
+  - ✅ Phase F：邀请码系统（User 自动生成 inviteCode，注册时接收邀请码，双方各得 200 积分，Credits 页显示我的邀请码 + 一键复制链接）
+  - ✅ Google OAuth ESLint 修复（LoginModal import 顺序 + GOOGLE_CLIENT_ID 条件渲染）
+  - ✅ Google OAuth 根因定位：CRA dev server 需重启才能读取新增 env var
   - ✅ ESLint import/first 错误修复（App.js 所有 import 移至顶部）
   - ✅ ESLint 未使用变量清理（GalleryCard/VideoCard/Header/Hero/Home）
   - ✅ GOOGLE_CLIENT_ID 环境变量已由用户配置（server/.env + client/.env）

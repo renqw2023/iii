@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Sparkles, Check, X, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Sparkles, Check, X, Loader2, Gift } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { enhancedAuthAPI } from '../services/enhancedApi';
@@ -28,6 +28,10 @@ const Register = () => {
 
   const { register, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // 支持从 URL ?ref=CODE 自动填充邀请码
+  const [inviteCode, setInviteCode] = useState(searchParams.get('ref') || '');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -296,6 +300,7 @@ const Register = () => {
     }
 
     const { confirmPassword, ...registerData } = formData;
+    if (inviteCode.trim()) registerData.inviteCode = inviteCode.trim().toUpperCase();
     const result = await register(registerData);
     if (result.success) {
       // 如果需要邮箱验证，跳转到验证页面
@@ -515,6 +520,26 @@ const Register = () => {
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
               )}
+            </div>
+
+            {/* 邀请码（可选） */}
+            <div>
+              <label htmlFor="inviteCode" className="block text-sm font-medium text-slate-700 mb-2">
+                邀请码 <span className="text-slate-400 font-normal">（选填，双方各得 200 积分）</span>
+              </label>
+              <div className="relative">
+                <Gift className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <input
+                  id="inviteCode"
+                  name="inviteCode"
+                  type="text"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  className="input pl-10 uppercase tracking-widest"
+                  placeholder="8位邀请码（如：AB3D5E7F）"
+                  maxLength={8}
+                />
+              </div>
             </div>
 
             <div className="flex items-center">

@@ -5,6 +5,9 @@ import { X, Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
+// Google 登录只在 clientId 已配置时启用
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+
 const LoginModal = ({ isOpen, onClose }) => {
   const { login, loginWithGoogle, loading } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
@@ -108,25 +111,28 @@ const LoginModal = ({ isOpen, onClose }) => {
               </p>
             </div>
 
-            {/* Google Login */}
-            <div className="flex justify-center mb-4">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="outline"
-                size="large"
-                text="continue_with"
-                locale="zh-CN"
-                width="280"
-              />
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
-              <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>或</span>
-              <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
-            </div>
+            {/* Google Login — 仅在 clientId 已配置时渲染 */}
+            {GOOGLE_CLIENT_ID && (
+              <>
+                <div className="flex justify-center mb-4">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="outline"
+                    size="large"
+                    text="continue_with"
+                    locale="zh-CN"
+                    width="280"
+                  />
+                </div>
+                {/* Divider */}
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>或</span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
+                </div>
+              </>
+            )}
 
             {/* Email form */}
             <form onSubmit={handleEmailLogin} className="space-y-3">

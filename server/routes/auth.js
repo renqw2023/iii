@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const CreditTransaction = require('../models/CreditTransaction');
 const { auth } = require('../middleware/auth');
 const config = require('../config');
 const emailService = require('../services/emailService');
@@ -45,7 +46,7 @@ router.post('/register', [
       });
     }
 
-    const { username, email, password } = req.body;
+    const { username, email, password, inviteCode } = req.body;
 
     // 检查用户是否已存在
     const existingUser = await User.findOne({
@@ -58,13 +59,20 @@ router.post('/register', [
       });
     }
 
+    // 查找邀请人
+    let inviter = null;
+    if (inviteCode && inviteCode.trim()) {
+      inviter = await User.findOne({ inviteCode: inviteCode.trim().toUpperCase() });
+    }
+
     // 创建新用户（未验证状态）
-    const user = new User({ 
-      username, 
-      email, 
+    const user = new User({
+      username,
+      email,
       password,
       emailVerified: false,
-      isActive: false // 邮箱验证前不激活账户
+      isActive: false, // 邮箱验证前不激活账户
+      invitedBy: inviter ? inviter._id : null,
     });
     
     // 生成验证码
@@ -157,8 +165,56 @@ router.post('/verify-email', [
     user.emailVerified = true;
     user.isActive = true;
     user.clearEmailVerificationCode();
+
+    // 注册奖励积分
+    const REGISTER_BONUS = 50;
+    const INVITE_BONUS = 200;
+    user.credits = (user.credits || 0) + REGISTER_BONUS;
     await user.save();
-    
+
+    // 记录注册奖励流水
+    await CreditTransaction.create({
+      userId: user._id,
+      type: 'earn',
+      amount: REGISTER_BONUS,
+      reason: 'register_bonus',
+      note: '新用户注册奖励',
+      balanceAfter: user.credits,
+    });
+
+    // 处理邀请人奖励
+    if (user.invitedBy) {
+      try {
+        const inviter = await User.findById(user.invitedBy);
+        if (inviter && inviter.isActive) {
+          inviter.credits = (inviter.credits || 0) + INVITE_BONUS;
+          await inviter.save();
+          await CreditTransaction.create({
+            userId: inviter._id,
+            type: 'earn',
+            amount: INVITE_BONUS,
+            reason: 'invite_bonus',
+            note: `邀请用户 ${user.username} 注册`,
+            balanceAfter: inviter.credits,
+          });
+          // 同时给被邀请人也发奖励
+          user.credits += INVITE_BONUS;
+          await User.findByIdAndUpdate(user._id, { credits: user.credits });
+          await CreditTransaction.create({
+            userId: user._id,
+            type: 'earn',
+            amount: INVITE_BONUS,
+            reason: 'invite_reward',
+            note: `使用邀请码注册奖励`,
+            balanceAfter: user.credits,
+          });
+        }
+      } catch (inviteErr) {
+        console.error('邀请奖励处理失败:', inviteErr);
+        // 不影响主流程
+      }
+    }
+
     console.log('用户邮箱验证成功:', user.email);
 
     // 发送欢迎邮件

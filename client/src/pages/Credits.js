@@ -1,8 +1,9 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Coins, CheckCircle, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Coins, CheckCircle, TrendingUp, TrendingDown, Clock, Gift, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { creditsAPI } from '../services/creditsApi';
+import { useAuth } from '../contexts/AuthContext';
 
 const REASON_LABELS = {
   daily_checkin:  '每日签到',
@@ -15,6 +16,7 @@ const REASON_LABELS = {
 
 const Credits = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: balanceData } = useQuery(
     ['credits-balance'],
@@ -94,7 +96,7 @@ const Credits = () => {
 
       {/* 获取更多积分提示 */}
       <div
-        className="rounded-xl p-4 mb-6 text-sm"
+        className="rounded-xl p-4 mb-4 text-sm"
         style={{
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-color)',
@@ -108,6 +110,44 @@ const Credits = () => {
           <li>• 邀请好友注册 +200 积分（双方均得）</li>
         </ul>
       </div>
+
+      {/* 我的邀请码 */}
+      {user?.inviteCode && (
+        <div
+          className="rounded-xl p-4 mb-6 flex items-center justify-between"
+          style={{
+            backgroundColor: 'rgba(99,102,241,0.08)',
+            border: '1px solid rgba(99,102,241,0.25)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(99,102,241,0.15)' }}>
+              <Gift size={16} style={{ color: '#6366f1' }} />
+            </div>
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>我的邀请码</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>邀请好友注册，双方各得 200 积分</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const inviteUrl = `${window.location.origin}/register?ref=${user.inviteCode}`;
+              navigator.clipboard.writeText(inviteUrl);
+              toast.success('邀请链接已复制！');
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold transition-all"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              color: '#6366f1',
+              letterSpacing: '0.1em',
+            }}
+          >
+            {user.inviteCode}
+            <Copy size={13} />
+          </button>
+        </div>
+      )}
 
       {/* 积分流水 */}
       <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>

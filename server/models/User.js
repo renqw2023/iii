@@ -43,6 +43,18 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // 邀请系统
+  inviteCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    uppercase: true,
+  },
+  invitedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
   avatar: {
     type: String,
     default: ''
@@ -272,6 +284,17 @@ const userSchema = new mongoose.Schema({
 
 // 索引优化 - 移除重复索引，因为unique已经创建了索引
 userSchema.index({ createdAt: -1 });
+
+// 自动生成邀请码（新用户首次保存时）
+userSchema.pre('save', function(next) {
+  if (this.isNew && !this.inviteCode) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去掉易混淆字符
+    this.inviteCode = Array.from({ length: 8 }, () =>
+      chars[Math.floor(Math.random() * chars.length)]
+    ).join('');
+  }
+  next();
+});
 
 // 密码加密中间件（Google 用户无密码，跳过）
 userSchema.pre('save', async function(next) {

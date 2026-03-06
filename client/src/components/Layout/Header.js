@@ -41,8 +41,8 @@ const Header = () => {
 
   const navItems = [
     { path: '/', label: t('nav.home'), icon: null },
-    { path: '/gallery', label: t('nav.gallery', 'Gallery'), icon: Image },
-    { path: '/seedance', label: t('nav.seedance', 'Seedance'), icon: Film },
+    { path: '/gallery', label: t('nav.gallery'), icon: Image },
+    { path: '/seedance', label: t('nav.seedance'), icon: Film },
     { path: '/explore', label: t('nav.explore'), icon: Palette },
     ...(isAuthenticated ? [
       { path: '/create', label: t('nav.create'), icon: Palette },

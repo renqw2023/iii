@@ -2,9 +2,9 @@
 export const navigation = {
   'zh-CN': {
     home: "首页",
-    gallery: "Gallery",
-    seedance: "Seedance",
-    explore: "风格广场",
+    gallery: "提示词库",
+    seedance: "AI 视频",
+    explore: "风格参数",
     prompts: "提示词库",
     create: "创建风格参数",
     createPrompt: "创建提示词",
@@ -31,9 +31,9 @@ export const navigation = {
   },
   'en-US': {
     home: "Home",
-    gallery: "Gallery",
-    seedance: "Seedance",
-    explore: "Style Gallery",
+    gallery: "Prompt Gallery",
+    seedance: "Video Gallery",
+    explore: "Sref Gallery",
     prompts: "Prompt Library",
     create: "Create Style",
     createPrompt: "Create Prompt",
@@ -60,9 +60,9 @@ export const navigation = {
   },
   'ja-JP': {
     home: "ホーム",
-    gallery: "ギャラリー",
-    seedance: "Seedance",
-    explore: "スタイルギャラリー",
+    gallery: "プロンプト集",
+    seedance: "AI動画",
+    explore: "スタイル参照",
     prompts: "プロンプトライブラリ",
     create: "スタイル作成",
     createPrompt: "プロンプト作成",

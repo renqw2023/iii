@@ -44,7 +44,7 @@
 
     /* Gallery specific — light overrides */
     --gallery-card-bg: #ffffff;
-    --gallery-card-border: #e2e8f0;
+    --gallery-card-border: transparent;
     --gallery-card-hover-border: rgba(99, 102, 241, 0.4);
     --gallery-search-bg: rgba(241, 245, 249, 0.8);
     --gallery-search-border: #e2e8f0;
@@ -55,6 +55,15 @@
     /* Home entry cards — light */
     --entry-card-bg: rgba(241, 245, 249, 0.6);
     --entry-card-border: #e2e8f0;
+
+    /* meigen-style page & stage */
+    --page-bg: linear-gradient(135deg, #e8edff 0%, #f3eeff 60%, #fdf0ff 100%);
+    --stage-bg: rgba(255, 255, 255, 0.88);
+    --stage-border: rgba(209, 213, 219, 0.5);
+    --stage-shadow: 0 2px 40px rgba(99, 102, 241, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
+    --sidebar-glass-bg: rgba(245, 247, 255, 0.65);
+    --sidebar-glass-border: rgba(200, 208, 240, 0.4);
+    --sidebar-divider: rgba(0, 0, 0, 0.07);
 }
 
 /* ========== Dark Theme ========== */
@@ -103,6 +112,15 @@
     /* Home entry cards — dark */
     --entry-card-bg: rgba(255, 255, 255, 0.03);
     --entry-card-border: rgba(255, 255, 255, 0.06);
+
+    /* meigen-style page & stage — dark overrides */
+    --page-bg: #0b0f1a;
+    --stage-bg: rgba(17, 24, 39, 0.85);
+    --stage-border: rgba(255, 255, 255, 0.07);
+    --stage-shadow: 0 4px 40px rgba(0, 0, 0, 0.4);
+    --sidebar-glass-bg: rgba(11, 15, 26, 0.5);
+    --sidebar-glass-border: rgba(255, 255, 255, 0.05);
+    --sidebar-divider: rgba(255, 255, 255, 0.06);
 }
 
 /* ========== Smooth Transition ========== */

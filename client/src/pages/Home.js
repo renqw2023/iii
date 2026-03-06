@@ -26,11 +26,11 @@ const Home = () => {
 
   useHomeSEO();
 
-  // 离开首页时保存滚动位置（首页卡片导航到 /explore/:id 会卸载 Home）
+  // 实时保存首页滚动位置（不依赖 unmount 时机 — 导航后页面高度变化会导致 unmount 时 scrollY 已被浏览器压缩归零）
   useEffect(() => {
-    return () => {
-      sessionStorage.setItem(HOME_SCROLL_KEY, String(Math.round(window.scrollY)));
-    };
+    const save = () => sessionStorage.setItem(HOME_SCROLL_KEY, String(Math.round(window.scrollY)));
+    window.addEventListener('scroll', save, { passive: true });
+    return () => window.removeEventListener('scroll', save);
   }, []);
 
   const [searchTerm, setSearchTerm] = useState('');

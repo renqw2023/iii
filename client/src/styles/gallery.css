@@ -6,16 +6,22 @@
 .gallery-page,
 .seedance-page {
   width: 100%;
-  padding: 0.75rem 0.75rem 4rem;
-  background-color: var(--bg-primary);
+  padding: 1.25rem 1.25rem 4rem;
+  background: var(--page-bg);
   color: var(--text-primary);
 }
 
 /* --- Sidebar + Main Layout --- */
 .gallery-layout {
   display: flex;
-  gap: 0.5rem;
+  gap: 0;
   align-items: flex-start;
+  background: var(--stage-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid var(--stage-border);
+  box-shadow: var(--stage-shadow);
 }
 
 .gallery-sidebar {
@@ -23,9 +29,14 @@
   flex-shrink: 0;
   position: sticky;
   top: 1rem;
-  background: var(--gallery-card-bg, rgba(255, 255, 255, 0.03));
-  border: 1px solid var(--gallery-card-border, rgba(255, 255, 255, 0.08));
-  border-radius: 14px;
+  background: var(--sidebar-glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: none;
+  border-right: 1px solid var(--sidebar-glass-border);
+  border-radius: 0;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -33,7 +44,7 @@
   max-height: calc(100vh - 2rem);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .gallery-sidebar.closed {
@@ -45,7 +56,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--sidebar-divider);
 }
 
 .gallery-sidebar-title {
@@ -68,8 +79,8 @@
 }
 
 .gallery-sidebar-close:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary, #f1f5f9);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .gallery-sidebar-section {
@@ -90,6 +101,7 @@
 .gallery-main {
   flex: 1;
   min-width: 0;
+  padding: 1.25rem;
 }
 
 /* --- Toolbar (above grid) --- */
@@ -417,25 +429,25 @@
 /* --- Gallery Card — no break-inside needed with grid-row span --- */
 .gallery-card {
   margin-bottom: 0;
-  background: var(--gallery-card-bg);
-  border: 1px solid var(--gallery-card-border);
+  background: transparent;
+  border: none;
   border-radius: 12px;
   overflow: hidden;
-  transition: box-shadow 0.3s, border-color 0.3s;
+  transition: box-shadow 0.3s;
   display: block;
 }
 
-.gallery-card:hover {
-  border-color: var(--gallery-card-hover-border);
-  box-shadow: var(--shadow-card-hover);
+.gallery-card:hover .gallery-card-image {
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
 }
 
 /* --- Card Image — natural aspect ratio, no fixed height --- */
 .gallery-card-image {
   position: relative;
   overflow: hidden;
-  background: var(--bg-secondary, #0f172a);
+  background: var(--bg-secondary);
   border-radius: 12px;
+  transition: box-shadow 0.3s;
 }
 
 .gallery-card-image img {
@@ -539,15 +551,14 @@
 }
 
 .video-card:hover {
-  border-color: rgba(239, 68, 68, 0.3);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
 }
 
 .video-card-media {
   position: relative;
   aspect-ratio: 16/9;
   overflow: hidden;
-  background: #0b0f1a;
+  background: var(--bg-secondary);
 }
 
 .video-play-overlay {
@@ -1807,27 +1818,29 @@
 
 /* --- Dark Area Wrapper --- */
 .home-dark-area {
-  background-color: var(--bg-primary);
-  padding: 3rem 0 0;
+  background: var(--page-bg);
+  padding: 2rem 2.5rem 4rem;
   min-height: 60vh;
 }
 
 /* --- Generic Section --- */
 .home-section {
-  max-width: 1400px;
-  margin: 0 auto 3rem;
-  padding: 0 1.5rem;
+  width: 100%;
+  margin: 0 0 1.5rem;
+  padding: 0;
 }
 
-/* Latest content section — full viewport width, matches gallery-page layout */
+/* Latest content section — floating stage panel, matches gallery-layout style */
 .home-content-section {
-  max-width: none;
-  margin-left: 0;
-  margin-right: 0;
-  margin-bottom: 0;
-  padding: 2.5rem 0.75rem 0;
-  background-color: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
+  width: 100%;
+  margin: 0 0 2rem;
+  padding: 2rem;
+  background: var(--stage-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid var(--stage-border);
+  box-shadow: var(--stage-shadow);
 }
 
 /* --- Section Header --- */
@@ -1925,8 +1938,8 @@
 
 .home-entry-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: var(--stage-border);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12);
 }
 
 .home-entry-card:hover::before {
@@ -2038,16 +2051,18 @@
 /* --- Homepage Responsive --- */
 @media (max-width: 768px) {
   .home-dark-area {
-    padding: 2rem 0 0;
+    padding: 1.25rem 1rem 3rem;
   }
 
   .home-content-section {
-    padding-top: 1.75rem;
+    padding: 1.5rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
   }
 
   .home-section {
-    padding: 0 1rem;
-    margin-bottom: 2rem;
+    padding: 0;
+    margin-bottom: 1.5rem;
   }
 
   .home-entry-grid {
@@ -2089,11 +2104,16 @@
 
 @media (max-width: 480px) {
   .home-dark-area {
-    padding: 1.5rem 0 2rem;
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .home-content-section {
+    padding: 1.25rem;
+    border-radius: 12px;
   }
 
   .home-section {
-    padding: 0 0.75rem;
-    margin-bottom: 1.5rem;
+    padding: 0;
+    margin-bottom: 1.25rem;
   }
 }

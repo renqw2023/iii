@@ -3,25 +3,26 @@
 .liblib-card {
   /* 无固定高度——让图片自然撑开 */
   /* break-inside 和 margin-bottom 由 CSS Grid span 控制，无需显式设置 */
-  background: var(--gallery-card-bg, rgba(255,255,255,0.04));
-  border: 1px solid var(--gallery-card-border, rgba(255,255,255,0.08));
+  background: transparent;
+  border: none;
   border-radius: 12px;
   overflow: hidden;
-  transition: box-shadow 0.25s, border-color 0.25s;
+  transition: box-shadow 0.25s;
   display: block;
   cursor: pointer;
 }
 
-.liblib-card:hover {
-  border-color: var(--gallery-card-hover-border, rgba(99,102,241,0.4));
-  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-}
-
-/* 图片容器 — 自然高度，无裁切 */
+/* 图片容器 — 自然高度，圆角裁切，无白色底部溢出 */
 .liblib-card-image {
   position: relative;
   overflow: hidden;
-  background: #0f172a;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  transition: box-shadow 0.25s;
+}
+
+.liblib-card:hover .liblib-card-image {
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
 }
 
 .liblib-card-image img {

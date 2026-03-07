@@ -1,426 +1,314 @@
-import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Coins, CheckCircle, Heart, Clock, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from 'react-query';
+import { Heart, Clock, Palette, Image, Film, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { useTranslation } from 'react-i18next';
 import { creditsAPI } from '../services/creditsApi';
+import { favoritesAPI } from '../services/favoritesApi';
+import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import StatsPanel from '../components/Dashboard/StatsPanel';
 import DashboardHeader from '../components/Dashboard/DashboardHeader';
 import DashboardTabs from '../components/Dashboard/DashboardTabs';
-import PostsTab from '../components/Dashboard/tabs/PostsTab';
-import PromptsTab from '../components/Dashboard/tabs/PromptsTab';
-import FavoritesTab from '../components/Dashboard/tabs/FavoritesTab';
-import FollowingTab from '../components/Dashboard/tabs/FollowingTab';
-import FollowersTab from '../components/Dashboard/tabs/FollowersTab';
-import SocialTab from '../components/Dashboard/tabs/SocialTab';
-import PostEditModal from '../components/Dashboard/modals/PostEditModal';
-import PromptEditModal from '../components/Dashboard/modals/PromptEditModal';
-import useDashboardData from '../hooks/useDashboardData';
-import usePostEdit from '../hooks/usePostEdit';
-import usePromptEdit from '../hooks/usePromptEdit';
-import { generateTabsConfig } from '../utils/dashboard/dashboardHelpers';
-import { ANIMATION_CONFIG } from '../utils/dashboard/dashboardConstants';
 
-// 积分 + 快捷入口面板
-const CreditsQuickPanel = () => {
-  const queryClient = useQueryClient();
+// ── Reuse FavCard display logic ──────────────────────────────────────────────
+const FAV_TABS = [
+  { key: 'sref',     label: 'Sref',    icon: Palette, color: '#a855f7' },
+  { key: 'gallery',  label: 'Gallery', icon: Image,   color: '#3b82f6' },
+  { key: 'seedance', label: 'Video',   icon: Film,    color: '#10b981' },
+];
 
-  const { data: balanceData } = useQuery(
-    ['credits-balance'],
-    () => creditsAPI.getBalance().then(r => r.data.data),
-    { staleTime: 60 * 1000 }
-  );
-
-  const checkinMutation = useMutation(
-    () => creditsAPI.checkin().then(r => r.data),
-    {
-      onSuccess: (res) => {
-        toast.success(res.message);
-        queryClient.invalidateQueries(['credits-balance']);
-      },
-      onError: (err) => {
-        toast.error(err.response?.data?.message || '签到失败');
-      },
-    }
-  );
-
-  const balance = balanceData?.credits ?? '—';
-  const checkedInToday = balanceData?.checkedInToday ?? false;
+const FavCard = ({ item, navigate }) => {
+  const { targetType, target } = item;
+  if (!target) return null;
+  const image = target.previewImage || target.thumbnailUrl || '';
+  const title = target.title || target.srefCode || target.prompt?.substring(0, 40) || '';
+  const url =
+    targetType === 'sref'    ? `/explore/${target._id}` :
+    targetType === 'gallery' ? `/gallery/${target._id}` :
+    `/seedance/${target._id}`;
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* 积分卡片 */}
-      <div
-        className="col-span-1 sm:col-span-2 rounded-2xl p-5 flex items-center justify-between"
-        style={{
-          background: 'linear-gradient(135deg, var(--accent-primary, #6366f1), #7c3aed)',
-          color: '#fff',
-        }}
-      >
-        <div>
-          <p className="text-sm opacity-75 mb-0.5">我的积分</p>
-          <div className="flex items-center gap-2">
-            <Coins size={22} />
-            <span className="text-3xl font-bold">{balance}</span>
+    <div
+      className="group relative rounded-xl overflow-hidden cursor-pointer"
+      style={{ border: '1px solid var(--border-color)' }}
+      onClick={() => navigate(url, { state: { fromList: true } })}
+    >
+      <div className="aspect-square" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+        {image ? (
+          <img src={image} alt={title} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center opacity-20">
+            <Heart size={28} />
           </div>
-        </div>
-        <button
-          onClick={() => checkinMutation.mutate()}
-          disabled={checkedInToday || checkinMutation.isLoading}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all"
-          style={{
-            backgroundColor: checkedInToday ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.92)',
-            color: checkedInToday ? 'rgba(255,255,255,0.55)' : '#6366f1',
-            cursor: checkedInToday ? 'default' : 'pointer',
-          }}
-        >
-          {checkedInToday ? (
-            <><CheckCircle size={14} /> 已签到</>
-          ) : (
-            <><Coins size={14} /> {checkinMutation.isLoading ? '签到中...' : '每日签到 +10'}</>
-          )}
-        </button>
+        )}
       </div>
-
-      {/* 快捷入口 */}
-      <Link
-        to="/favorites"
-        className="rounded-2xl p-5 flex items-center justify-between group transition-colors"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
-          color: 'var(--text-primary)',
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(239,68,68,0.12)' }}>
-            <Heart size={16} style={{ color: '#ef4444' }} />
-          </div>
-          <span className="text-sm font-medium">我的收藏</span>
-        </div>
-        <ArrowRight size={16} className="opacity-40 group-hover:opacity-80 transition-opacity" />
-      </Link>
-
-      <Link
-        to="/history"
-        className="rounded-2xl p-5 flex items-center justify-between group transition-colors"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
-          color: 'var(--text-primary)',
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(99,102,241,0.12)' }}>
-            <Clock size={16} style={{ color: '#6366f1' }} />
-          </div>
-          <span className="text-sm font-medium">浏览历史</span>
-        </div>
-        <ArrowRight size={16} className="opacity-40 group-hover:opacity-80 transition-opacity" />
-      </Link>
+      <div className="p-2" style={{ backgroundColor: 'var(--bg-card)' }}>
+        <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{title}</p>
+      </div>
     </div>
   );
 };
 
-const Dashboard = () => {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const [viewMode, setViewMode] = useState('grid');
-  const [activeTab, setActiveTab] = useState('posts');
-  const [favoritesSubTab, setFavoritesSubTab] = useState('posts');
+// ── Favorites tab ─────────────────────────────────────────────────────────────
+const FavoritesSection = () => {
+  const navigate = useNavigate();
+  const [activeType, setActiveType] = useState('sref');
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // 使用自定义Hook管理数据
-  const {
-    userStats,
-    userPosts,
-    userPrompts,
-    favoritesPosts,
-    favoritesPrompts,
-    followingUsers,
-    followerUsers,
-    loading,
-    error,
-    pagination,
-    refreshData,
-    updatePost,
-    updatePrompt,
-    // removePost, // 暂未使用
-    // removePrompt, // 暂未使用
-    loadPostsPage,
-    loadPromptsPage
-  } = useDashboardData(user?.id);
-
-  // 使用编辑Hook
-  const {
-    editingPost,
-    editForm: postEditForm,
-    isUpdating: isUpdatingPost,
-    validationErrors: postValidationErrors,
-    startEdit: startPostEdit,
-    cancelEdit: cancelPostEdit,
-    updateField: updatePostField,
-    addTag: addPostTag,
-    removeTag: removePostTag,
-    saveEdit: savePostEdit,
-    // isEditing: isEditingPost, // 暂未使用
-    hasChanges: postHasChanges
-  } = usePostEdit((postId, updatedPost) => {
-    updatePost(postId, updatedPost);
-  });
-
-  const {
-    editingPrompt,
-    editForm: promptEditForm,
-    isUpdating: isUpdatingPrompt,
-    validationErrors: promptValidationErrors,
-    startEdit: startPromptEdit,
-    cancelEdit: cancelPromptEdit,
-    updateField: updatePromptField,
-    addTag: addPromptTag,
-    removeTag: removePromptTag,
-    saveEdit: savePromptEdit,
-    // isEditing: isEditingPrompt, // 暂未使用
-    hasChanges: promptHasChanges,
-    getCategoryOptions,
-    getDifficultyOptions
-  } = usePromptEdit((promptId, updatedPrompt) => {
-    updatePrompt(promptId, updatedPrompt);
-  });
-
-  // 生成标签页配置
-  const tabs = generateTabsConfig({
-    userPosts,
-    userPrompts,
-    favoritesPosts,
-    favoritesPrompts,
-    followingUsers,
-    followerUsers
-  }, pagination, t);
-
-  // 处理编辑操作
-  const handleEditPost = useCallback((post) => {
-    startPostEdit(post);
-  }, [startPostEdit]);
-
-  const handleEditPrompt = useCallback((prompt) => {
-    startPromptEdit(prompt);
-  }, [startPromptEdit]);
-
-  // 处理标签页切换
-  const handleTabChange = useCallback((tabId) => {
-    setActiveTab(tabId);
-    if (tabId === 'favorites') {
-      setFavoritesSubTab('posts');
+  const fetchFavs = useCallback(async (type) => {
+    setLoading(true);
+    try {
+      const res = await favoritesAPI.getList(type, 1, 24);
+      setItems(res.data.data?.favorites || []);
+    } catch {
+      toast.error('获取收藏失败');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // 处理视图模式切换
-  const handleViewModeChange = useCallback((mode) => {
-    setViewMode(mode);
-  }, []);
+  useEffect(() => { fetchFavs(activeType); }, [activeType, fetchFavs]);
 
-  // 处理分页切换
-  const handlePostsPageChange = useCallback((page) => {
-    loadPostsPage(page);
-  }, [loadPostsPage]);
+  const tabInfo = FAV_TABS.find(t => t.key === activeType);
 
-  const handlePromptsPageChange = useCallback((page) => {
-    loadPromptsPage(page);
-  }, [loadPromptsPage]);
-
-  // 渲染标签页内容
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'posts':
-        return (
-          <PostsTab
-            posts={userPosts}
-            viewMode={viewMode}
-            onEditPost={handleEditPost}
-            editingPost={editingPost}
-            loading={loading}
-            pagination={pagination?.posts}
-            onPageChange={handlePostsPageChange}
-          />
-        );
-      
-      case 'prompts':
-        return (
-          <PromptsTab
-            prompts={userPrompts}
-            viewMode={viewMode}
-            onEditPrompt={handleEditPrompt}
-            editingPrompt={editingPrompt}
-            loading={loading}
-            pagination={pagination?.prompts}
-            onPageChange={handlePromptsPageChange}
-          />
-        );
-      
-      case 'favorites':
-        return (
-          <div>
-            {/* 收藏子标签页 */}
-            <div className="flex space-x-4 mb-6">
-              <button
-                onClick={() => setFavoritesSubTab('posts')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  favoritesSubTab === 'posts'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {t('dashboard.favorites.posts.title')} ({favoritesPosts.length})
-              </button>
-              <button
-                onClick={() => setFavoritesSubTab('prompts')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  favoritesSubTab === 'prompts'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                {t('dashboard.favorites.prompts.title')} ({favoritesPrompts.length})
-              </button>
-            </div>
-            
-            <FavoritesTab
-              favorites={favoritesPosts}
-              favoritePrompts={favoritesPrompts}
-              viewMode={viewMode}
-              loading={loading}
-              activeSubTab={favoritesSubTab}
-            />
-          </div>
-        );
-      
-      case 'following':
-        return (
-          <FollowingTab
-            following={followingUsers}
-            loading={loading}
-          />
-        );
-      
-      case 'followers':
-        return (
-          <FollowersTab
-            followers={followerUsers}
-            loading={loading}
-          />
-        );
-      
-      case 'social':
-        return (
-          <SocialTab
-            following={followingUsers}
-            followers={followerUsers}
-            loading={loading}
-          />
-        );
-      
-      default:
-        return null;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 flex items-center justify-center">
-        <LoadingSpinner />
+  return (
+    <div>
+      {/* Sub-tabs */}
+      <div className="flex gap-2 mb-5">
+        {FAV_TABS.map(tab => {
+          const Icon = tab.icon;
+          const active = activeType === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveType(tab.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
+              style={{
+                backgroundColor: active ? tab.color : 'var(--bg-tertiary)',
+                color: active ? '#fff' : 'var(--text-secondary)',
+                border: `1px solid ${active ? tab.color : 'var(--border-color)'}`,
+              }}
+            >
+              <Icon size={13} />
+              {tab.label}
+            </button>
+          );
+        })}
+        <Link
+          to="/favorites"
+          className="ml-auto flex items-center gap-1 text-sm transition-opacity opacity-60 hover:opacity-100"
+          style={{ color: 'var(--accent-primary)' }}
+        >
+          View all <ArrowRight size={13} />
+        </Link>
       </div>
-    );
-  }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={refreshData}
-            className="btn btn-primary"
-          >
-            {t('dashboard.posts.error')}
-          </button>
+      {loading ? (
+        <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
+          {tabInfo && <tabInfo.icon size={40} className="mx-auto mb-3 opacity-20" />}
+          <p className="text-sm">No {tabInfo?.label} saved yet</p>
+          <p className="text-xs mt-1 opacity-60">Tap the heart icon on any card to save it</p>
         </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {items.map(item => (
+            <FavCard key={item._id} item={item} navigate={navigate} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── History tab ───────────────────────────────────────────────────────────────
+const TYPE_META = {
+  sref:     { icon: Palette, label: 'Sref',    color: '#a855f7' },
+  gallery:  { icon: Image,   label: 'Gallery', color: '#3b82f6' },
+  seedance: { icon: Film,    label: 'Video',   color: '#10b981' },
+};
+
+const formatTime = (iso) => {
+  const diff = Date.now() - new Date(iso);
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+  return new Date(iso).toLocaleDateString();
+};
+
+const HistorySection = () => {
+  const navigate = useNavigate();
+  const { getHistory } = useBrowsingHistory();
+  const items = getHistory().slice(0, 12);
+
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
+        <Clock size={40} className="mx-auto mb-3 opacity-20" />
+        <p className="text-sm">No browsing history yet</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 用户信息头部 */}
-        <motion.div
-          initial={ANIMATION_CONFIG.INITIAL}
-          animate={ANIMATION_CONFIG.ANIMATE}
-          transition={ANIMATION_CONFIG.TRANSITION}
+    <div>
+      <div className="flex justify-end mb-4">
+        <Link
+          to="/history"
+          className="flex items-center gap-1 text-sm opacity-60 hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--accent-primary)' }}
         >
-          <DashboardHeader user={user} userStats={userStats} />
-        </motion.div>
+          View all <ArrowRight size={13} />
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {items.map((item) => {
+          const meta = TYPE_META[item.type] || {};
+          const Icon = meta.icon || Clock;
+          return (
+            <div
+              key={`${item.type}-${item.id}`}
+              className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors group"
+              style={{ backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}
+              onClick={() => navigate(item.url)}
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${meta.color}20` }}
+              >
+                <Icon size={14} style={{ color: meta.color }} />
+              </div>
+              {item.image && (
+                <img src={item.image} alt={item.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                  {item.title || `${meta.label} item`}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {meta.label} · {formatTime(item.visitedAt)}
+                </p>
+              </div>
+              <ArrowRight size={14} className="opacity-0 group-hover:opacity-40 transition-opacity flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
-        {/* 统计面板 */}
-        <StatsPanel user={user} stats={userStats} />
+// ── Credits tab ───────────────────────────────────────────────────────────────
+const REASON_LABELS = {
+  daily_checkin:  'Daily check-in',
+  register_bonus: 'Register bonus',
+  invite_reward:  'Invite reward',
+  invite_bonus:   'Invited friend bonus',
+  admin_grant:    'Admin grant',
+  generate_image: 'Image generation',
+};
 
-        {/* 积分 + 快捷入口 */}
-        <CreditsQuickPanel />
+const CreditsSection = () => {
+  const { data: historyData, isLoading } = useQuery(
+    ['credits-history'],
+    () => creditsAPI.getHistory(1, 20).then(r => r.data.data),
+    { staleTime: 60 * 1000 }
+  );
 
-        {/* 内容区域 */}
-        <motion.div
-          initial={ANIMATION_CONFIG.INITIAL}
-          animate={ANIMATION_CONFIG.ANIMATE}
-          transition={{ ...ANIMATION_CONFIG.TRANSITION, delay: 0.2 }}
-          className="card"
+  const transactions = historyData?.transactions ?? [];
+
+  if (isLoading) {
+    return <div className="flex justify-center py-12"><LoadingSpinner size="md" /></div>;
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
+        <TrendingUp size={40} className="mx-auto mb-3 opacity-20" />
+        <p className="text-sm">No transactions yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-end mb-4">
+        <Link
+          to="/credits"
+          className="flex items-center gap-1 text-sm opacity-60 hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--accent-primary)' }}
         >
-          {/* 标签页导航 */}
-          <DashboardTabs
-            tabs={tabs}
-            activeTab={activeTab}
-            viewMode={viewMode}
-            onTabChange={handleTabChange}
-            onViewModeChange={handleViewModeChange}
-            showViewModeToggle={activeTab === 'posts' || activeTab === 'prompts'}
-          />
-
-          {/* 标签页内容 */}
-          <div className="p-6">
-            {renderTabContent()}
+          View all <ArrowRight size={13} />
+        </Link>
+      </div>
+      <div className="space-y-2">
+        {transactions.map(tx => (
+          <div
+            key={tx._id}
+            className="flex items-center justify-between rounded-xl px-4 py-3"
+            style={{ backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: tx.type === 'earn' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)' }}
+              >
+                {tx.type === 'earn'
+                  ? <TrendingUp size={14} style={{ color: '#10b981' }} />
+                  : <TrendingDown size={14} style={{ color: '#ef4444' }} />
+                }
+              </div>
+              <div>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {REASON_LABELS[tx.reason] || tx.reason}
+                </p>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {new Date(tx.createdAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-bold" style={{ color: tx.type === 'earn' ? '#10b981' : '#ef4444' }}>
+                {tx.type === 'earn' ? '+' : '-'}{tx.amount}
+              </span>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>bal. {tx.balanceAfter}</p>
+            </div>
           </div>
-        </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
-        {/* 编辑模态框 */}
-        <PostEditModal
-          isOpen={!!editingPost}
-          onClose={cancelPostEdit}
-          editForm={postEditForm}
-          onUpdateField={updatePostField}
-          onAddTag={addPostTag}
-          onRemoveTag={removePostTag}
-          onSave={savePostEdit}
-          isUpdating={isUpdatingPost}
-          validationErrors={postValidationErrors}
-          hasChanges={postHasChanges(userPosts.find(p => p._id === editingPost))}
-        />
+// ── Main Dashboard ────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'favorites', label: 'Saved' },
+  { id: 'history',   label: 'History' },
+  { id: 'credits',   label: 'Credits' },
+];
 
-        <PromptEditModal
-          isOpen={!!editingPrompt}
-          onClose={cancelPromptEdit}
-          editForm={promptEditForm}
-          onUpdateField={updatePromptField}
-          onAddTag={addPromptTag}
-          onRemoveTag={removePromptTag}
-          onSave={savePromptEdit}
-          isUpdating={isUpdatingPrompt}
-          validationErrors={promptValidationErrors}
-          hasChanges={promptHasChanges(userPrompts.find(p => p._id === editingPrompt))}
-          categoryOptions={getCategoryOptions()}
-          difficultyOptions={getDifficultyOptions()}
-        />
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('favorites');
+
+  return (
+    <div style={{ backgroundColor: 'var(--bg-primary)', minHeight: '100vh', padding: '2rem 0' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <DashboardHeader user={user} />
+        <StatsPanel user={user} />
+        <DashboardTabs
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        >
+          {activeTab === 'favorites' && <FavoritesSection />}
+          {activeTab === 'history'   && <HistorySection />}
+          {activeTab === 'credits'   && <CreditsSection />}
+        </DashboardTabs>
       </div>
     </div>
   );

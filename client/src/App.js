@@ -9,6 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ErrorBoundary from './components/Error/ErrorBoundary';
 import LoginModal from './components/Auth/LoginModal';
+import SearchModal from './components/Search/SearchModal';
 import Layout from './components/Layout/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -35,6 +36,8 @@ import Contact from './pages/Contact';
 import Notifications from './pages/Notifications';
 import Credits from './pages/Credits';
 import History from './pages/History';
+import MagicLinkVerify from './pages/MagicLinkVerify';
+import Img2Prompt from './pages/Img2Prompt';
 import ErrorDemo from './pages/ErrorDemo';
 import GalleryList from './pages/Gallery/GalleryList';
 import GalleryModal from './pages/Gallery/GalleryModal';
@@ -53,6 +56,12 @@ const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 const GlobalLoginModal = () => {
   const { isLoginModalOpen, closeLoginModal } = useAuth();
   return <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />;
+};
+
+// 全局 SearchModal 挂载
+const GlobalSearchModal = () => {
+  const { isSearchOpen, closeSearch } = useAuth();
+  return <SearchModal isOpen={isSearchOpen} onClose={closeSearch} />;
 };
 
 // 创建 React Query 客户端
@@ -110,6 +119,8 @@ function App() {
                         <Route path="terms" element={<Terms />} />
                         <Route path="contact" element={<Contact />} />
                         <Route path="error-demo" element={<ErrorDemo />} />
+                        <Route path="magic-link/verify" element={<MagicLinkVerify />} />
+                        <Route path="img2prompt" element={<Img2Prompt />} />
                         {/* 画廊与视频（嵌套路由 — Modal 方案） */}
                         <Route path="gallery" element={<GalleryList />}>
                           <Route path=":id" element={<GalleryModal />} />
@@ -148,6 +159,9 @@ function App() {
 
                     {/* 全局 LoginModal */}
                     <GlobalLoginModal />
+
+                    {/* 全局 SearchModal */}
+                    <GlobalSearchModal />
 
                     {/* 全局通知 */}
                     <Toaster

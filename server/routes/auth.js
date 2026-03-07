@@ -682,4 +682,94 @@ router.post('/google', [
   }
 });
 
+// Magic Link - 请求登录链接
+router.post('/magic-link/request', [
+  body('email').isEmail().withMessage('请输入有效的邮箱地址')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '请输入有效的邮箱地址' });
+    }
+
+    const { email } = req.body;
+    const crypto = require('crypto');
+
+    // 查找或创建用户（只允许已注册用户）
+    const user = await User.findOne({ email: email.toLowerCase(), isActive: true });
+    if (!user) {
+      // 安全：不暴露用户是否存在
+      return res.json({ message: '如果该邮箱已注册，您将收到登录链接' });
+    }
+
+    // 生成 32 字节 token
+    const token = crypto.randomBytes(32).toString('hex');
+    user.magicLinkToken = token;
+    user.magicLinkExpires = new Date(Date.now() + 15 * 60 * 1000); // 15分钟
+    await user.save();
+
+    const magicUrl = `${config.server.clientUrl}/magic-link/verify?token=${token}`;
+
+    if (config.email.enabled) {
+      try {
+        await emailService.sendMagicLinkEmail(email, magicUrl);
+      } catch (emailError) {
+        console.error('Magic Link 邮件发送失败:', emailError);
+        return res.status(500).json({ message: '邮件发送失败，请稍后重试' });
+      }
+    } else {
+      // 开发环境：日志输出链接
+      console.log('Magic Link (dev):', magicUrl);
+    }
+
+    res.json({ message: '如果该邮箱已注册，您将收到登录链接' });
+  } catch (error) {
+    console.error('Magic Link 请求错误:', error);
+    res.status(500).json({ message: '请求失败，请稍后重试' });
+  }
+});
+
+// Magic Link - 验证 token
+router.get('/magic-link/verify', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ message: '缺少 token 参数' });
+    }
+
+    const user = await User.findOne({
+      magicLinkToken: token,
+      magicLinkExpires: { $gt: new Date() },
+      isActive: true,
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: '链接已失效或已过期，请重新发送' });
+    }
+
+    // 清除 token（一次性使用）
+    user.magicLinkToken = null;
+    user.magicLinkExpires = null;
+    if (!user.emailVerified) {
+      user.emailVerified = true;
+    }
+    await user.save();
+
+    const jwtToken = generateToken(user._id);
+
+    updateLoginAnalytics(user._id, req).catch(err =>
+      console.error('更新登录分析数据失败:', err)
+    );
+
+    res.json({
+      message: '登录成功',
+      token: jwtToken,
+      user: user.toPublicJSON(),
+    });
+  } catch (error) {
+    console.error('Magic Link 验证错误:', error);
+    res.status(500).json({ message: '验证失败，请稍后重试' });
+  }
+});
+
 module.exports = router;

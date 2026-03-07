@@ -82,6 +82,19 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
         onLike?.(prompt._id);
     };
 
+    const handleMouseMove = useCallback((e) => {
+        const el = cardRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        el.style.background = `radial-gradient(circle 160px at ${x}px ${y}px, rgba(99,102,241,0.15), transparent 70%), var(--bg-card)`;
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        if (cardRef.current) cardRef.current.style.background = 'var(--bg-card)';
+    }, []);
+
     return (
         <motion.div
             ref={(el) => { cardRef.current = el; ref(el); }}
@@ -90,6 +103,8 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
             whileHover={{ y: -2 }}
             style={{ gridRowEnd: `span ${gridSpan}` }}
             className="gallery-card group cursor-pointer"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
             onClick={() => navigate(`/gallery/${prompt._id}`, { state: { fromList: true } })}
         >
             {/* 预览图区域 — 自然比例，无固定 aspect-ratio */}

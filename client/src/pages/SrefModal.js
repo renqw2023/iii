@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import TranslateButton from '../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ const SrefModal = () => {
     const [copied, setCopied] = useState(false);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [activeIdx, setActiveIdx] = useState(0);
+    const [srefTranslated, setSrefTranslated] = useState(null);
     // 滚轮节流：避免单次滚轮事件触发多次切换
     const wheelTimerRef = useRef(null);
     const mediaLeftRef = useRef(null);
@@ -350,9 +352,17 @@ const SrefModal = () => {
                                     </div>
 
                                     {sref.description && (
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
-                                            {sref.description}
-                                        </p>
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.4rem' }}>
+                                                <TranslateButton
+                                                    text={sref.description}
+                                                    onTranslated={(t) => setSrefTranslated(t)}
+                                                />
+                                            </div>
+                                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
+                                                {srefTranslated || sref.description}
+                                            </p>
+                                        </div>
                                     )}
 
                                     {sref.tags?.length > 0 && (

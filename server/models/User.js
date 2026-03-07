@@ -96,6 +96,15 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Magic Link 登录
+  magicLinkToken: {
+    type: String,
+    default: null
+  },
+  magicLinkExpires: {
+    type: Date,
+    default: null
+  },
   // 密码重置
   passwordResetToken: {
     type: String,

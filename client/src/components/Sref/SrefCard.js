@@ -60,6 +60,19 @@ const SrefCard = ({ sref }) => {
     }
   };
 
+  const handleMouseMove = useCallback((e) => {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    el.style.background = `radial-gradient(circle 160px at ${x}px ${y}px, rgba(99,102,241,0.15), transparent 70%), var(--bg-card)`;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (cardRef.current) cardRef.current.style.background = 'var(--bg-card)';
+  }, []);
+
   return (
     <motion.div
       ref={cardRef}
@@ -67,6 +80,8 @@ const SrefCard = ({ sref }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.25 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       style={{ gridRowEnd: `span ${gridSpan}` }}
       className="liblib-card"
       onClick={() => navigate(`/explore/${sref._id}`, { state: { fromList: true } })}

@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn } from 'lucide-react';
+import TranslateButton from '../../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { galleryAPI } from '../../services/galleryApi';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +23,7 @@ const GalleryModal = () => {
     const location = useLocation();
     const { t } = useTranslation();
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [translatedPrompt, setTranslatedPrompt] = useState(null);
 
     const handleClose = () => {
         if (location.state?.fromList) navigate(-1);
@@ -218,11 +220,19 @@ const GalleryModal = () => {
                                     <div className="dmodal-prompt-box">
                                         <div className="dmodal-prompt-header">
                                             <span>Prompt</span>
-                                            <button onClick={handleCopy} className="detail-copy-btn">
-                                                <Copy size={13} /><span>Copy</span>
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <TranslateButton
+                                                    text={prompt.prompt}
+                                                    onTranslated={(t) => setTranslatedPrompt(t)}
+                                                />
+                                                <button onClick={handleCopy} className="detail-copy-btn">
+                                                    <Copy size={13} /><span>Copy</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <p className="dmodal-prompt-text">{prompt.prompt}</p>
+                                        <p className="dmodal-prompt-text">
+                                            {translatedPrompt || prompt.prompt}
+                                        </p>
                                     </div>
 
                                     {prompt.tags?.length > 0 && (

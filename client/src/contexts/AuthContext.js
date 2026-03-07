@@ -59,9 +59,12 @@ const initialState = {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const openLoginModal  = useCallback(() => setIsLoginModalOpen(true), []);
   const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
+  const openSearch  = useCallback(() => setIsSearchOpen(true), []);
+  const closeSearch = useCallback(() => setIsSearchOpen(false), []);
 
   // 检查认证状态
   const checkAuthStatus = useCallback(async () => {
@@ -266,6 +269,9 @@ export const AuthProvider = ({ children }) => {
     isLoginModalOpen,
     openLoginModal,
     closeLoginModal,
+    isSearchOpen,
+    openSearch,
+    closeSearch,
   };
 
   return (

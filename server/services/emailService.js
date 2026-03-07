@@ -315,6 +315,59 @@ class EmailService {
     }
   }
 
+  // 发送 Magic Link 邮件
+  async sendMagicLinkEmail(email, magicUrl) {
+    if (!this.transporter) {
+      throw new Error('邮件服务未启用');
+    }
+
+    const mailOptions = {
+      from: {
+        name: config.email.from.name,
+        address: config.email.from.address,
+      },
+      to: email,
+      subject: 'III.PICS - 登录链接',
+      html: `
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>III.PICS - Magic Link 登录</title>
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f5f7fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); overflow: hidden;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 700;">III.PICS</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 16px;">一键登录，无需密码</p>
+            </div>
+            <div style="padding: 50px 40px;">
+              <h2 style="color: #2d3748; text-align: center; margin: 0 0 16px;">点击下方按钮登录</h2>
+              <p style="color: #718096; text-align: center; font-size: 16px; margin: 0 0 40px;">此链接 15 分钟内有效，仅可使用一次。</p>
+              <div style="text-align: center; margin: 40px 0;">
+                <a href="${magicUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 50px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102,126,234,0.4);">登录 III.PICS</a>
+              </div>
+              <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                <p style="color: #4a5568; margin: 0 0 12px; font-size: 14px;">如果按钮无法点击，请复制以下链接：</p>
+                <p style="color: #667eea; margin: 0; font-size: 13px; word-break: break-all; font-family: monospace;">${magicUrl}</p>
+              </div>
+              <p style="color: #a0aec0; text-align: center; font-size: 14px; margin: 0;">如果您没有请求此链接，请忽略此邮件。</p>
+            </div>
+            <div style="background: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+              <p style="color: #a0aec0; font-size: 12px; margin: 0;">© 2025 III.PICS. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    const result = await this.transporter.sendMail(mailOptions);
+    console.log('Magic Link 邮件发送成功:', result.messageId);
+    return result;
+  }
+
   // 测试邮件连接
   async testConnection() {
     if (!this.transporter) {

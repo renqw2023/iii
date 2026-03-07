@@ -63,6 +63,19 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         onLike?.(prompt._id);
     };
 
+    const handleMouseMove = (e) => {
+        const el = containerRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        el.style.background = `radial-gradient(circle 160px at ${x}px ${y}px, rgba(99,102,241,0.15), transparent 70%), var(--bg-card)`;
+    };
+
+    const handleMouseLeaveHalo = () => {
+        if (containerRef.current) containerRef.current.style.background = 'var(--bg-card)';
+    };
+
     return (
         <motion.div
             ref={containerRef}
@@ -71,6 +84,8 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             whileHover={{ y: -4 }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeaveHalo}
             className="video-card group cursor-pointer"
             onClick={() => navigate(`/seedance/${prompt._id}`, { state: { fromList: true } })}
             onMouseEnter={() => setIsHovering(true)}

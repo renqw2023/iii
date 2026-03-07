@@ -8,13 +8,38 @@
 
 ## 当前进度（每次恢复工作前先读这里）
 
-**最后更新**: 2026-03-06 — Phase A/B/C/D/E/F 全部完成，ESLint 零错误，推送至 GitHub
-**当前阶段**: 用户体系所有核心功能完成，Google OAuth 问题已定位（需重启 dev server）
+**最后更新**: 2026-03-06 — 5-Feature 功能包全部完成，零 console 错误，浏览器验证通过
+**当前阶段**: Feature 1-5 全部实现并验证
 **下一步**:
-  1. 重启 React dev server 使 REACT_APP_GOOGLE_CLIENT_ID 生效（CRA 编译时注入 env）
-  2. 在 Google Cloud Console 确认 Authorized JavaScript Origins 包含 `http://localhost:3100`
-  3. 全局搜索 Modal（meigen 分析 Phase B，中优先级）
-  4. 卡片鼠标跟随光晕效果（meigen 分析 Phase D.12，低优先级）
+  - 配置 OPENAI_API_KEY 环境变量（server/.env）以启用 img2prompt
+  - 可选：在 Header 导航加入 /img2prompt 入口链接
+
+## 已完成 — 5-Feature 功能包（2026-03-06）
+
+- ✅ Feature 1: Magic Link 登录
+  - User model 追加 magicLinkToken/magicLinkExpires
+  - emailService.sendMagicLinkEmail()
+  - POST /api/auth/magic-link/request + GET /api/auth/magic-link/verify
+  - MagicLinkVerify.js 页面（/magic-link/verify）
+  - LoginModal 新增密码/Magic Link 双 Tab 切换
+- ✅ Feature 2: 全局搜索 Modal
+  - searchApi.js（searchSref + searchGallery）
+  - SearchModal.js（debounce 搜索 + 浏览历史展示）
+  - AuthContext 追加 isSearchOpen/openSearch/closeSearch
+  - Header 搜索图标 → openSearch()
+  - App.js 挂载 GlobalSearchModal
+- ✅ Feature 3: 卡片鼠标跟随光晕
+  - GalleryCard.js + SrefCard.js + VideoCard.js 均追加 handleMouseMove/handleMouseLeave
+  - 纯 DOM 操作，radial-gradient 160px 光晕，不触发 re-render
+- ✅ Feature 4: Prompt 翻译按钮
+  - translateApi.js（MyMemory 免费 API）
+  - TranslateButton.js 通用组件（点击翻译/切回原文）
+  - GalleryModal.js + SrefModal.js 均已集成
+- ✅ Feature 5: 图生文 /img2prompt
+  - server/routes/tools.js（multer + OpenAI gpt-4o Vision，扣 1 积分）
+  - server/index.js 注册 /api/tools 路由
+  - Img2Prompt.js 页面（拖拽上传+预览+结果+复制）
+  - App.js 追加 /img2prompt 路由
 
 **已完成清单（本阶段）**:
   - ✅ Phase F：邀请码系统（User 自动生成 inviteCode，注册时接收邀请码，双方各得 200 积分，Credits 页显示我的邀请码 + 一键复制链接）

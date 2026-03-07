@@ -13,7 +13,8 @@ import {
   Image,
   Film,
   Sun,
-  Moon
+  Moon,
+  Search
 } from 'lucide-react';
 import NotificationDropdown from '../UI/NotificationDropdown';
 import CreditsDisplay from '../UI/CreditsDisplay';
@@ -25,7 +26,7 @@ import { getUserAvatar } from '../../utils/avatarUtils';
 
 const Header = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, user, logout, openLoginModal } = useAuth();
+  const { isAuthenticated, user, logout, openLoginModal, openSearch } = useAuth();
   const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -99,6 +100,19 @@ const Header = () => {
 
           {/* Right actions */}
           <div className="flex items-center space-x-3">
+            {/* Search */}
+            <button
+              onClick={openSearch}
+              className="p-2 rounded-lg transition-all duration-200"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+              aria-label="搜索"
+              title="全局搜索"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}

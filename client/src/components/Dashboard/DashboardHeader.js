@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQuery } from 'react-query';
 import { Settings, Calendar, Copy, Check } from 'lucide-react';
 import { getUserAvatar, DEFAULT_FALLBACK_AVATAR } from '../../utils/avatarUtils';
+import { creditsAPI } from '../../services/creditsApi';
 import toast from 'react-hot-toast';
 
 const DashboardHeader = ({ user }) => {
   const [copied, setCopied] = useState(false);
+
+  const { data: balanceData } = useQuery(
+    ['credits-balance'],
+    () => creditsAPI.getBalance().then(r => r.data.data),
+    { staleTime: 60000, enabled: !!user }
+  );
 
   if (!user) {
     return (
@@ -75,6 +83,11 @@ const DashboardHeader = ({ user }) => {
                 >
                   {user.inviteCode}
                 </code>
+                {balanceData?.inviteUsedCount !== undefined && (
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    · {balanceData.inviteUsedCount} used
+                  </span>
+                )}
                 <button
                   onClick={handleCopyInviteLink}
                   className="flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors"

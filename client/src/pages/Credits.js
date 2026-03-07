@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { Coins, CheckCircle, TrendingUp, TrendingDown, Clock, Gift, Copy } from 'lucide-react';
+import { Coins, CheckCircle, TrendingUp, TrendingDown, Clock, Gift, Copy, Zap } from 'lucide-react';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 import { creditsAPI } from '../services/creditsApi';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +13,12 @@ const REASON_LABELS = {
   invite_bonus:   '邀请好友奖励',
   admin_grant:    '管理员赠送',
   generate_image: '生成图片',
+  purchase:       '积分购买',
 };
+
+const getAuthHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`
+});
 
 const Credits = () => {
   const queryClient = useQueryClient();
@@ -29,6 +35,35 @@ const Credits = () => {
     () => creditsAPI.getHistory(1, 30).then(r => r.data.data),
     { staleTime: 60 * 1000 }
   );
+
+  const { data: plansData } = useQuery(
+    ['credit-plans'],
+    () => axios.get('/api/payments/plans').then(r => r.data.plans),
+    { staleTime: 5 * 60 * 1000 }
+  );
+
+  // Handle Stripe redirect result
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      toast.success('Payment successful! Credits added to your account.');
+      queryClient.invalidateQueries(['credits-balance']);
+      queryClient.invalidateQueries(['credits-history']);
+      window.history.replaceState({}, '', '/credits');
+    } else if (params.get('payment') === 'cancelled') {
+      toast.error('Payment cancelled.');
+      window.history.replaceState({}, '', '/credits');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePurchase = async (planId) => {
+    try {
+      const res = await axios.post('/api/payments/create-checkout', { planId }, { headers: getAuthHeaders() });
+      window.location.href = res.data.url;
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to start checkout');
+    }
+  };
 
   const checkinMutation = useMutation(
     () => creditsAPI.checkin().then(r => r.data),
@@ -94,22 +129,46 @@ const Credits = () => {
         </button>
       </div>
 
-      {/* 获取更多积分提示 */}
-      <div
-        className="rounded-xl p-4 mb-4 text-sm"
-        style={{
-          backgroundColor: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
-          color: 'var(--text-secondary)',
-        }}
-      >
-        <p className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>如何获得积分</p>
-        <ul className="space-y-1">
-          <li>• 每日签到 +10 积分</li>
-          <li>• 注册账号 +50 积分</li>
-          <li>• 邀请好友注册 +200 积分（双方均得）</li>
-        </ul>
-      </div>
+      {/* 购买套餐 */}
+      {plansData && plansData.length > 0 && (
+        <div className="mb-6">
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Upgrade your credits</h2>
+            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>One-time payment · Credits never expire</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {plansData.map(plan => (
+              <div
+                key={plan.id}
+                className="rounded-xl p-4 flex flex-col gap-3"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                }}
+              >
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{plan.name}</p>
+                  <p className="text-2xl font-bold mt-0.5" style={{ color: 'var(--text-primary)' }}>${plan.price}</p>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm" style={{ color: '#f59e0b' }}>
+                  <Zap size={14} fill="currentColor" />
+                  <span className="font-medium">{plan.credits.toLocaleString()} credits</span>
+                </div>
+                <button
+                  onClick={() => handlePurchase(plan.id)}
+                  className="w-full py-2 rounded-lg text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: 'var(--accent-primary)',
+                    color: '#fff',
+                  }}
+                >
+                  Buy Now
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 我的邀请码 */}
       {user?.inviteCode && (

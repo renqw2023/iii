@@ -189,6 +189,7 @@ router.post('/verify-email', [
         if (inviter && inviter.isActive) {
           inviter.credits = (inviter.credits || 0) + INVITE_BONUS;
           await inviter.save();
+          await User.findByIdAndUpdate(user.invitedBy, { $inc: { inviteUsedCount: 1 } });
           await CreditTransaction.create({
             userId: inviter._id,
             type: 'earn',

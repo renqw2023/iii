@@ -19,6 +19,7 @@ const seedanceRoutes = require('./routes/seedance');
 const srefRoutes = require('./routes/sref');
 const favoritesRoutes = require('./routes/favorites');
 const creditsRoutes = require('./routes/credits');
+const paymentsRoutes = require('./routes/payments');
 const toolsRoutes = require('./routes/tools');
 const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
 
@@ -32,6 +33,18 @@ app.use(cors(config.cors));
 // 限流
 const limiter = rateLimit(config.rateLimit);
 app.use(limiter);
+
+// Stripe webhook 需要 raw body，在 express.json() 之前注册
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') {
+    let data = '';
+    req.setEncoding('utf8');
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => { req.rawBody = data; next(); });
+  } else {
+    next();
+  }
+});
 
 // 解析JSON
 app.use(express.json({ limit: config.server.bodyLimit }));
@@ -68,6 +81,7 @@ app.use('/api/sref', srefRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/credits', creditsRoutes);
+app.use('/api/payments', paymentsRoutes);
 app.use('/api/tools', toolsRoutes);
 
 // 健康检查

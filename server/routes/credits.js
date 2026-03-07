@@ -26,7 +26,7 @@ function isSameDay(date1, date2) {
 // GET /api/credits/balance — 获取积分余额
 router.get('/balance', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('credits lastCheckinAt').lean();
+    const user = await User.findById(req.userId).select('credits lastCheckinAt inviteUsedCount').lean();
     if (!user) return res.status(404).json({ message: '用户不存在' });
 
     const checkedInToday = isSameDay(user.lastCheckinAt, new Date());
@@ -36,6 +36,7 @@ router.get('/balance', auth, async (req, res) => {
         credits: user.credits || 0,
         checkedInToday,
         dailyAmount: DAILY_CHECKIN_AMOUNT,
+        inviteUsedCount: user.inviteUsedCount || 0,
       }
     });
   } catch (error) {

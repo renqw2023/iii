@@ -55,6 +55,10 @@ const userSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
+  inviteUsedCount: {
+    type: Number,
+    default: 0
+  },
   avatar: {
     type: String,
     default: ''

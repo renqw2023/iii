@@ -6,11 +6,13 @@ import { Toaster } from 'react-hot-toast';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ErrorBoundary from './components/Error/ErrorBoundary';
 import LoginModal from './components/Auth/LoginModal';
 import SearchModal from './components/Search/SearchModal';
 import Layout from './components/Layout/Layout';
+import HomeLayout from './components/Layout/HomeLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -89,6 +91,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <ThemeProvider>
+            <SidebarProvider>
             <AuthProvider>
               <NotificationProvider>
                 <Router future={{
@@ -98,36 +101,39 @@ function App() {
                   <ScrollToTop />
                   <div className="min-h-screen">
                     <Routes>
-                      {/* 公开路由 */}
-                      <Route path="/" element={<Layout />}>
+                      {/* 首页 + 认证页 — 无全局侧边栏，顶部 Header */}
+                      <Route path="/" element={<HomeLayout />}>
                         <Route index element={<Home />} />
                         <Route path="login" element={<Login />} />
                         <Route path="register" element={<Register />} />
                         <Route path="verify-email" element={<EmailVerification />} />
                         <Route path="forgot-password" element={<ForgotPassword />} />
                         <Route path="reset-password" element={<ResetPassword />} />
-                        <Route path="post/:id" element={<PostDetail />} />
-                        <Route path="user/:id" element={<Profile />} />
+                        <Route path="magic-link/verify" element={<MagicLinkVerify />} />
+                      </Route>
+
+                      {/* 内容页 — 带全局侧边栏（含 filter 集成页） */}
+                      <Route path="/" element={<Layout />}>
                         <Route path="explore" element={<Explore />}>
                           <Route path=":id" element={<SrefModal />} />
                         </Route>
-                        <Route path="health" element={<Health />} />
-                        <Route path="about" element={<About />} />
-                        <Route path="help" element={<Help />} />
-                        <Route path="history" element={<History />} />
-                        <Route path="privacy" element={<Privacy />} />
-                        <Route path="terms" element={<Terms />} />
-                        <Route path="contact" element={<Contact />} />
-                        <Route path="error-demo" element={<ErrorDemo />} />
-                        <Route path="magic-link/verify" element={<MagicLinkVerify />} />
-                        <Route path="img2prompt" element={<Img2Prompt />} />
-                        {/* 画廊与视频（嵌套路由 — Modal 方案） */}
                         <Route path="gallery" element={<GalleryList />}>
                           <Route path=":id" element={<GalleryModal />} />
                         </Route>
                         <Route path="seedance" element={<SeedanceList />}>
                           <Route path=":id" element={<SeedanceModal />} />
                         </Route>
+                        <Route path="post/:id" element={<PostDetail />} />
+                        <Route path="user/:id" element={<Profile />} />
+                        <Route path="history" element={<History />} />
+                        <Route path="health" element={<Health />} />
+                        <Route path="about" element={<About />} />
+                        <Route path="help" element={<Help />} />
+                        <Route path="privacy" element={<Privacy />} />
+                        <Route path="terms" element={<Terms />} />
+                        <Route path="contact" element={<Contact />} />
+                        <Route path="error-demo" element={<ErrorDemo />} />
+                        <Route path="img2prompt" element={<Img2Prompt />} />
                       </Route>
 
                       {/* 需要登录的路由 */}
@@ -195,6 +201,7 @@ function App() {
                 </Router>
               </NotificationProvider>
             </AuthProvider>
+            </SidebarProvider>
           </ThemeProvider>
           </GoogleOAuthProvider>
         </QueryClientProvider>

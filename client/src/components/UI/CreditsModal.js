@@ -1,111 +1,112 @@
 /**
- * CreditsModal — 积分购买定价弹窗（阶段28）
+ * CreditsModal — 积分购买定价弹窗（阶段28 精确复刻 MeiGen）
  *
- * 对标 MeiGen.ai 定价 Modal：
- * - rounded-3xl 全屏 Modal，max-w-[1200px]
- * - 关闭按钮：absolute -right-14 毛玻璃圆角
- * - 渐变 mesh header
- * - 4套餐卡片（Free/Starter/Pro/Ultimate），hover:-translate-y-1
+ * 完全对标 MeiGen.ai 实测值：
+ * - Dialog: rounded-[22px] white bg, -right-14 毛玻璃关闭按钮
+ * - Cards: rounded-[24px] border-[#E3E3E3] bg-[#F9F9F9]，Pro: border-[#147DFF] bg-white
+ * - CTA: Starter rgb(20,20,20) | Pro rgb(20,125,255) | Ultimate rgb(96,93,243)
+ * - 货币：USD (西方市场)
  */
 import React, { useEffect } from 'react';
-import { X, Check, Zap } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const PLANS = [
   {
     id: 'free',
     name: 'Free',
-    subtitle: '免费开始',
+    subtitle: 'Start for free',
     price: 0,
-    priceLabel: '¥0',
-    priceSub: '无需信用卡',
-    credits: '每日 40 积分',
-    creditsSub: '每日刷新',
-    ctaLabel: '当前套餐',
-    ctaDisabled: true,
+    currency: '$',
+    priceSub: 'No credit card required',
+    creditsLabel: 'Daily Credits',
+    creditsSub: 'Refreshes daily',
+    cta: { label: 'Current Plan', disabled: true, style: 'free' },
     features: [
-      '每日刷新 40 积分',
-      '最多生成 20 张图片',
-      '标准分辨率',
-      '社区访问权',
+      'Daily refresh of 40 credits',
+      'Generate up to 20 images (image 1.5)',
+      'Max 2K resolution',
+      '1 parallel task',
+      'Free for commercial use',
     ],
-    cardBg: '#F9F9F9',
-    cardBgDark: 'rgba(255,255,255,0.04)',
-    cardBorder: '#E3E3E3',
+    cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
+    badge: null,
   },
   {
     id: 'starter',
     name: 'Starter',
-    subtitle: '轻量创作',
-    price: 79,
-    priceLabel: '¥79',
-    priceSub: '一次性付款',
-    credits: '1,000 积分',
-    creditsSub: '永不过期',
-    ctaLabel: '选 Starter',
-    ctaDisabled: false,
+    subtitle: 'Unlock full features',
+    price: 9,
+    currency: '$',
+    priceSub: 'One-time payment',
+    creditsLabel: '1,000 Credits',
+    creditsSub: 'Never expires',
+    cta: { label: 'Buy Starter', disabled: false, style: 'starter' },
     features: [
-      '1,000 积分礼包',
-      '无限浏览历史',
-      '收藏夹功能',
-      '优先客服支持',
+      'Daily refresh of 40 credits',
+      'Max 4K resolution',
+      '4 parallel tasks',
+      'Credits never expire',
+      'Free for commercial use',
     ],
-    cardBg: '#F9F9F9',
-    cardBgDark: 'rgba(255,255,255,0.04)',
-    cardBorder: '#E3E3E3',
+    cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
+    badge: null,
   },
   {
     id: 'pro',
     name: 'Pro',
-    subtitle: '专业创作',
-    price: 159,
-    priceLabel: '¥159',
-    priceSub: '一次性付款',
-    credits: '2,200 积分',
-    creditsSub: '永不过期',
-    ctaLabel: '选 Pro',
-    ctaDisabled: false,
-    featured: true,
+    subtitle: 'Most popular',
+    price: 19,
+    originalPrice: 23,
+    currency: '$',
+    priceSub: 'One-time payment',
+    creditsLabel: '2,200 Credits',
+    creditsSub: 'Up to 1,100 images (image 1.5)',
+    cta: { label: 'Buy Pro', disabled: false, style: 'pro' },
     features: [
-      '2,200 积分礼包',
-      '优先生成队列',
-      '批量操作模式',
-      '高清导出',
-      '优先客服支持',
+      'Daily refresh of 40 credits',
+      'Max 4K resolution',
+      '4 parallel tasks',
+      'Credits never expire',
+      'Free for commercial use',
     ],
-    cardBg: 'linear-gradient(135deg, #f0f0ff 0%, #f9f0ff 100%)',
-    cardBgDark: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.10) 100%)',
-    cardBorder: '#c4b5fd',
+    cardStyle: { border: '#147DFF', bg: '#fff' },
+    badge: { label: '4×5', color: '#147DFF', bg: 'rgba(20,125,255,0.1)' },
   },
   {
     id: 'ultimate',
     name: 'Ultimate',
-    subtitle: '旗舰全能',
-    price: 399,
-    priceLabel: '¥399',
-    priceSub: '一次性付款',
-    credits: '5,000 积分',
-    creditsSub: '永不过期',
-    ctaLabel: '选 Ultimate',
-    ctaDisabled: false,
+    subtitle: 'Best value',
+    price: 39,
+    originalPrice: 49,
+    currency: '$',
+    priceSub: 'One-time payment',
+    creditsLabel: '6,000 Credits',
+    creditsSub: 'Up to 2,000 images (image 1.5)',
+    cta: { label: 'Buy Ultimate', disabled: false, style: 'ultimate' },
     features: [
-      '5,000 积分礼包',
-      '优先生成队列',
-      '批量操作模式',
-      '4K 超清生成',
-      '专属客服通道',
-      '新功能抢先体验',
+      'Daily refresh of 40 credits',
+      'Max 4K resolution',
+      '4 parallel tasks',
+      'Credits never expire',
+      'Free for commercial use',
+      'Priority support',
     ],
-    cardBg: '#F9F9F9',
-    cardBgDark: 'rgba(255,255,255,0.04)',
-    cardBorder: '#E3E3E3',
+    cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
+    badge: { label: 'Save $10', color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
   },
 ];
+
+const CTA_COLORS = {
+  free:     { bg: 'transparent', color: '#919191', border: '1px solid #E3E3E3' },
+  starter:  { bg: 'rgb(20,20,20)',   color: '#fff', border: 'none' },
+  pro:      { bg: 'rgb(20,125,255)', color: '#fff', border: 'none' },
+  ultimate: { bg: 'rgb(96,93,243)',  color: '#fff', border: 'none' },
+};
 
 const CreditsModal = ({ open, onClose }) => {
   const { isAuthenticated, openLoginModal } = useAuth();
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
@@ -113,193 +114,209 @@ const CreditsModal = ({ open, onClose }) => {
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  // Lock body scroll
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
   if (!open) return null;
 
   const handlePlanClick = (plan) => {
-    if (plan.ctaDisabled) return;
+    if (plan.cta.disabled) return;
     if (!isAuthenticated) { onClose(); openLoginModal(); return; }
-    // TODO: 接入 Stripe checkout
     window.location.href = `/credits?plan=${plan.id}`;
   };
 
   return (
+    /* Overlay */
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 300,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+      }}
     >
-      {/* Dialog */}
-      <div
-        className="relative w-full overflow-visible"
-        style={{
-          maxWidth: 1200,
-          maxHeight: '90vh',
-          borderRadius: 24,
-          backgroundColor: 'var(--bg-primary)',
-          boxShadow: '0 25px 80px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-          animation: 'fadeInUp 0.2s ease-out',
-        }}
-      >
-        {/* Close button — outside the card */}
+      {/* Dialog wrapper — needed for absolute close button positioning */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: 1200 }}>
+
+        {/* Close button — absolute -right-14 top-0, exact MeiGen */}
         <button
           onClick={onClose}
-          className="absolute flex items-center justify-center transition-colors duration-150"
           style={{
-            top: 0, right: -56,
-            width: 40, height: 40,
-            borderRadius: 12,
-            backgroundColor: 'rgba(100,100,100,0.5)',
+            position: 'absolute', top: 0, right: -56,
+            width: 40, height: 40, borderRadius: 12,
+            backgroundColor: 'rgba(115,115,115,0.5)',
             backdropFilter: 'blur(8px)',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
+            WebkitBackdropFilter: 'blur(8px)',
+            color: '#fff', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'background-color 150ms',
           }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(100,100,100,0.7)'; }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(100,100,100,0.5)'; }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(115,115,115,0.7)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(115,115,115,0.5)'; }}
         >
           <X size={18} />
         </button>
 
-        {/* Scrollable content */}
-        <div style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-          <div style={{ padding: 24 }}>
-
-            {/* Header with gradient mesh */}
-            <div className="relative overflow-hidden"
-                 style={{ borderRadius: 12, padding: '28px 24px', backgroundColor: 'var(--bg-secondary)', marginBottom: 20 }}>
-              <div className="absolute inset-0" style={{
-                background: `
-                  radial-gradient(80% 120% at 95% 20%, rgba(184,112,255,0.18) 0%, transparent 50%),
-                  radial-gradient(60% 80% at 75% 80%, rgba(255,166,77,0.15) 0%, transparent 45%),
-                  radial-gradient(50% 100% at 85% 50%, rgba(41,130,255,0.12) 0%, transparent 40%)
-                `,
-                pointerEvents: 'none',
-              }} />
-              <div className="relative text-center">
-                <h2 style={{ fontSize: 30, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                  解锁更多积分
-                </h2>
-                <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginTop: 8, marginBottom: 0 }}>
-                  一次付款永久有效，按你的节奏创作精美 AI 图像
-                </p>
-              </div>
+        {/* Dialog — rounded-[22px] white bg, exact MeiGen */}
+        <div
+          style={{
+            borderRadius: 22,
+            backgroundColor: '#fff',
+            boxShadow: '0 25px 80px rgba(0,0,0,0.25)',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            animation: 'fadeInUp 0.2s ease-out',
+          }}
+        >
+          {/* Header section — bg-muted/30 with gradient mesh */}
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px 12px 0 0',
+                        padding: '28px 24px 24px', backgroundColor: 'rgba(0,0,0,0.02)' }}>
+            <div style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: `
+                radial-gradient(80% 120% at 95% 20%, rgba(184,112,255,0.15) 0%, transparent 50%),
+                radial-gradient(60% 80% at 75% 80%, rgba(255,166,77,0.12) 0%, transparent 45%),
+                radial-gradient(50% 100% at 15% 50%, rgba(41,130,255,0.10) 0%, transparent 40%)
+              `,
+            }} />
+            <div style={{ position: 'relative', textAlign: 'center' }}>
+              <h2 style={{ fontSize: 30, fontWeight: 700, color: '#0E1014', margin: 0 }}>
+                One-time payment. Yours forever.
+              </h2>
+              <p style={{ fontSize: 15, color: '#6b7280', marginTop: 8, marginBottom: 0 }}>
+                Unlock 4K generation, batch mode — create at your own pace
+              </p>
             </div>
+          </div>
 
-            {/* Plan grid */}
+          {/* Plan grid */}
+          <div style={{ padding: '20px 24px 24px' }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
               gap: 16,
             }}>
-              {PLANS.map(plan => (
-                <div
-                  key={plan.id}
-                  className="relative overflow-hidden flex flex-col transition-transform duration-200 hover:-translate-y-1"
-                  style={{
-                    borderRadius: 20,
-                    border: `1px solid ${plan.cardBorder}`,
-                    background: plan.cardBg,
-                    padding: 24,
-                  }}
-                >
-                  {/* Featured badge */}
-                  {plan.featured && (
-                    <div className="absolute top-4 right-4"
-                         style={{
-                           backgroundColor: '#6366f1',
-                           color: '#fff',
-                           fontSize: 11,
-                           fontWeight: 700,
-                           borderRadius: 20,
-                           padding: '2px 10px',
-                           letterSpacing: '0.05em',
-                         }}>
-                      推荐
-                    </div>
-                  )}
-
-                  {/* Plan name */}
-                  <h3 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    {plan.name}
-                  </h3>
-                  <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>{plan.subtitle}</p>
-
-                  {/* Price */}
-                  <div style={{ marginTop: 20, marginBottom: 4 }}>
-                    <div className="flex items-baseline gap-1">
-                      <span style={{ fontSize: 14, color: 'var(--text-primary)', position: 'relative', top: -4 }}>¥</span>
-                      <span style={{ fontSize: 38, fontWeight: 700, lineHeight: 1, color: 'var(--text-primary)' }}>
-                        {plan.price}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>{plan.priceSub}</p>
-                  </div>
-
-                  {/* Credits */}
-                  <div style={{ marginBottom: 16 }}>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {plan.credits}
-                    </span>
-                    <p style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{plan.creditsSub}</p>
-                  </div>
-
-                  {/* CTA */}
-                  <button
-                    onClick={() => handlePlanClick(plan)}
-                    disabled={plan.ctaDisabled}
-                    className="w-full flex items-center justify-center transition-all duration-150"
+              {PLANS.map(plan => {
+                const ctaColor = CTA_COLORS[plan.cta.style];
+                return (
+                  <div
+                    key={plan.id}
                     style={{
-                      height: 44,
-                      borderRadius: 12,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      marginBottom: 20,
-                      cursor: plan.ctaDisabled ? 'default' : 'pointer',
-                      border: plan.ctaDisabled ? '1px solid #E3E3E3' : 'none',
-                      backgroundColor: plan.ctaDisabled ? 'transparent'
-                        : plan.featured ? '#6366f1'
-                        : 'var(--text-primary)',
-                      color: plan.ctaDisabled ? '#999'
-                        : '#fff',
+                      position: 'relative',
+                      borderRadius: 24,
+                      border: `1px solid ${plan.cardStyle.border}`,
+                      backgroundColor: plan.cardStyle.bg,
+                      overflow: 'hidden',
+                      transition: 'transform 200ms ease-out',
+                      cursor: 'default',
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    {plan.ctaDisabled ? (
-                      plan.ctaLabel
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <Zap size={14} />
-                        {plan.ctaLabel}
-                      </span>
-                    )}
-                  </button>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-                  {/* Features */}
-                  <div className="flex flex-col gap-2">
-                    {plan.features.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <Check size={14} className="flex-shrink-0 mt-0.5" style={{ color: '#22c55e' }} />
-                        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{feat}</span>
+                      {/* Plan header */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
+                        <div>
+                          <h3 style={{ fontSize: 24, fontWeight: 700, color: '#252525', margin: 0, lineHeight: 1 }}>
+                            {plan.name}
+                          </h3>
+                          <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4, marginBottom: 0 }}>
+                            {plan.subtitle}
+                          </p>
+                        </div>
+                        {plan.badge && (
+                          <span style={{
+                            fontSize: 11, fontWeight: 700,
+                            color: plan.badge.color, backgroundColor: plan.badge.bg,
+                            borderRadius: 20, padding: '3px 10px',
+                            letterSpacing: '0.03em', whiteSpace: 'nowrap',
+                          }}>
+                            {plan.badge.label}
+                          </span>
+                        )}
                       </div>
-                    ))}
+
+                      {/* Price */}
+                      <div style={{ marginTop: 20, marginBottom: 4 }}>
+                        {plan.originalPrice && (
+                          <span style={{ fontSize: 14, color: '#9ca3af', textDecoration: 'line-through', marginRight: 6 }}>
+                            {plan.currency}{plan.originalPrice}
+                          </span>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                          <span style={{ fontSize: 28, color: '#0E1014', position: 'relative', top: -6 }}>
+                            {plan.currency}
+                          </span>
+                          <span style={{ fontSize: 40, fontWeight: 600, lineHeight: 1, color: '#0E1014' }}>
+                            {plan.price}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4, marginBottom: 0 }}>
+                          {plan.priceSub}
+                        </p>
+                      </div>
+
+                      {/* Credits */}
+                      <div style={{ marginBottom: 16 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#1f2937', margin: 0 }}>
+                          {plan.creditsLabel}
+                        </p>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginTop: 2, marginBottom: 0 }}>
+                          {plan.creditsSub}
+                        </p>
+                      </div>
+
+                      {/* CTA button */}
+                      <button
+                        onClick={() => handlePlanClick(plan)}
+                        disabled={plan.cta.disabled}
+                        style={{
+                          width: '100%', height: 44,
+                          borderRadius: 14,
+                          fontSize: 15, fontWeight: 500,
+                          marginBottom: 20,
+                          cursor: plan.cta.disabled ? 'default' : 'pointer',
+                          backgroundColor: ctaColor.bg,
+                          color: ctaColor.color,
+                          border: ctaColor.border || 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'opacity 150ms',
+                        }}
+                        onMouseEnter={e => { if (!plan.cta.disabled) e.currentTarget.style.opacity = '0.88'; }}
+                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                      >
+                        {plan.cta.label}
+                      </button>
+
+                      {/* Divider */}
+                      <div style={{ height: 1, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
+
+                      {/* Feature list */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {plan.features.map((feat, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <Check size={14} style={{ color: '#22c55e', flexShrink: 0, marginTop: 1 }} />
+                            <span style={{ fontSize: 13, color: '#525252', lineHeight: 1.4 }}>{feat}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Footer note */}
-            <p className="text-center" style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 20 }}>
-              积分永不过期 · 安全支付 · 随时可用
+            {/* Footer */}
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 20, marginBottom: 0 }}>
+              By purchasing, you agree to our{' '}
+              <a href="/terms" style={{ color: '#6b7280', textDecoration: 'underline' }}>Terms of Service</a>
+              {' '}and{' '}
+              <a href="/privacy" style={{ color: '#6b7280', textDecoration: 'underline' }}>Privacy Policy</a>
             </p>
           </div>
         </div>

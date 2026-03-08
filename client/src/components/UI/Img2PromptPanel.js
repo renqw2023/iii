@@ -1,67 +1,61 @@
 /**
- * Img2PromptPanel — 右侧滑出面板（阶段28）
+ * Img2PromptPanel — 右侧滑出生成面板（阶段28 精确复刻 MeiGen）
  *
- * 对标 MeiGen.ai 右侧生成面板：
- * - fixed top-4 bottom-4 right-4，w-[380px]，rounded-3xl
- * - translateX 滑入动画 200ms ease-out
- * - 反推提示词卡（叠层图片预览）+ 拖拽上传区 + 生成 + 结果
+ * 实测值：
+ * - aside: fixed top-4 bottom-4 right-4 z-40, width=320px
+ * - inner: rounded-[22px] bg-white/95 backdrop-blur(8px) p-4
+ * - Card1 (反推): h-16 rounded-[14px] bg-muted/50 hover:bg-muted/70 cursor-pointer
+ * - Card2 (上传): h-16 rounded-[14px] border-dashed border-muted-foreground/20
+ * - Card3 (描述): rounded-[14px] p-4 bg-muted/50 h-~200px
+ * - CTA: h-11 rounded-[14px] bg-foreground (#1B1B1B) text-white hover:-translate-y-0.5
  */
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Upload, Copy, Check, Loader2, Image as ImageIcon, Coins } from 'lucide-react';
+import { X, Upload, Copy, Check, Loader2, Image as ImageIcon, Plus } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+
+/* ── Muted bg: matches MeiGen's bg-muted/50 ≈ rgba(0,0,0,0.04) in light mode ── */
+const MUTED = 'rgba(0,0,0,0.04)';
+const MUTED_HOVER = 'rgba(0,0,0,0.07)';
 
 const Img2PromptPanel = ({ open, onClose }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
   const fileInputRef = useRef(null);
   const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
+  const [file, setFile]       = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [isLoading, setIsLoading]   = useState(false);
+  const [result, setResult]   = useState('');
+  const [copied, setCopied]   = useState(false);
+  const [prompt, setPrompt]   = useState('');
 
-  // Reset state when closed
   useEffect(() => {
     if (!open) {
-      setPreview(null);
-      setFile(null);
-      setResult('');
-      setCopied(false);
-      setIsDragging(false);
+      setPreview(null); setFile(null); setResult('');
+      setCopied(false); setIsDragging(false); setPrompt('');
     }
   }, [open]);
 
   const handleFile = (f) => {
-    if (!f || !f.type.startsWith('image/')) {
-      toast.error('请选择图片文件');
-      return;
-    }
-    setFile(f);
-    setResult('');
+    if (!f?.type?.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    setFile(f); setResult('');
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target.result);
     reader.readAsDataURL(f);
   };
 
   const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
+    e.preventDefault(); setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
     if (dropped) handleFile(dropped);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = () => setIsDragging(false);
-
   const handleSubmit = async () => {
     if (!isAuthenticated) { openLoginModal(); return; }
-    if (!file) { toast.error('请先上传图片'); return; }
-
-    setIsLoading(true);
-    setResult('');
+    if (!file) { toast.error('Please upload an image first'); return; }
+    setIsLoading(true); setResult('');
     try {
       const formData = new FormData();
       formData.append('image', file);
@@ -71,228 +65,243 @@ const Img2PromptPanel = ({ open, onClose }) => {
       });
       setResult(res.data.prompt);
       updateUser({ credits: res.data.creditsLeft });
-      toast.success('Prompt 生成成功！消耗 1 积分');
+      toast.success('Prompt generated! 1 credit used');
     } catch (err) {
-      const msg = err.response?.data?.message || '生成失败，请重试';
-      toast.error(msg);
+      toast.error(err.response?.data?.message || 'Generation failed, please try again');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCopy = async () => {
-    if (!result) return;
-    await navigator.clipboard.writeText(result);
+    const text = result || prompt;
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success('已复制到剪贴板');
+    toast.success('Copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
+    /* Slide-in panel — exact MeiGen: fixed top-4 bottom-4 right-4, w=320px */
     <div
-      className="fixed z-[100]"
       style={{
-        top: 16, bottom: 16, right: 16,
-        width: 380,
+        position: 'fixed', top: 16, bottom: 16, right: 16,
+        width: 320, zIndex: 100,
         transform: open ? 'translateX(0)' : 'translateX(calc(100% + 16px))',
         transition: 'transform 0.2s ease-out',
         pointerEvents: open ? 'auto' : 'none',
       }}
     >
+      {/* Inner container — rounded-3xl ≈ 22px, bg-card/95, backdrop-blur(8px), p-4 */}
       <div
-        className="flex flex-col h-full"
         style={{
-          borderRadius: 24,
-          backgroundColor: 'var(--bg-secondary)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid var(--border-color)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          display: 'flex', flexDirection: 'column', height: '100%',
+          borderRadius: 22,
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
           overflow: 'hidden',
+          padding: 16,
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between flex-shrink-0" style={{ padding: '16px 20px 12px' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
-            图生提示词
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      marginBottom: 12, paddingLeft: 4, paddingRight: 2, flexShrink: 0 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: 0 }}>
+            Generate
           </h2>
           <button
             onClick={onClose}
-            className="flex items-center justify-center rounded-lg transition-colors duration-150"
-            style={{ width: 30, height: 30, border: 'none', cursor: 'pointer',
-                     backgroundColor: 'transparent', color: 'var(--text-tertiary)' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--gallery-filter-hover-bg, rgba(0,0,0,0.06))'; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            style={{
+              width: 28, height: 28, borderRadius: 8, border: 'none',
+              backgroundColor: 'transparent', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#9ca3af', transition: 'background-color 150ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED; e.currentTarget.style.color = '#6b7280'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#9ca3af'; }}
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto" style={{ padding: '0 12px 16px', scrollbarWidth: 'thin' }}>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8,
+                      scrollbarWidth: 'thin', paddingRight: 2 }}>
 
-          {/* 功能入口卡 */}
+          {/* Card 1 — 反推提示词 / Reverse Prompt */}
           <div
-            className="flex items-center justify-between rounded-xl cursor-pointer transition-colors duration-150"
-            style={{ height: 64, padding: '0 12px', marginBottom: 8,
-                     backgroundColor: 'rgba(0,0,0,0.04)' }}
             onClick={() => fileInputRef.current?.click()}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.07)'; }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)'; }}
+            style={{
+              height: 64, borderRadius: 14, padding: '0 12px',
+              backgroundColor: preview ? MUTED : MUTED,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', transition: 'background-color 150ms', flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_HOVER; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = MUTED; }}
           >
-            <div className="flex items-center gap-2">
-              <ImageIcon size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {/* Custom image-reverse icon */}
+              <svg viewBox="0 0 24 24" fill="none" width={14} height={14} style={{ color: '#9ca3af', flexShrink: 0 }}>
+                <path d="M19 8C20.6569 8 22 6.65685 22 5C22 3.34315 20.6569 2 19 2C17.3431 2 16 3.34315 16 5C16 6.65685 17.3431 8 19 8Z"
+                      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V10"
+                      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               <div>
-                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>反推提示词</p>
-                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>拖拽图片反推画面描述</p>
+                <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>Reverse Prompt</p>
+                <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>Drag image to reverse-engineer prompt</p>
               </div>
             </div>
-            {/* 叠层图预览 */}
-            {preview ? (
-              <div style={{ position: 'relative', width: 48, height: 32, overflow: 'visible' }}>
-                <img src={preview} alt="" style={{
-                  position: 'absolute', width: 32, height: 32, borderRadius: 6,
-                  objectFit: 'cover', right: 4, bottom: -2, zIndex: 0,
-                  transform: 'rotate(-12deg)', transition: 'transform 0.2s ease-out',
-                }} />
-                <img src={preview} alt="" style={{
-                  position: 'absolute', width: 32, height: 32, borderRadius: 6,
-                  objectFit: 'cover', right: -2, bottom: -4, zIndex: 1,
-                  transition: 'transform 0.2s ease-out',
-                }} />
-              </div>
-            ) : (
-              <div style={{ position: 'relative', width: 48, height: 32, overflow: 'visible' }}>
-                <div style={{
-                  position: 'absolute', width: 32, height: 32, borderRadius: 6,
-                  backgroundColor: 'var(--border-color)', right: 4, bottom: -2, zIndex: 0,
-                  transform: 'rotate(-12deg)',
-                }} />
-                <div style={{
-                  position: 'absolute', width: 32, height: 32, borderRadius: 6,
-                  backgroundColor: 'var(--bg-tertiary, #e5e7eb)', right: -2, bottom: -4, zIndex: 1,
-                }} />
-              </div>
-            )}
+
+            {/* Stacked image preview (MeiGen style) */}
+            <div style={{ position: 'relative', width: 48, height: 36, overflow: 'visible', flexShrink: 0 }}>
+              {preview ? (
+                <>
+                  <img src={preview} alt="" style={{
+                    position: 'absolute', width: 32, height: 32, borderRadius: 6,
+                    objectFit: 'cover', right: 4, bottom: -2, zIndex: 0,
+                    transform: 'rotate(-12deg)', transition: 'transform 200ms ease-out',
+                  }} />
+                  <img src={preview} alt="" style={{
+                    position: 'absolute', width: 32, height: 32, borderRadius: 6,
+                    objectFit: 'cover', right: -2, bottom: -4, zIndex: 1,
+                    transition: 'transform 200ms ease-out',
+                  }} />
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    position: 'absolute', width: 32, height: 32, borderRadius: 6,
+                    backgroundColor: 'rgba(0,0,0,0.08)', right: 4, bottom: -2, zIndex: 0,
+                    transform: 'rotate(-12deg)',
+                  }} />
+                  <div style={{
+                    position: 'absolute', width: 32, height: 32, borderRadius: 6,
+                    backgroundColor: 'rgba(0,0,0,0.05)', right: -2, bottom: -4, zIndex: 1,
+                  }} />
+                </>
+              )}
+            </div>
           </div>
 
-          {/* 拖拽上传区 */}
+          {/* Card 2 — Upload reference image */}
           <div
-            className="flex items-center justify-between rounded-xl transition-colors duration-150"
             style={{
-              height: 64, padding: '0 12px', marginBottom: 12,
-              border: `1px dashed ${isDragging ? 'var(--accent-primary)' : 'rgba(0,0,0,0.15)'}`,
-              backgroundColor: isDragging ? 'rgba(99,102,241,0.05)' : 'transparent',
-              cursor: 'pointer',
+              height: 64, borderRadius: 14, padding: '0 12px',
+              border: `1px dashed ${isDragging ? 'rgba(99,102,241,0.6)' : 'rgba(0,0,0,0.15)'}`,
+              backgroundColor: isDragging ? 'rgba(99,102,241,0.04)' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', transition: 'border-color 150ms, background-color 150ms', flexShrink: 0,
             }}
             onClick={() => fileInputRef.current?.click()}
             onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.25)'; }}
+            onMouseLeave={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; }}
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])}
-            />
-            <div className="flex items-center gap-2">
-              <Upload size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+                   style={{ display: 'none' }}
+                   onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ImageIcon size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
               <div>
-                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', margin: 0 }}>
-                  拖拽或上传图片
+                <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>
+                  Drag or upload reference image
                 </p>
-                <p style={{ fontSize: 11, color: 'var(--text-tertiary)', margin: 0 }}>JPG / PNG / WebP</p>
+                <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>Optional</p>
               </div>
             </div>
-            {file && (
-              <div style={{
+            <button
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              style={{
+                width: 36, height: 36, borderRadius: 8, border: 'none',
+                backgroundColor: 'rgba(0,0,0,0.05)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 32, height: 32, borderRadius: 8,
-                backgroundColor: 'rgba(0,0,0,0.05)',
-                fontSize: 11, color: 'var(--text-tertiary)',
-              }}>
-                ✓
-              </div>
-            )}
+                transition: 'background-color 150ms', flexShrink: 0,
+                color: '#6b7280',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.09)'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+            >
+              <Plus size={16} />
+            </button>
           </div>
 
-          {/* 积分提示 */}
-          {isAuthenticated && (
-            <div className="flex items-center gap-1.5 rounded-xl" style={{
-              padding: '10px 12px', marginBottom: 12,
-              backgroundColor: 'rgba(0,0,0,0.03)',
-              fontSize: 12, color: 'var(--text-tertiary)',
-            }}>
-              <Coins size={13} />
-              <span>每次消耗 1 积分 · 余额 {user?.credits ?? 0} 积分</span>
+          {/* Card 3 — Prompt description textarea */}
+          <div style={{ borderRadius: 14, padding: 16, backgroundColor: MUTED, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>Prompt Description</span>
+              {(result || prompt) && (
+                <button onClick={handleCopy}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px',
+                                 borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11,
+                                 backgroundColor: copied ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.06)',
+                                 color: copied ? '#16a34a' : '#6b7280', transition: 'all 150ms' }}>
+                  {copied ? <Check size={11} /> : <Copy size={11} />}
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              )}
             </div>
-          )}
+            <textarea
+              value={result || prompt}
+              onChange={(e) => { if (!result) setPrompt(e.target.value); }}
+              placeholder="Drag a card to apply popular prompts, or type here…"
+              style={{
+                width: '100%', minHeight: 130, border: 'none', outline: 'none',
+                backgroundColor: 'transparent', resize: 'none',
+                fontSize: 13, lineHeight: 1.6, color: '#374151',
+                fontFamily: 'inherit',
+              }}
+              readOnly={!!result}
+            />
+          </div>
 
-          {/* 生成按钮 */}
+          {/* Divider + generate button area */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.08)' }} />
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>1 credit per generation</span>
+            <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.08)' }} />
+          </div>
+
+          {/* CTA — h-11 rounded-[14px] bg-foreground (#1B1B1B) hover:-translate-y-0.5 */}
           <button
             onClick={handleSubmit}
             disabled={isLoading || !file}
-            className="w-full flex items-center justify-center gap-2 rounded-xl font-semibold transition-opacity"
             style={{
-              height: 44, fontSize: 14,
-              backgroundColor: 'var(--accent-primary, #6366f1)',
-              color: '#fff',
-              border: 'none', cursor: isLoading || !file ? 'default' : 'pointer',
-              opacity: isLoading || !file ? 0.55 : 1,
-              marginBottom: 12,
+              height: 44, borderRadius: 14, border: 'none',
+              backgroundColor: '#1B1B1B', color: '#fff',
+              fontSize: 15, fontWeight: 500,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              cursor: isLoading || !file ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !file ? 0.5 : 1,
+              transition: 'transform 150ms, opacity 150ms',
+              flexShrink: 0,
             }}
+            onMouseEnter={e => { if (!isLoading && file) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
           >
             {isLoading ? (
-              <><Loader2 size={15} className="animate-spin" />正在生成...</>
+              <><Loader2 size={15} className="animate-spin" />Generating...</>
             ) : (
-              <><Upload size={15} />生成 Prompt</>
+              <><Upload size={14} />Generate Prompt</>
             )}
           </button>
 
-          {/* Result */}
-          {result && (
-            <div style={{
-              borderRadius: 12, padding: 14,
-              backgroundColor: 'var(--bg-primary)',
-              border: '1px solid var(--border-color)',
-            }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>生成结果</span>
-                <button
-                  onClick={handleCopy}
-                  className="flex items-center gap-1 rounded-lg transition-colors duration-150"
-                  style={{
-                    padding: '4px 10px', fontSize: 12, border: 'none', cursor: 'pointer',
-                    backgroundColor: copied ? 'rgba(16,185,129,0.12)' : 'var(--bg-tertiary, rgba(0,0,0,0.05))',
-                    color: copied ? '#10b981' : 'var(--text-secondary)',
-                  }}
-                >
-                  {copied ? <Check size={12} /> : <Copy size={12} />}
-                  {copied ? '已复制' : '复制'}
-                </button>
-              </div>
-              <p style={{
-                fontSize: 12, lineHeight: 1.7,
-                color: 'var(--text-secondary)',
-                whiteSpace: 'pre-wrap', userSelect: 'text', margin: 0,
-              }}>
-                {result}
-              </p>
-            </div>
-          )}
-
           {!isAuthenticated && (
-            <div className="text-center" style={{ padding: '12px 0' }}>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                请{' '}
-                <button onClick={openLoginModal} style={{ color: 'var(--accent-primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-                  登录
-                </button>
-                {' '}后使用（每次消耗 1 积分）
-              </p>
-            </div>
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', margin: 0 }}>
+              <button onClick={openLoginModal}
+                      style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer',
+                               padding: 0, textDecoration: 'underline', fontSize: 12 }}>
+                Sign in
+              </button>
+              {' '}to use this feature (1 credit each)
+            </p>
           )}
         </div>
       </div>

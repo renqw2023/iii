@@ -150,117 +150,126 @@ const Sidebar = ({ onCreditsClick }) => {
               <button
                 onClick={() => setAvatarOpen(v => !v)}
                 title="Account"
-                className="flex items-center justify-center rounded-lg transition-all duration-200"
+                className="flex items-center justify-center transition-colors duration-200"
                 style={{
-                  width: 40, height: 40,
-                  backgroundColor: avatarOpen ? 'var(--gallery-filter-hover-bg, rgba(0,0,0,0.06))' : 'transparent',
+                  width: 40, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer',
+                  backgroundColor: avatarOpen ? 'rgba(0,0,0,0.06)' : 'transparent',
                 }}
+                onMouseEnter={e => { if (!avatarOpen) e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)'; }}
+                onMouseLeave={e => { if (!avatarOpen) e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                <img
-                  src={getUserAvatar(user)} alt={user.username}
-                  className="w-7 h-7 rounded-full object-cover flex-shrink-0"
-                  style={{ transform: 'scale(1)', transition: 'transform 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                  onError={e => { e.target.src = '/Circle/01.png'; }}
-                />
+                {/* Avatar: image with dark fallback letter (MeiGen style) */}
+                <div className="relative flex-shrink-0 overflow-hidden rounded-full"
+                     style={{ width: 28, height: 28, backgroundColor: '#1B1B1B' }}>
+                  <img
+                    src={getUserAvatar(user)} alt=""
+                    className="w-full h-full object-cover"
+                    onError={e => { e.target.style.display = 'none'; }}
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center text-white font-medium"
+                        style={{ fontSize: 12 }}>
+                    {(user.username || 'U')[0].toUpperCase()}
+                  </span>
+                </div>
               </button>
 
-              {/* Dropdown menu */}
+              {/* Dropdown — exact MeiGen values */}
               {avatarOpen && (
                 <div
                   className="absolute bottom-full mb-2 left-0 z-[200]"
                   style={{
                     width: 245,
-                    borderRadius: 12,
-                    backgroundColor: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
-                    padding: '6px',
+                    borderRadius: 14,
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -4px rgba(0,0,0,0.10)',
+                    padding: 6,
                     animation: 'fadeInUp 0.15s ease-out',
                   }}
                 >
-                  {/* User info header */}
-                  <div className="flex items-center gap-3 px-3 py-2">
-                    <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden"
-                         style={{ backgroundColor: 'var(--text-primary)' }}>
-                      <img src={getUserAvatar(user)} alt={user.username}
-                           className="w-full h-full object-cover"
-                           onError={e => {
-                             e.target.style.display = 'none';
-                             e.target.parentElement.style.display = 'flex';
-                             e.target.parentElement.style.alignItems = 'center';
-                             e.target.parentElement.style.justifyContent = 'center';
-                           }} />
+                  {/* User header: avatar h-9 w-9 + name + email */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px' }}>
+                    <div className="relative flex-shrink-0 overflow-hidden rounded-full flex items-center justify-center"
+                         style={{ width: 36, height: 36, backgroundColor: '#1B1B1B' }}>
+                      <img src={getUserAvatar(user)} alt="" className="absolute inset-0 w-full h-full object-cover"
+                           onError={e => { e.target.style.display = 'none'; }} />
+                      <span className="text-white font-medium" style={{ fontSize: 13, position: 'relative' }}>
+                        {(user.username || 'U')[0].toUpperCase()}
+                      </span>
                     </div>
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                    <div style={{ overflow: 'hidden', flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#111827', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {user.username}
-                      </span>
-                      <span className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+                      </p>
+                      <p style={{ fontSize: 12, color: '#6b7280', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {user.email}
-                      </span>
+                      </p>
                     </div>
                   </div>
 
                   {/* Separator */}
-                  <div style={{ height: 1, backgroundColor: 'var(--border-color)', margin: '4px -6px' }} />
+                  <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '2px -6px 2px' }} />
 
-                  {/* Menu items */}
+                  {/* Menu items — MeiGen: gap-3 rounded-lg px-3 py-1.5 text-[13px] */}
                   {[
                     { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
-                    { icon: Settings, label: 'Settings', to: '/settings' },
-                    { icon: Clock, label: 'History', to: '/history' },
-                    { icon: Heart, label: 'Favorites', to: '/favorites' },
-                    { icon: HelpCircle, label: 'Help', to: '/help' },
+                    { icon: Settings,        label: 'Settings',  to: '/settings' },
+                    { icon: Clock,           label: 'History',   to: '/history' },
+                    { icon: Heart,           label: 'Favorites', to: '/favorites' },
+                    { icon: HelpCircle,      label: 'Help',      to: '/help' },
                   ].map(({ icon: Icon, label, to }) => (
                     <Link
                       key={to} to={to}
                       onClick={() => setAvatarOpen(false)}
-                      className="flex items-center gap-3 w-full text-left no-underline rounded-lg transition-colors duration-150"
-                      style={{ padding: '7px 12px', fontSize: 14, color: 'var(--text-secondary)' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--gallery-filter-hover-bg, rgba(0,0,0,0.05))'; }}
+                      className="flex items-center no-underline transition-colors duration-100"
+                      style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#1B1B1B',
+                               borderRadius: 10, display: 'flex', textDecoration: 'none' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
                       onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                     >
-                      <Icon size={15} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
-                      <span>{label}</span>
+                      <Icon size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                      <span style={{ flex: 1 }}>{label}</span>
                     </Link>
                   ))}
 
                   {/* Separator */}
-                  <div style={{ height: 1, backgroundColor: 'var(--border-color)', margin: '4px -6px' }} />
+                  <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '2px -6px 2px' }} />
 
-                  {/* Logout */}
+                  {/* Sign out */}
                   <button
                     onClick={() => { setAvatarOpen(false); logout(); navigate('/'); }}
-                    className="flex items-center gap-3 w-full text-left rounded-lg transition-colors duration-150"
-                    style={{ padding: '7px 12px', fontSize: 14, color: '#ef4444' }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; }}
+                    className="flex items-center w-full transition-colors duration-100"
+                    style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#ef4444',
+                             borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.07)'; }}
                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                   >
-                    <LogOut size={15} style={{ flexShrink: 0 }} />
+                    <LogOut size={16} style={{ flexShrink: 0 }} />
                     <span>Sign Out</span>
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Credits button */}
+            {/* Credits button — MeiGen: bg-[#1B1B1B] h-[28px] rounded-[8px] pl-3 pr-1 */}
             {!collapsed && (
               <button
                 onClick={onCreditsClick}
-                className="flex items-center gap-1 transition-colors duration-150"
+                className="flex items-center gap-2 transition-colors duration-150"
                 style={{
-                  backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)',
+                  backgroundColor: '#1B1B1B', color: '#fff',
                   borderRadius: 8, height: 28, paddingLeft: 12, paddingRight: 4,
-                  fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
+                  fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap',
+                  cursor: 'pointer', border: 'none',
                 }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#363636'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1B1B1B'; }}
               >
-                <span style={{ marginRight: 4 }}>Add Credits</span>
+                <span>Add Credits</span>
                 <div className="flex items-center gap-1"
-                     style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 5, height: 22, padding: '0 8px' }}>
+                     style={{ backgroundColor: '#262626', borderRadius: 5, height: 22, padding: '0 8px' }}>
                   <Zap size={10} style={{ color: '#FFDBA4' }} />
-                  <span>{credits}</span>
+                  <span style={{ fontSize: 12 }}>{credits}</span>
                 </div>
               </button>
             )}
@@ -269,7 +278,7 @@ const Sidebar = ({ onCreditsClick }) => {
           !collapsed && (
             <button onClick={openLoginModal}
                     className="w-full text-sm font-medium py-2 px-3 rounded-lg transition-colors"
-                    style={{ backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)' }}>
+                    style={{ backgroundColor: '#1B1B1B', color: '#fff', border: 'none', cursor: 'pointer' }}>
               Sign In
             </button>
           )

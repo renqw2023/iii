@@ -187,3 +187,9 @@
 
 /* Gallery & Seedance styles */
 @import './styles/gallery.css';
+
+/* Dropdown animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

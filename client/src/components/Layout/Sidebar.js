@@ -7,10 +7,13 @@
  *   Panel   : 由各页面通过 useSidebarPanel() 注入；默认 DefaultPanel
  *   Bottom  : 邀请卡（普通页）+ 用户头像 + Credits
  */
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
-import { Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift } from 'lucide-react';
+import {
+  Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
+  LayoutDashboard, Settings, LogOut, HelpCircle,
+} from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -25,11 +28,25 @@ const navItemClass = (active) =>
      : 'text-[var(--text-secondary)] hover:bg-[var(--gallery-filter-hover-bg,#f8fafc)] hover:text-[var(--text-primary)]'
    }`;
 
-const Sidebar = () => {
+const Sidebar = ({ onCreditsClick }) => {
   const { collapsed, toggleCollapsed, SidebarPanel } = useSidebar();
-  const { isAuthenticated, user, openSearch, openLoginModal } = useAuth();
+  const { isAuthenticated, user, openSearch, openLoginModal, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    if (!avatarOpen) return;
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setAvatarOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [avatarOpen]);
 
   const { data: creditsData } = useQuery(
     ['credits-balance'],
@@ -127,22 +144,125 @@ const Sidebar = () => {
 
         {/* User row */}
         {isAuthenticated && user ? (
-          <div className={`flex items-center gap-2 px-1 ${collapsed ? 'justify-center' : ''}`}>
-            <Link to="/dashboard" title="Dashboard">
-              <img
-                src={getUserAvatar(user)} alt={user.username}
-                className="w-8 h-8 rounded-full object-cover flex-shrink-0 hover:opacity-80 transition-opacity"
-                onError={e => { e.target.src = '/Circle/01.png'; }}
-              />
-            </Link>
+          <div className={`flex items-center gap-2 px-1 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+            {/* Avatar dropdown trigger */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setAvatarOpen(v => !v)}
+                title="Account"
+                className="flex items-center justify-center rounded-lg transition-all duration-200"
+                style={{
+                  width: 40, height: 40,
+                  backgroundColor: avatarOpen ? 'var(--gallery-filter-hover-bg, rgba(0,0,0,0.06))' : 'transparent',
+                }}
+              >
+                <img
+                  src={getUserAvatar(user)} alt={user.username}
+                  className="w-7 h-7 rounded-full object-cover flex-shrink-0"
+                  style={{ transform: 'scale(1)', transition: 'transform 0.2s' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                  onError={e => { e.target.src = '/Circle/01.png'; }}
+                />
+              </button>
+
+              {/* Dropdown menu */}
+              {avatarOpen && (
+                <div
+                  className="absolute bottom-full mb-2 left-0 z-[200]"
+                  style={{
+                    width: 245,
+                    borderRadius: 12,
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+                    padding: '6px',
+                    animation: 'fadeInUp 0.15s ease-out',
+                  }}
+                >
+                  {/* User info header */}
+                  <div className="flex items-center gap-3 px-3 py-2">
+                    <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden"
+                         style={{ backgroundColor: 'var(--text-primary)' }}>
+                      <img src={getUserAvatar(user)} alt={user.username}
+                           className="w-full h-full object-cover"
+                           onError={e => {
+                             e.target.style.display = 'none';
+                             e.target.parentElement.style.display = 'flex';
+                             e.target.parentElement.style.alignItems = 'center';
+                             e.target.parentElement.style.justifyContent = 'center';
+                           }} />
+                    </div>
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                        {user.username}
+                      </span>
+                      <span className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+                        {user.email}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Separator */}
+                  <div style={{ height: 1, backgroundColor: 'var(--border-color)', margin: '4px -6px' }} />
+
+                  {/* Menu items */}
+                  {[
+                    { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
+                    { icon: Settings, label: 'Settings', to: '/settings' },
+                    { icon: Clock, label: 'History', to: '/history' },
+                    { icon: Heart, label: 'Favorites', to: '/favorites' },
+                    { icon: HelpCircle, label: 'Help', to: '/help' },
+                  ].map(({ icon: Icon, label, to }) => (
+                    <Link
+                      key={to} to={to}
+                      onClick={() => setAvatarOpen(false)}
+                      className="flex items-center gap-3 w-full text-left no-underline rounded-lg transition-colors duration-150"
+                      style={{ padding: '7px 12px', fontSize: 14, color: 'var(--text-secondary)' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--gallery-filter-hover-bg, rgba(0,0,0,0.05))'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    >
+                      <Icon size={15} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                      <span>{label}</span>
+                    </Link>
+                  ))}
+
+                  {/* Separator */}
+                  <div style={{ height: 1, backgroundColor: 'var(--border-color)', margin: '4px -6px' }} />
+
+                  {/* Logout */}
+                  <button
+                    onClick={() => { setAvatarOpen(false); logout(); navigate('/'); }}
+                    className="flex items-center gap-3 w-full text-left rounded-lg transition-colors duration-150"
+                    style={{ padding: '7px 12px', fontSize: 14, color: '#ef4444' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    <LogOut size={15} style={{ flexShrink: 0 }} />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Credits button */}
             {!collapsed && (
-              <Link to="/credits" className="flex items-center gap-1 no-underline"
-                    style={{
-                      backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)',
-                      borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
-                    }}>
-                <Zap size={12} />{credits}
-              </Link>
+              <button
+                onClick={onCreditsClick}
+                className="flex items-center gap-1 transition-colors duration-150"
+                style={{
+                  backgroundColor: 'var(--text-primary)', color: 'var(--bg-primary)',
+                  borderRadius: 8, height: 28, paddingLeft: 12, paddingRight: 4,
+                  fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer',
+                }}
+              >
+                <span style={{ marginRight: 4 }}>Add Credits</span>
+                <div className="flex items-center gap-1"
+                     style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 5, height: 22, padding: '0 8px' }}>
+                  <Zap size={10} style={{ color: '#FFDBA4' }} />
+                  <span>{credits}</span>
+                </div>
+              </button>
             )}
           </div>
         ) : (

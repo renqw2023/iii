@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import Sidebar from './Sidebar';
 import MobileDock from '../UI/MobileDock';
 import DesktopDock from '../UI/DesktopDock';
+import CreditsModal from '../UI/CreditsModal';
+import Img2PromptPanel from '../UI/Img2PromptPanel';
 import { useSidebar } from '../../contexts/SidebarContext';
 
 const Layout = () => {
   const { collapsed } = useSidebar();
+  const [creditsOpen, setCreditsOpen] = useState(false);
+  const [img2promptOpen, setImg2promptOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen">
@@ -20,7 +24,7 @@ const Layout = () => {
           transition: 'width 0.25s ease',
         }}
       >
-        <Sidebar />
+        <Sidebar onCreditsClick={() => setCreditsOpen(true)} />
       </div>
 
       {/* Main content area */}
@@ -42,7 +46,13 @@ const Layout = () => {
       <MobileDock />
 
       {/* Desktop floating dock (bottom-center, md+ only) */}
-      <DesktopDock />
+      <DesktopDock onImg2PromptClick={() => setImg2promptOpen(v => !v)} />
+
+      {/* Credits pricing modal */}
+      <CreditsModal open={creditsOpen} onClose={() => setCreditsOpen(false)} />
+
+      {/* Img2Prompt right panel */}
+      <Img2PromptPanel open={img2promptOpen} onClose={() => setImg2promptOpen(false)} />
     </div>
   );
 };

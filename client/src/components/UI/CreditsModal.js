@@ -1,11 +1,17 @@
 /**
- * CreditsModal — 积分购买定价弹窗（阶段28 精确复刻 MeiGen）
+ * CreditsModal — 积分购买定价弹窗（精确复刻 MeiGen.ai）
  *
- * 完全对标 MeiGen.ai 实测值：
- * - Dialog: rounded-[22px] white bg, -right-14 毛玻璃关闭按钮
- * - Cards: rounded-[24px] border-[#E3E3E3] bg-[#F9F9F9]，Pro: border-[#147DFF] bg-white
- * - CTA: Starter rgb(20,20,20) | Pro rgb(20,125,255) | Ultimate rgb(96,93,243)
- * - 货币：USD (西方市场)
+ * 实测值（1440×900 Chrome DevTools DOM inspection）：
+ * - Dialog: rounded-[22px] white bg, maxWidth 1300px
+ * - Header: gradient mesh radial-gradient (purple/orange/blue), p-28px/24px
+ * - Cards: rounded-[24px], Free/Starter: border #E3E3E3 bg #F9F9F9
+ *          Pro: border #147DFF bg white
+ *          Ultimate: border rgb(96,93,243) bg white（紫色边框！不是灰色）
+ * - CTA buttons: h-44px rounded-[14px]
+ *   Free=gray border | Starter=rgb(20,20,20) | Pro=rgb(20,125,255) | Ultimate=rgb(96,93,243)
+ * - "✓ No auto-renewal" note: shown below CTA in paid plans, gray 10px text
+ * - Badges: Pro "Save $4" blue rgba(20,125,255,0.1) | Ultimate "Save $10" rgb(96,93,243)
+ * - Currency: USD（西方市场）
  */
 import React, { useEffect } from 'react';
 import { X, Check } from 'lucide-react';
@@ -20,8 +26,9 @@ const PLANS = [
     currency: '$',
     priceSub: 'No credit card required',
     creditsLabel: 'Daily Credits',
-    creditsSub: 'Refreshes daily',
+    creditsSub: 'Refreshes every day',
     cta: { label: 'Current Plan', disabled: true, style: 'free' },
+    noAutoRenew: false,
     features: [
       'Daily refresh of 40 credits',
       'Generate up to 20 images (image 1.5)',
@@ -40,13 +47,15 @@ const PLANS = [
     currency: '$',
     priceSub: 'One-time payment',
     creditsLabel: '1,000 Credits',
-    creditsSub: 'Never expires',
+    creditsSub: 'Up to 500 images (image 1.5)',
     cta: { label: 'Buy Starter', disabled: false, style: 'starter' },
+    noAutoRenew: true,
     features: [
       'Daily refresh of 40 credits',
       'Max 4K resolution',
       '4 parallel tasks',
       'Credits never expire',
+      'Free background removal',
       'Free for commercial use',
     ],
     cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
@@ -63,15 +72,17 @@ const PLANS = [
     creditsLabel: '2,200 Credits',
     creditsSub: 'Up to 1,100 images (image 1.5)',
     cta: { label: 'Buy Pro', disabled: false, style: 'pro' },
+    noAutoRenew: true,
     features: [
       'Daily refresh of 40 credits',
       'Max 4K resolution',
       '4 parallel tasks',
       'Credits never expire',
+      'Free background removal',
       'Free for commercial use',
     ],
     cardStyle: { border: '#147DFF', bg: '#fff' },
-    badge: { label: '4×5', color: '#147DFF', bg: 'rgba(20,125,255,0.1)' },
+    badge: { label: 'Save $4', color: '#147DFF', bg: 'rgba(20,125,255,0.1)' },
   },
   {
     id: 'ultimate',
@@ -82,26 +93,28 @@ const PLANS = [
     currency: '$',
     priceSub: 'One-time payment',
     creditsLabel: '6,000 Credits',
-    creditsSub: 'Up to 2,000 images (image 1.5)',
+    creditsSub: 'Up to 3,000 images (image 1.5)',
     cta: { label: 'Buy Ultimate', disabled: false, style: 'ultimate' },
+    noAutoRenew: true,
     features: [
       'Daily refresh of 40 credits',
       'Max 4K resolution',
       '4 parallel tasks',
       'Credits never expire',
+      'Free background removal',
       'Free for commercial use',
       'Priority support',
     ],
-    cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
-    badge: { label: 'Save $10', color: '#7c3aed', bg: 'rgba(124,58,237,0.1)' },
+    cardStyle: { border: 'rgb(96,93,243)', bg: '#fff' },
+    badge: { label: 'Save $10', color: 'rgb(96,93,243)', bg: 'rgba(96,93,243,0.1)' },
   },
 ];
 
 const CTA_COLORS = {
   free:     { bg: 'transparent', color: '#919191', border: '1px solid #E3E3E3' },
-  starter:  { bg: 'rgb(20,20,20)',   color: '#fff', border: 'none' },
-  pro:      { bg: 'rgb(20,125,255)', color: '#fff', border: 'none' },
-  ultimate: { bg: 'rgb(96,93,243)',  color: '#fff', border: 'none' },
+  starter:  { bg: 'rgb(20,20,20)',    color: '#fff', border: 'none' },
+  pro:      { bg: 'rgb(20,125,255)',  color: '#fff', border: 'none' },
+  ultimate: { bg: 'rgb(96,93,243)',   color: '#fff', border: 'none' },
 };
 
 const CreditsModal = ({ open, onClose }) => {
@@ -138,8 +151,8 @@ const CreditsModal = ({ open, onClose }) => {
         backgroundColor: 'rgba(0,0,0,0.5)',
       }}
     >
-      {/* Dialog wrapper — needed for absolute close button positioning */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 1200 }}>
+      {/* Dialog wrapper — for absolute close button */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: 1100 }}>
 
         {/* Close button — absolute -right-14 top-0, exact MeiGen */}
         <button
@@ -160,7 +173,7 @@ const CreditsModal = ({ open, onClose }) => {
           <X size={18} />
         </button>
 
-        {/* Dialog — rounded-[22px] white bg, exact MeiGen */}
+        {/* Dialog */}
         <div
           style={{
             borderRadius: 22,
@@ -172,15 +185,20 @@ const CreditsModal = ({ open, onClose }) => {
             animation: 'fadeInUp 0.2s ease-out',
           }}
         >
-          {/* Header section — bg-muted/30 with gradient mesh */}
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px 12px 0 0',
-                        padding: '28px 24px 24px', backgroundColor: 'rgba(0,0,0,0.02)' }}>
+          {/* Header — gradient mesh, exact MeiGen values */}
+          <div style={{
+            position: 'relative', overflow: 'hidden',
+            borderRadius: '12px 12px 0 0',
+            padding: '28px 24px 24px',
+            backgroundColor: 'rgba(0,0,0,0.02)',
+          }}>
+            {/* Gradient mesh overlay */}
             <div style={{
               position: 'absolute', inset: 0, pointerEvents: 'none',
               background: `
-                radial-gradient(80% 120% at 95% 20%, rgba(184,112,255,0.15) 0%, transparent 50%),
-                radial-gradient(60% 80% at 75% 80%, rgba(255,166,77,0.12) 0%, transparent 45%),
-                radial-gradient(50% 100% at 15% 50%, rgba(41,130,255,0.10) 0%, transparent 40%)
+                radial-gradient(80% 120% at 95% 20%, rgba(184,112,255,0.18) 0%, transparent 50%),
+                radial-gradient(60% 80% at 75% 80%, rgba(255,166,77,0.15) 0%, transparent 45%),
+                radial-gradient(50% 100% at 15% 50%, rgba(41,130,255,0.12) 0%, transparent 40%)
               `,
             }} />
             <div style={{ position: 'relative', textAlign: 'center' }}>
@@ -197,7 +215,7 @@ const CreditsModal = ({ open, onClose }) => {
           <div style={{ padding: '20px 24px 24px' }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: 16,
             }}>
               {PLANS.map(plan => {
@@ -213,11 +231,13 @@ const CreditsModal = ({ open, onClose }) => {
                       overflow: 'hidden',
                       transition: 'transform 200ms ease-out',
                       cursor: 'default',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
-                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
 
                       {/* Plan header */}
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
@@ -279,19 +299,31 @@ const CreditsModal = ({ open, onClose }) => {
                           width: '100%', height: 44,
                           borderRadius: 14,
                           fontSize: 15, fontWeight: 500,
-                          marginBottom: 20,
                           cursor: plan.cta.disabled ? 'default' : 'pointer',
                           backgroundColor: ctaColor.bg,
                           color: ctaColor.color,
                           border: ctaColor.border || 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           transition: 'opacity 150ms',
+                          marginBottom: plan.noAutoRenew ? 6 : 20,
                         }}
                         onMouseEnter={e => { if (!plan.cta.disabled) e.currentTarget.style.opacity = '0.88'; }}
                         onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
                       >
                         {plan.cta.label}
                       </button>
+
+                      {/* No auto-renewal note — MeiGen: ✓ gray text-[10px] */}
+                      {plan.noAutoRenew && (
+                        <p style={{
+                          fontSize: 10, color: '#9ca3af', margin: '0 0 14px',
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          justifyContent: 'center',
+                        }}>
+                          <Check size={10} style={{ color: '#9ca3af' }} />
+                          No auto-renewal
+                        </p>
+                      )}
 
                       {/* Divider */}
                       <div style={{ height: 1, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
@@ -305,6 +337,7 @@ const CreditsModal = ({ open, onClose }) => {
                           </div>
                         ))}
                       </div>
+
                     </div>
                   </div>
                 );

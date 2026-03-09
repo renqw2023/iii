@@ -1,120 +1,109 @@
 /**
- * CreditsModal — 积分购买定价弹窗（精确复刻 MeiGen.ai）
+ * CreditsModal — 积分购买定价弹窗
  *
- * 实测值（1440×900 Chrome DevTools DOM inspection）：
- * - Dialog: rounded-[22px] white bg, maxWidth 1300px
- * - Header: gradient mesh radial-gradient (purple/orange/blue), p-28px/24px
- * - Cards: rounded-[24px], Free/Starter: border #E3E3E3 bg #F9F9F9
- *          Pro: border #147DFF bg white
- *          Ultimate: border rgb(96,93,243) bg white（紫色边框！不是灰色）
- * - CTA buttons: h-44px rounded-[14px]
- *   Free=gray border | Starter=rgb(20,20,20) | Pro=rgb(20,125,255) | Ultimate=rgb(96,93,243)
- * - "✓ No auto-renewal" note: shown below CTA in paid plans, gray 10px text
- * - Badges: Pro "Save $4" blue rgba(20,125,255,0.1) | Ultimate "Save $10" rgb(96,93,243)
- * - Currency: USD（西方市场）
+ * 对标目标截图实测值：
+ * - Title: "Pay Once. Keep Forever"
+ * - Prices: $0 / $9.9 / $19.9 / $49.9（原价 $22 / $60）
+ * - CTA buttons: border-radius 50px（胶囊形），"Get Starter/Pro/Ultimate"
+ * - Pro badge: "SAVE 10%" blue | Ultimate badge: "SAVE 20%" purple
+ * - Features: "40 refresh credits every day", "Commercial license" 等
+ * - No auto-renewal: 小灰字，CTA 按钮正下方
+ * - Card borders: Free/Starter #E3E3E3 bg #F9F9F9 | Pro #147DFF bg white | Ultimate rgb(96,93,243) bg white
  */
 import React, { useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
+const FREE_FEATURES = [
+  '40 refresh credits every day',
+  'Up to 20 images (image 1.5)',
+  '2K resolution',
+  '1 concurrent task',
+  'Free background removal',
+  'Commercial license',
+];
+
+const PAID_FEATURES = [
+  '40 refresh credits every day',
+  'Up to 4K resolution',
+  '4 concurrent tasks',
+  'Credits never expire',
+  'Free background removal',
+  'Commercial license',
+];
+
 const PLANS = [
   {
     id: 'free',
     name: 'Free',
-    subtitle: 'Start for free',
-    price: 0,
+    subtitle: 'Get Started',
+    price: '0',
     currency: '$',
     priceSub: 'No credit card required',
     creditsLabel: 'Daily Credits',
     creditsSub: 'Refreshes every day',
     cta: { label: 'Current Plan', disabled: true, style: 'free' },
     noAutoRenew: false,
-    features: [
-      'Daily refresh of 40 credits',
-      'Generate up to 20 images (image 1.5)',
-      'Max 2K resolution',
-      '1 parallel task',
-      'Free for commercial use',
-    ],
+    features: FREE_FEATURES,
     cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
     badge: null,
+    originalPrice: null,
   },
   {
     id: 'starter',
     name: 'Starter',
-    subtitle: 'Unlock full features',
-    price: 9,
+    subtitle: 'All Features Unlocked',
+    price: '9.9',
     currency: '$',
     priceSub: 'One-time payment',
     creditsLabel: '1,000 Credits',
     creditsSub: 'Up to 500 images (image 1.5)',
-    cta: { label: 'Buy Starter', disabled: false, style: 'starter' },
+    cta: { label: 'Get Starter', disabled: false, style: 'starter' },
     noAutoRenew: true,
-    features: [
-      'Daily refresh of 40 credits',
-      'Max 4K resolution',
-      '4 parallel tasks',
-      'Credits never expire',
-      'Free background removal',
-      'Free for commercial use',
-    ],
+    features: PAID_FEATURES,
     cardStyle: { border: '#E3E3E3', bg: '#F9F9F9' },
     badge: null,
+    originalPrice: null,
   },
   {
     id: 'pro',
     name: 'Pro',
-    subtitle: 'Most popular',
-    price: 19,
-    originalPrice: 23,
+    subtitle: 'Most Popular',
+    price: '19.9',
     currency: '$',
     priceSub: 'One-time payment',
     creditsLabel: '2,200 Credits',
     creditsSub: 'Up to 1,100 images (image 1.5)',
-    cta: { label: 'Buy Pro', disabled: false, style: 'pro' },
+    cta: { label: 'Get Pro', disabled: false, style: 'pro' },
     noAutoRenew: true,
-    features: [
-      'Daily refresh of 40 credits',
-      'Max 4K resolution',
-      '4 parallel tasks',
-      'Credits never expire',
-      'Free background removal',
-      'Free for commercial use',
-    ],
+    features: PAID_FEATURES,
     cardStyle: { border: '#147DFF', bg: '#fff' },
-    badge: { label: 'Save $4', color: '#147DFF', bg: 'rgba(20,125,255,0.1)' },
+    badge: { label: 'SAVE 10%', color: '#147DFF', bg: 'rgba(20,125,255,0.1)' },
+    originalPrice: '22',
   },
   {
     id: 'ultimate',
     name: 'Ultimate',
-    subtitle: 'Best value',
-    price: 39,
-    originalPrice: 49,
+    subtitle: 'Best Value',
+    price: '49.9',
     currency: '$',
     priceSub: 'One-time payment',
     creditsLabel: '6,000 Credits',
     creditsSub: 'Up to 3,000 images (image 1.5)',
-    cta: { label: 'Buy Ultimate', disabled: false, style: 'ultimate' },
+    cta: { label: 'Get Ultimate', disabled: false, style: 'ultimate' },
     noAutoRenew: true,
-    features: [
-      'Daily refresh of 40 credits',
-      'Max 4K resolution',
-      '4 parallel tasks',
-      'Credits never expire',
-      'Free background removal',
-      'Free for commercial use',
-      'Priority support',
-    ],
+    features: [...PAID_FEATURES, 'Priority support'],
     cardStyle: { border: 'rgb(96,93,243)', bg: '#fff' },
-    badge: { label: 'Save $10', color: 'rgb(96,93,243)', bg: 'rgba(96,93,243,0.1)' },
+    badge: { label: 'SAVE 20%', color: 'rgb(96,93,243)', bg: 'rgba(96,93,243,0.1)' },
+    originalPrice: '60',
   },
 ];
 
 const CTA_COLORS = {
-  free:     { bg: 'transparent', color: '#919191', border: '1px solid #E3E3E3' },
-  starter:  { bg: 'rgb(20,20,20)',    color: '#fff', border: 'none' },
-  pro:      { bg: 'rgb(20,125,255)',  color: '#fff', border: 'none' },
-  ultimate: { bg: 'rgb(96,93,243)',   color: '#fff', border: 'none' },
+  free:     { bg: 'transparent', color: '#9ca3af', border: '1.5px solid #e5e7eb' },
+  starter:  { bg: 'rgb(20,20,20)',   color: '#fff', border: 'none' },
+  pro:      { bg: 'rgb(20,125,255)', color: '#fff', border: 'none' },
+  ultimate: { bg: 'rgb(96,93,243)',  color: '#fff', border: 'none' },
 };
 
 const CreditsModal = ({ open, onClose }) => {
@@ -141,7 +130,6 @@ const CreditsModal = ({ open, onClose }) => {
   };
 
   return (
-    /* Overlay */
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
@@ -151,18 +139,16 @@ const CreditsModal = ({ open, onClose }) => {
         backgroundColor: 'rgba(0,0,0,0.5)',
       }}
     >
-      {/* Dialog wrapper — for absolute close button */}
       <div style={{ position: 'relative', width: '100%', maxWidth: 1100 }}>
 
-        {/* Close button — absolute -right-14 top-0, exact MeiGen */}
+        {/* Close button */}
         <button
           onClick={onClose}
           style={{
             position: 'absolute', top: 0, right: -56,
             width: 40, height: 40, borderRadius: 12,
             backgroundColor: 'rgba(115,115,115,0.5)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
             color: '#fff', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background-color 150ms',
@@ -185,14 +171,13 @@ const CreditsModal = ({ open, onClose }) => {
             animation: 'fadeInUp 0.2s ease-out',
           }}
         >
-          {/* Header — gradient mesh, exact MeiGen values */}
+          {/* Header — gradient mesh */}
           <div style={{
             position: 'relative', overflow: 'hidden',
-            borderRadius: '12px 12px 0 0',
-            padding: '28px 24px 24px',
-            backgroundColor: 'rgba(0,0,0,0.02)',
+            borderRadius: '22px 22px 0 0',
+            padding: '32px 24px 28px',
+            backgroundColor: 'rgba(0,0,0,0.01)',
           }}>
-            {/* Gradient mesh overlay */}
             <div style={{
               position: 'absolute', inset: 0, pointerEvents: 'none',
               background: `
@@ -202,21 +187,22 @@ const CreditsModal = ({ open, onClose }) => {
               `,
             }} />
             <div style={{ position: 'relative', textAlign: 'center' }}>
-              <h2 style={{ fontSize: 30, fontWeight: 700, color: '#0E1014', margin: 0 }}>
-                One-time payment. Yours forever.
+              <h2 style={{ fontSize: 32, fontWeight: 700, color: '#0E1014', margin: 0, letterSpacing: '-0.5px' }}>
+                Pay Once. Keep Forever.
               </h2>
               <p style={{ fontSize: 15, color: '#6b7280', marginTop: 8, marginBottom: 0 }}>
-                Unlock 4K generation, batch mode — create at your own pace
+                Unlock 4K generation, batch mode, and create stunning images on your own timeline
               </p>
             </div>
           </div>
 
           {/* Plan grid */}
-          <div style={{ padding: '20px 24px 24px' }}>
+          <div style={{ padding: '20px 24px 28px' }}>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
               gap: 16,
+              alignItems: 'stretch',
             }}>
               {PLANS.map(plan => {
                 const ctaColor = CTA_COLORS[plan.cta.style];
@@ -225,36 +211,39 @@ const CreditsModal = ({ open, onClose }) => {
                     key={plan.id}
                     style={{
                       position: 'relative',
-                      borderRadius: 24,
+                      borderRadius: 20,
                       border: `1px solid ${plan.cardStyle.border}`,
                       backgroundColor: plan.cardStyle.bg,
-                      overflow: 'hidden',
-                      transition: 'transform 200ms ease-out',
-                      cursor: 'default',
-                      display: 'flex',
-                      flexDirection: 'column',
+                      transition: 'transform 200ms ease-out, box-shadow 200ms ease-out',
+                      display: 'flex', flexDirection: 'column',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = 'translateY(-4px)';
+                      e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.10)';
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
                     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', flex: 1 }}>
 
                       {/* Plan header */}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
                         <div>
-                          <h3 style={{ fontSize: 24, fontWeight: 700, color: '#252525', margin: 0, lineHeight: 1 }}>
+                          <h3 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1 }}>
                             {plan.name}
                           </h3>
-                          <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4, marginBottom: 0 }}>
+                          <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4, marginBottom: 0 }}>
                             {plan.subtitle}
                           </p>
                         </div>
                         {plan.badge && (
                           <span style={{
-                            fontSize: 11, fontWeight: 700,
+                            fontSize: 10, fontWeight: 700,
                             color: plan.badge.color, backgroundColor: plan.badge.bg,
-                            borderRadius: 20, padding: '3px 10px',
-                            letterSpacing: '0.03em', whiteSpace: 'nowrap',
+                            borderRadius: 20, padding: '4px 9px',
+                            letterSpacing: '0.06em', whiteSpace: 'nowrap',
                           }}>
                             {plan.badge.label}
                           </span>
@@ -262,27 +251,29 @@ const CreditsModal = ({ open, onClose }) => {
                       </div>
 
                       {/* Price */}
-                      <div style={{ marginTop: 20, marginBottom: 4 }}>
+                      <div style={{ marginBottom: 4 }}>
                         {plan.originalPrice && (
-                          <span style={{ fontSize: 14, color: '#9ca3af', textDecoration: 'line-through', marginRight: 6 }}>
-                            {plan.currency}{plan.originalPrice}
-                          </span>
+                          <div style={{ marginBottom: 2 }}>
+                            <span style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'line-through' }}>
+                              {plan.currency}{plan.originalPrice}
+                            </span>
+                          </div>
                         )}
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                          <span style={{ fontSize: 28, color: '#0E1014', position: 'relative', top: -6 }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 1, lineHeight: 1 }}>
+                          <span style={{ fontSize: 20, fontWeight: 600, color: '#111827', paddingTop: 4 }}>
                             {plan.currency}
                           </span>
-                          <span style={{ fontSize: 40, fontWeight: 600, lineHeight: 1, color: '#0E1014' }}>
+                          <span style={{ fontSize: 44, fontWeight: 700, color: '#111827', lineHeight: 1 }}>
                             {plan.price}
                           </span>
                         </div>
-                        <p style={{ fontSize: 11, color: '#6b7280', marginTop: 4, marginBottom: 0 }}>
+                        <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, marginBottom: 0 }}>
                           {plan.priceSub}
                         </p>
                       </div>
 
                       {/* Credits */}
-                      <div style={{ marginBottom: 16 }}>
+                      <div style={{ marginBottom: 20, marginTop: 12 }}>
                         <p style={{ fontSize: 15, fontWeight: 600, color: '#1f2937', margin: 0 }}>
                           {plan.creditsLabel}
                         </p>
@@ -291,49 +282,56 @@ const CreditsModal = ({ open, onClose }) => {
                         </p>
                       </div>
 
-                      {/* CTA button */}
+                      {/* CTA button — pill shape, exact match screenshot */}
                       <button
                         onClick={() => handlePlanClick(plan)}
                         disabled={plan.cta.disabled}
                         style={{
                           width: '100%', height: 44,
-                          borderRadius: 14,
-                          fontSize: 15, fontWeight: 500,
+                          borderRadius: 50,
+                          fontSize: 15, fontWeight: 600,
                           cursor: plan.cta.disabled ? 'default' : 'pointer',
                           backgroundColor: ctaColor.bg,
                           color: ctaColor.color,
                           border: ctaColor.border || 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'opacity 150ms',
+                          transition: 'opacity 150ms, transform 100ms',
                           marginBottom: plan.noAutoRenew ? 6 : 20,
+                          letterSpacing: '0.01em',
                         }}
-                        onMouseEnter={e => { if (!plan.cta.disabled) e.currentTarget.style.opacity = '0.88'; }}
-                        onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                        onMouseEnter={e => {
+                          if (!plan.cta.disabled) {
+                            e.currentTarget.style.opacity = '0.88';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.opacity = '1';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
                       >
                         {plan.cta.label}
                       </button>
 
-                      {/* No auto-renewal note — MeiGen: ✓ gray text-[10px] */}
+                      {/* No auto-renewal */}
                       {plan.noAutoRenew && (
                         <p style={{
-                          fontSize: 10, color: '#9ca3af', margin: '0 0 14px',
-                          display: 'flex', alignItems: 'center', gap: 4,
-                          justifyContent: 'center',
+                          fontSize: 10, color: '#9ca3af', margin: '0 0 16px',
+                          textAlign: 'center', fontStyle: 'italic',
                         }}>
-                          <Check size={10} style={{ color: '#9ca3af' }} />
-                          No auto-renewal
+                          ✓ No auto-renewal
                         </p>
                       )}
 
                       {/* Divider */}
-                      <div style={{ height: 1, backgroundColor: '#e5e7eb', marginBottom: 16 }} />
+                      <div style={{ height: 1, backgroundColor: '#f3f4f6', marginBottom: 16 }} />
 
                       {/* Feature list */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
                         {plan.features.map((feat, i) => (
                           <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                            <Check size={14} style={{ color: '#22c55e', flexShrink: 0, marginTop: 1 }} />
-                            <span style={{ fontSize: 13, color: '#525252', lineHeight: 1.4 }}>{feat}</span>
+                            <Check size={13} style={{ color: '#22c55e', flexShrink: 0, marginTop: 1 }} />
+                            <span style={{ fontSize: 12.5, color: '#4b5563', lineHeight: 1.45 }}>{feat}</span>
                           </div>
                         ))}
                       </div>

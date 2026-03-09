@@ -28,7 +28,7 @@ const navItemClass = (active) =>
      : 'text-[var(--text-secondary)] hover:bg-[var(--gallery-filter-hover-bg,#f8fafc)] hover:text-[var(--text-primary)]'
    }`;
 
-const Sidebar = ({ onCreditsClick }) => {
+const Sidebar = ({ onCreditsClick, onInviteClick }) => {
   const { collapsed, toggleCollapsed, SidebarPanel } = useSidebar();
   const { isAuthenticated, user, openSearch, openLoginModal, logout } = useAuth();
   const navigate = useNavigate();
@@ -124,14 +124,17 @@ const Sidebar = ({ onCreditsClick }) => {
 
       {/* ── Bottom ── */}
       <div className="flex-shrink-0 px-2 pb-3 space-y-2">
-        {/* Invite card — non-filter pages, expanded */}
-        {!collapsed && !isFilterPage && (
-          <Link to="/dashboard" className="block p-3 rounded-xl no-underline"
-                style={{
-                  background: `linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box,
-                               linear-gradient(135deg, #f472b6, #6366f1) border-box`,
-                  border: '1px solid transparent',
-                }}>
+        {/* Invite card — expanded only */}
+        {!collapsed && (
+          <button
+            onClick={onInviteClick}
+            className="block w-full p-3 rounded-xl text-left cursor-pointer"
+            style={{
+              background: `linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box,
+                           linear-gradient(135deg, #f472b6, #6366f1) border-box`,
+              border: '1px solid transparent',
+            }}
+          >
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Share III.PICS</p>
@@ -139,7 +142,7 @@ const Sidebar = ({ onCreditsClick }) => {
               </div>
               <Gift size={16} style={{ color: '#f472b6', flexShrink: 0 }} />
             </div>
-          </Link>
+          </button>
         )}
 
         {/* User row */}

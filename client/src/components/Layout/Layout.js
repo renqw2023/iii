@@ -7,12 +7,14 @@ import MobileDock from '../UI/MobileDock';
 import DesktopDock from '../UI/DesktopDock';
 import CreditsModal from '../UI/CreditsModal';
 import Img2PromptPanel from '../UI/Img2PromptPanel';
+import InviteModal from '../UI/InviteModal';
 import { useSidebar } from '../../contexts/SidebarContext';
 
 const Layout = () => {
   const { collapsed } = useSidebar();
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [img2promptOpen, setImg2promptOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen">
@@ -24,7 +26,7 @@ const Layout = () => {
           transition: 'width 0.25s ease',
         }}
       >
-        <Sidebar onCreditsClick={() => setCreditsOpen(true)} />
+        <Sidebar onCreditsClick={() => setCreditsOpen(true)} onInviteClick={() => setInviteOpen(true)} />
       </div>
 
       {/* Main content area */}
@@ -53,6 +55,9 @@ const Layout = () => {
 
       {/* Img2Prompt right panel */}
       <Img2PromptPanel open={img2promptOpen} onClose={() => setImg2promptOpen(false)} />
+
+      {/* Invite modal */}
+      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
     </div>
   );
 };

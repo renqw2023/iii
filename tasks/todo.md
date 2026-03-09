@@ -8,11 +8,12 @@
 
 ## 当前进度（每次恢复工作前先读这里）
 
-**最后更新**: 2026-03-06 — 5-Feature 功能包全部完成，零 console 错误，浏览器验证通过
-**当前阶段**: Feature 1-5 全部实现并验证
+**最后更新**: 2026-03-09 — 阶段28 全部完成，InviteModal 新建，邀请卡全页面可见，零 console 错误
+**当前阶段**: 阶段28 完整收尾
 **下一步**:
   - 配置 OPENAI_API_KEY 环境变量（server/.env）以启用 img2prompt
-  - 可选：在 Header 导航加入 /img2prompt 入口链接
+  - 配置 STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET → 重启 server（积分购买上线）
+  - 可选：全局搜索 Modal 体验优化
 
 ## 已完成 — 5-Feature 功能包（2026-03-06）
 

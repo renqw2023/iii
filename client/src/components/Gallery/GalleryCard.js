@@ -82,6 +82,13 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
         onLike?.(prompt._id);
     };
 
+    const handleDragStart = useCallback((e) => {
+        if (prompt.previewImage) {
+            e.dataTransfer.setData('application/json', JSON.stringify({ image: prompt.previewImage }));
+            e.dataTransfer.effectAllowed = 'copy';
+        }
+    }, [prompt.previewImage]);
+
     const handleMouseMove = useCallback((e) => {
         const el = cardRef.current;
         if (!el) return;
@@ -106,6 +113,8 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={() => navigate(`/gallery/${prompt._id}`, { state: { fromList: true } })}
+            draggable={!!prompt.previewImage}
+            onDragStart={handleDragStart}
         >
             {/* 预览图区域 — 自然比例，无固定 aspect-ratio */}
             <div className="gallery-card-image">

@@ -60,6 +60,13 @@ const SrefCard = ({ sref }) => {
     }
   };
 
+  const handleDragStart = useCallback((e) => {
+    if (sref.previewImage) {
+      e.dataTransfer.setData('application/json', JSON.stringify({ image: sref.previewImage }));
+      e.dataTransfer.effectAllowed = 'copy';
+    }
+  }, [sref.previewImage]);
+
   const handleMouseMove = useCallback((e) => {
     const el = cardRef.current;
     if (!el) return;
@@ -82,6 +89,8 @@ const SrefCard = ({ sref }) => {
       transition={{ duration: 0.25 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      draggable={!!sref.previewImage}
+      onDragStart={handleDragStart}
       style={{ gridRowEnd: `span ${gridSpan}` }}
       className="liblib-card"
       onClick={() => navigate(`/explore/${sref._id}`, { state: { fromList: true } })}

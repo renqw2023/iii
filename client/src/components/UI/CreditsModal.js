@@ -250,15 +250,19 @@ const CreditsModal = ({ open, onClose }) => {
                         )}
                       </div>
 
-                      {/* Price */}
+                      {/* Price — 原价与现价同行，保证所有卡片高度一致，按钮对齐 */}
                       <div style={{ marginBottom: 4 }}>
-                        {plan.originalPrice && (
-                          <div style={{ marginBottom: 2 }}>
-                            <span style={{ fontSize: 13, color: '#9ca3af', textDecoration: 'line-through' }}>
+                        {/* 原价 + 现价 同一行 */}
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
+                          {plan.originalPrice ? (
+                            <span style={{ fontSize: 14, color: '#9ca3af', textDecoration: 'line-through' }}>
                               {plan.currency}{plan.originalPrice}
                             </span>
-                          </div>
-                        )}
+                          ) : (
+                            /* 占位，保持高度一致 */
+                            <span style={{ fontSize: 14, visibility: 'hidden' }}>$0</span>
+                          )}
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 1, lineHeight: 1 }}>
                           <span style={{ fontSize: 20, fontWeight: 600, color: '#111827', paddingTop: 4 }}>
                             {plan.currency}

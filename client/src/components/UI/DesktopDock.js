@@ -115,6 +115,7 @@ const DesktopDock = ({ onImg2PromptClick }) => {
           strokeWidth={isImg2PromptActive ? 1.8 : 1.5}
         />
       </DockIcon>
+
     </nav>
   );
 };

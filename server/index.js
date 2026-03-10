@@ -21,6 +21,7 @@ const favoritesRoutes = require('./routes/favorites');
 const creditsRoutes = require('./routes/credits');
 const paymentsRoutes = require('./routes/payments');
 const toolsRoutes = require('./routes/tools');
+const generateRoutes = require('./routes/generate');
 const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
 
 const app = express();
@@ -83,6 +84,7 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/credits', creditsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/tools', toolsRoutes);
+app.use('/api/generate', generateRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

@@ -53,7 +53,7 @@ const Layout = () => {
       {/* Credits pricing modal */}
       <CreditsModal open={creditsOpen} onClose={() => setCreditsOpen(false)} />
 
-      {/* Img2Prompt right panel */}
+      {/* Generate panel (Reverse Prompt + Generate Image tabs) */}
       <Img2PromptPanel open={img2promptOpen} onClose={() => setImg2promptOpen(false)} />
 
       {/* Invite modal */}

@@ -84,10 +84,10 @@ const GalleryCard = ({ prompt, onLike, onFavorite }) => {
 
     const handleDragStart = useCallback((e) => {
         if (prompt.previewImage) {
-            e.dataTransfer.setData('application/json', JSON.stringify({ image: prompt.previewImage }));
+            e.dataTransfer.setData('application/json', JSON.stringify({ image: prompt.previewImage, prompt: prompt.prompt || '' }));
             e.dataTransfer.effectAllowed = 'copy';
         }
-    }, [prompt.previewImage]);
+    }, [prompt.previewImage, prompt.prompt]);
 
     const handleMouseMove = useCallback((e) => {
         const el = cardRef.current;

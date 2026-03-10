@@ -79,7 +79,10 @@ const Credits = () => {
     }
   );
 
-  const balance = balanceData?.credits ?? 0;
+  const freeCredits  = balanceData?.freeCredits  ?? 0;
+  const paidCredits  = balanceData?.credits       ?? 0;
+  const dailyFree    = balanceData?.dailyFreeAmount ?? 40;
+  const totalBalance = freeCredits + paidCredits;
   const checkedInToday = balanceData?.checkedInToday ?? false;
   const transactions = historyData?.transactions ?? [];
 
@@ -99,9 +102,19 @@ const Credits = () => {
       >
         <div>
           <p className="text-sm opacity-80 mb-1">当前积分</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <Coins size={28} />
-            <span className="text-4xl font-bold">{balance}</span>
+            <span className="text-4xl font-bold">{totalBalance}</span>
+          </div>
+          {/* 双积分明细 */}
+          <div className="flex items-center gap-3 text-xs opacity-80">
+            <span>
+              <span style={{ color: '#fde68a' }}>↺</span> 每日免费 {freeCredits}/{dailyFree}
+            </span>
+            <span style={{ opacity: 0.5 }}>·</span>
+            <span>
+              <span style={{ color: '#fde68a' }}>✦</span> 永久积分 {paidCredits}
+            </span>
           </div>
         </div>
 

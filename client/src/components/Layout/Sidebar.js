@@ -12,7 +12,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
-  LayoutDashboard, Settings, LogOut, HelpCircle,
+  LayoutDashboard, Settings, LogOut, HelpCircle, Plus,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -27,6 +27,132 @@ const navItemClass = (active) =>
      ? 'bg-[var(--gallery-filter-active-bg,#f1f5f9)] text-[var(--text-primary)]'
      : 'text-[var(--text-secondary)] hover:bg-[var(--gallery-filter-hover-bg,#f8fafc)] hover:text-[var(--text-primary)]'
    }`;
+
+/* ── 积分 Hover 明细卡片组件 ── */
+const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
+  const [cardPos, setCardPos] = useState(null);
+  const triggerRef = useRef(null);
+  const hideTimer  = useRef(null);
+
+  const freeCredits = data?.freeCredits ?? 0;
+  const paidCredits = data?.credits ?? 0;
+  const dailyFree   = data?.dailyFreeAmount ?? 40;
+  const total       = freeCredits + paidCredits;
+
+  const freeUsed    = dailyFree - freeCredits;
+  const freeUsedPct = Math.round((freeUsed / dailyFree) * 100);
+  const freeLeftPct = Math.round((freeCredits / dailyFree) * 100);
+
+  const show = () => {
+    clearTimeout(hideTimer.current);
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCardPos({ bottom: window.innerHeight - rect.top + 8, left: 8 });
+    }
+  };
+  const hide = () => {
+    hideTimer.current = setTimeout(() => setCardPos(null), 120);
+  };
+
+  return (
+    <div onMouseEnter={show} onMouseLeave={hide}>
+      {/* Trigger: Add Credits pill */}
+      <button
+        ref={triggerRef}
+        onClick={onAddCredits}
+        className="flex items-center gap-2 transition-colors duration-150"
+        style={{
+          backgroundColor: '#1B1B1B', color: '#fff',
+          borderRadius: 8, height: 28, paddingLeft: 12, paddingRight: 4,
+          fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap',
+          cursor: 'pointer', border: 'none',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#363636'; }}
+        onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1B1B1B'; }}
+      >
+        <span>Add Credits</span>
+        <div className="flex items-center gap-1"
+             style={{ backgroundColor: '#262626', borderRadius: 5, height: 22, padding: '0 8px' }}>
+          <Zap size={10} style={{ color: '#FFDBA4' }} />
+          <span style={{ fontSize: 12 }}>{total}</span>
+        </div>
+      </button>
+
+      {/* Hover 明细卡片 — position:fixed 脱离 overflow:hidden 父容器 */}
+      {cardPos && (
+        <div
+          onMouseEnter={show}
+          onMouseLeave={hide}
+          style={{
+          position: 'fixed',
+          bottom: cardPos.bottom,
+          left: cardPos.left,
+          zIndex: 9999,
+          backgroundColor: '#fff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 14,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+          padding: '14px 16px',
+          width: 224,
+          fontSize: 13,
+        }}>
+          {/* 顶行 */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontWeight: 600, color: '#111', fontSize: 14 }}>Free</span>
+            <button
+              onClick={onAddCredits}
+              style={{
+                fontSize: 12, fontWeight: 600, color: '#fff',
+                background: '#1B1B1B', borderRadius: 8, padding: '3px 12px',
+                border: 'none', cursor: 'pointer',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#363636'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#1B1B1B'; }}
+            >Upgrade</button>
+          </div>
+
+          {/* Credits 行 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#374151' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                <path d="M11.85 4.22L11.72 3.24C11.69 3 11.49 2.83 11.25 2.83C11.01 2.83 10.81 3 10.78 3.24L10.65 4.22C10.27 7.08 8.01 9.34 5.14 9.72L4.16 9.85C3.93 9.89 3.75 10.09 3.75 10.33C3.75 10.56 3.93 10.77 4.16 10.8L5.14 10.93C8.01 11.31 10.27 13.57 10.65 16.43L10.78 17.41C10.81 17.65 11.01 17.83 11.25 17.83C11.49 17.83 11.69 17.65 11.72 17.41L11.85 16.43C12.23 13.57 14.49 11.31 17.36 10.93L18.34 10.8C18.57 10.77 18.75 10.56 18.75 10.33C18.75 10.09 18.57 9.89 18.34 9.85L17.36 9.72C14.49 9.34 12.23 7.08 11.85 4.22Z" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round"/>
+              </svg>
+              Credits
+            </span>
+            <strong style={{ color: '#111' }}>{paidCredits}</strong>
+          </div>
+
+          {/* Free Daily Credits 行 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, color: '#374151' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 15 }}>↺</span>
+              Free Daily Credits
+            </span>
+            <strong style={{ color: '#111' }}>{freeCredits}/{dailyFree}</strong>
+          </div>
+
+          {/* 进度条 */}
+          <div style={{ height: 6, borderRadius: 99, background: '#f3f4f6', overflow: 'hidden', marginBottom: 8 }}>
+            {freeUsedPct > 0 && (
+              <div style={{ width: `${freeUsedPct}%`, height: '100%', background: '#6366f1', float: 'left',
+                            borderRadius: freeLeftPct === 0 ? 99 : '99px 0 0 99px' }} />
+            )}
+            {freeLeftPct > 0 && (
+              <div style={{ width: `${freeLeftPct}%`, height: '100%', background: '#fbbf24', float: 'left',
+                            borderRadius: freeUsedPct === 0 ? 99 : '0 99px 99px 0' }} />
+            )}
+          </div>
+
+          {/* 说明 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#9ca3af', fontSize: 11 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', flexShrink: 0 }} />
+            Daily credits used first
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Sidebar = ({ onCreditsClick, onInviteClick }) => {
   const { collapsed, toggleCollapsed, SidebarPanel } = useSidebar();
@@ -50,10 +176,11 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
 
   const { data: creditsData } = useQuery(
     ['credits-balance'],
-    creditsAPI.getBalance,
+    () => creditsAPI.getBalance().then(r => r.data.data),
     { enabled: isAuthenticated, staleTime: 60_000 }
   );
-  const credits = creditsData?.data?.balance ?? 0;
+  // 总可用积分 = 每日免费额度 + 永久积分
+  const credits = (creditsData?.freeCredits ?? 0) + (creditsData?.credits ?? 0);
 
   const isActive = (path, exact = false) =>
     exact ? location.pathname === path : location.pathname.startsWith(path);
@@ -254,27 +381,12 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
               )}
             </div>
 
-            {/* Credits button — MeiGen: bg-[#1B1B1B] h-[28px] rounded-[8px] pl-3 pr-1 */}
+            {/* Credits button + hover 明细卡片 */}
             {!collapsed && (
-              <button
-                onClick={onCreditsClick}
-                className="flex items-center gap-2 transition-colors duration-150"
-                style={{
-                  backgroundColor: '#1B1B1B', color: '#fff',
-                  borderRadius: 8, height: 28, paddingLeft: 12, paddingRight: 4,
-                  fontSize: 12, fontWeight: 500, whiteSpace: 'nowrap',
-                  cursor: 'pointer', border: 'none',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#363636'; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1B1B1B'; }}
-              >
-                <span>Add Credits</span>
-                <div className="flex items-center gap-1"
-                     style={{ backgroundColor: '#262626', borderRadius: 5, height: 22, padding: '0 8px' }}>
-                  <Zap size={10} style={{ color: '#FFDBA4' }} />
-                  <span style={{ fontSize: 12 }}>{credits}</span>
-                </div>
-              </button>
+              <CreditsHoverArea
+                credits={creditsData}
+                onAddCredits={onCreditsClick}
+              />
             )}
           </div>
         ) : (

@@ -5,7 +5,8 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-const DAILY_CHECKIN_AMOUNT = 10;  // 每日签到获得积分
+const DAILY_CHECKIN_AMOUNT = 10;   // 每日签到获得永久积分
+const DAILY_FREE_AMOUNT = 40;      // 每日免费额度
 
 // 判断是否是同一天（UTC+8）
 function isSameDay(date1, date2) {
@@ -23,17 +24,38 @@ function isSameDay(date1, date2) {
   );
 }
 
-// GET /api/credits/balance — 获取积分余额
+/**
+ * 检查并刷新 freeCredits（接口内惰性刷新，无需 cron）
+ * 若今天未刷新，则将 freeCredits 重置为 DAILY_FREE_AMOUNT 并更新时间戳
+ * @param {Document} user - Mongoose User document（会被 save）
+ */
+async function refreshFreeCreditsIfNeeded(user) {
+  const now = new Date();
+  if (!isSameDay(user.lastFreeCreditsRefreshAt, now)) {
+    user.freeCredits = DAILY_FREE_AMOUNT;
+    user.lastFreeCreditsRefreshAt = now;
+    await user.save();
+  }
+}
+
+// GET /api/credits/balance — 获取积分余额（含 freeCredits 自动刷新）
 router.get('/balance', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select('credits lastCheckinAt inviteUsedCount').lean();
+    const user = await User.findById(req.userId).select(
+      'credits freeCredits lastFreeCreditsRefreshAt lastCheckinAt inviteUsedCount'
+    );
     if (!user) return res.status(404).json({ message: '用户不存在' });
+
+    // 惰性刷新免费额度
+    await refreshFreeCreditsIfNeeded(user);
 
     const checkedInToday = isSameDay(user.lastCheckinAt, new Date());
 
     res.json({
       data: {
         credits: user.credits || 0,
+        freeCredits: user.freeCredits ?? DAILY_FREE_AMOUNT,
+        dailyFreeAmount: DAILY_FREE_AMOUNT,
         checkedInToday,
         dailyAmount: DAILY_CHECKIN_AMOUNT,
         inviteUsedCount: user.inviteUsedCount || 0,
@@ -45,7 +67,7 @@ router.get('/balance', auth, async (req, res) => {
   }
 });
 
-// POST /api/credits/checkin — 每日签到
+// POST /api/credits/checkin — 每日签到（+10 永久积分）
 router.post('/checkin', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
@@ -111,3 +133,5 @@ router.get('/history', auth, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.refreshFreeCreditsIfNeeded = refreshFreeCreditsIfNeeded;
+module.exports.DAILY_FREE_AMOUNT = DAILY_FREE_AMOUNT;

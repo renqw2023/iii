@@ -167,9 +167,10 @@ router.post('/verify-email', [
     user.clearEmailVerificationCode();
 
     // 注册奖励积分
-    const REGISTER_BONUS = 50;
+    const REGISTER_BONUS = 80;
     const INVITE_BONUS = 200;
     user.credits = (user.credits || 0) + REGISTER_BONUS;
+    user.freeCredits = 40;  // 首日免费额度
     await user.save();
 
     // 记录注册奖励流水
@@ -652,7 +653,8 @@ router.post('/google', [
           avatar: picture || '',
           emailVerified: true,
           isActive: true,
-          credits: 50,  // 注册奖励
+          credits: 80,  // 注册欢迎奖励
+          freeCredits: 40,  // 首日免费额度
         });
         await user.save();
 

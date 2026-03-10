@@ -4,6 +4,7 @@ const router = express.Router();
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
+const { refreshFreeCreditsIfNeeded } = require('./credits');
 
 const CREDIT_COST = 2; // img2prompt 每次消耗积分
 
@@ -17,12 +18,35 @@ const upload = multer({
   },
 });
 
+// 允许的 Vision 模型映射
+const ALLOWED_MODELS = {
+  'gpt-4o':      'gpt-4o',
+  'gpt-4o-mini': 'gpt-4o-mini',
+};
+const DEFAULT_MODEL = 'gpt-4o';
+
+/**
+ * 双积分扣除（先 freeCredits，再 credits）
+ */
+async function deductCredits(user, cost) {
+  const freeAvail = user.freeCredits ?? 0;
+  const paidAvail = user.credits ?? 0;
+  if (freeAvail + paidAvail < cost) return { ok: false, freeDeducted: 0, paidDeducted: 0 };
+
+  const freeDeducted = Math.min(freeAvail, cost);
+  const paidDeducted = cost - freeDeducted;
+  user.freeCredits = freeAvail - freeDeducted;
+  user.credits = paidAvail - paidDeducted;
+  await user.save();
+  return { ok: true, freeDeducted, paidDeducted };
+}
+
 /**
  * POST /api/tools/img2prompt
  * 支持两种模式：
- *   1. multipart/form-data: 上传图片文件（image 字段）
- *   2. JSON body: { imageUrl: "https://..." } — 拖拽 gallery 图片，直接传 URL
- * 需要登录 + 扣除 2 积分
+ *   1. multipart/form-data: 上传图片文件（image 字段）+ 可选 model 字段
+ *   2. JSON body: { imageUrl, model? } — 拖拽 gallery 图片，直接传 URL
+ * 需要登录 + 扣除 2 积分（先 freeCredits，再 credits）
  */
 router.post(
   '/img2prompt',
@@ -36,6 +60,7 @@ router.post(
     try {
       const hasFile = !!req.file;
       const imageUrl = req.body?.imageUrl;
+      const modelId = req.body?.model;
 
       if (!hasFile && !imageUrl) {
         return res.status(400).json({ message: '请上传图片或提供图片 URL' });
@@ -46,10 +71,16 @@ router.post(
         return res.status(503).json({ message: 'OpenAI API 未配置，请联系管理员' });
       }
 
-      // 检查积分
+      // 校验并解析模型
+      const openaiModel = ALLOWED_MODELS[modelId] ?? DEFAULT_MODEL;
+
+      // 检查用户 + 刷新每日免费额度
       const user = await User.findById(req.userId);
       if (!user) return res.status(404).json({ message: '用户不存在' });
-      if ((user.credits || 0) < CREDIT_COST) {
+      await refreshFreeCreditsIfNeeded(user);
+
+      const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
+      if (totalAvail < CREDIT_COST) {
         return res.status(402).json({ message: `积分不足，需要 ${CREDIT_COST} 积分` });
       }
 
@@ -66,7 +97,7 @@ router.post(
           'Authorization': `Bearer ${OPENAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: openaiModel,
           messages: [
             {
               role: 'user',
@@ -96,19 +127,27 @@ router.post(
         return res.status(502).json({ message: 'AI 返回结果为空，请重试' });
       }
 
-      // 扣除积分
-      user.credits -= CREDIT_COST;
-      await user.save();
-      await CreditTransaction.create({
-        userId: user._id,
-        type: 'spend',
-        amount: CREDIT_COST,
-        reason: 'img2prompt',
-        note: '图生文（反推 Prompt）',
-        balanceAfter: user.credits,
-      });
+      // 扣除积分（先 freeCredits，再 credits）
+      const { ok, freeDeducted, paidDeducted } = await deductCredits(user, CREDIT_COST);
+      if (!ok) {
+        return res.status(402).json({ message: `积分不足，需要 ${CREDIT_COST} 积分` });
+      }
 
-      res.json({ prompt, creditsLeft: user.credits });
+      const note = `图生文（反推 Prompt）— ${openaiModel}`;
+      if (freeDeducted > 0) {
+        await CreditTransaction.create({
+          userId: user._id, type: 'spend', amount: freeDeducted,
+          reason: 'img2prompt', note: `[免费] ${note}`, balanceAfter: user.freeCredits,
+        });
+      }
+      if (paidDeducted > 0) {
+        await CreditTransaction.create({
+          userId: user._id, type: 'spend', amount: paidDeducted,
+          reason: 'img2prompt', note: `[付费] ${note}`, balanceAfter: user.credits,
+        });
+      }
+
+      res.json({ prompt, creditsLeft: user.credits, freeCreditsLeft: user.freeCredits });
     } catch (error) {
       console.error('img2prompt 错误:', error);
       if (error.message === '只支持图片文件') {

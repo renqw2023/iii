@@ -28,6 +28,12 @@ const REVERSE_COST = 2;
 const RATIOS = ['1:1', '4:3', '3:4', '16:9'];
 const RESOLUTIONS = ['2K', '4K'];
 
+// 反推 Prompt 可用模型列表（按 available 动态过滤）
+const REVERSE_MODELS = [
+  { id: 'gpt-4o',      name: 'GPT-4o Vision',      provider: 'OpenAI', badge: null  },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini Vision',  provider: 'OpenAI', badge: 'Fast' },
+];
+
 const FAQ_LINKS = [
   { label: 'How does Reverse Prompt work?', href: '/help' },
   { label: 'How many credits do I need?',   href: '/credits' },
@@ -48,18 +54,32 @@ const ReverseTab = ({ onClose }) => {
   const { isAuthenticated, updateUser, openLoginModal } = useAuth();
   const { user } = useAuth();
   const fileInputRef = useRef(null);
+  const modelDropdownRef = useRef(null);
 
-  const [preview,     setPreview]     = useState(null);
-  const [file,        setFile]        = useState(null);
-  const [isDragging1, setIsDragging1] = useState(false);
-  const [isDragging3, setIsDragging3] = useState(false);
-  const [isLoading,   setIsLoading]   = useState(false);
-  const [result,      setResult]      = useState('');
-  const [copied,      setCopied]      = useState(false);
-  const [prompt,      setPrompt]      = useState('');
-  const [ratioIdx,    setRatioIdx]    = useState(2);
-  const [resolution,  setResolution]  = useState('2K');
-  const [faqOpen,     setFaqOpen]     = useState(false);
+  const [preview,             setPreview]             = useState(null);
+  const [file,                setFile]                = useState(null);
+  const [isDragging1,         setIsDragging1]         = useState(false);
+  const [isDragging3,         setIsDragging3]         = useState(false);
+  const [isLoading,           setIsLoading]           = useState(false);
+  const [result,              setResult]              = useState('');
+  const [copied,              setCopied]              = useState(false);
+  const [prompt,              setPrompt]              = useState('');
+  const [ratioIdx,            setRatioIdx]            = useState(2);
+  const [resolution,          setResolution]          = useState('2K');
+  const [faqOpen,             setFaqOpen]             = useState(false);
+  const [selectedRevModel,    setSelectedRevModel]    = useState(REVERSE_MODELS[0].id);
+  const [modelDropdownOpen,   setModelDropdownOpen]   = useState(false);
+
+  // 点击外部关闭下拉
+  useEffect(() => {
+    const handler = (e) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target)) {
+        setModelDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleFile = (f) => {
     if (!f?.type?.startsWith('image/')) { toast.error('Please select an image file'); return; }
@@ -78,23 +98,24 @@ const ReverseTab = ({ onClose }) => {
       if (fileObj) {
         const formData = new FormData();
         formData.append('image', fileObj);
+        formData.append('model', selectedRevModel);
         res = await axios.post('/api/tools/img2prompt', formData, {
           headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
         });
       } else {
-        res = await axios.post('/api/tools/img2prompt', { imageUrl }, {
+        res = await axios.post('/api/tools/img2prompt', { imageUrl, model: selectedRevModel }, {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         });
       }
       setResult(res.data.prompt);
-      updateUser({ credits: res.data.creditsLeft });
+      updateUser({ credits: res.data.creditsLeft, freeCredits: res.data.freeCreditsLeft });
       toast.success(`Prompt generated! ${REVERSE_COST} credits used`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Generation failed, please try again');
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, openLoginModal, updateUser]);
+  }, [isAuthenticated, openLoginModal, updateUser, selectedRevModel]);
 
   const handleDrop = useCallback((e, setDragging) => {
     e.preventDefault();
@@ -129,6 +150,7 @@ const ReverseTab = ({ onClose }) => {
   };
 
   const credits = user?.credits ?? 0;
+  const freeCredits = user?.freeCredits ?? 0;
   const canGenerate = !isLoading && !!file;
 
   return (
@@ -305,18 +327,81 @@ const ReverseTab = ({ onClose }) => {
         )}
       </div>
 
-      {/* Model row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+      {/* Model row — 真正可交互的下拉选择器 */}
+      <div ref={modelDropdownRef} style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, position: 'relative' }}>
         <span style={{ fontSize: 10, color: '#6b7280', backgroundColor: '#f3f4f6', borderRadius: 999, padding: '3px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
           Now available ✨
         </span>
-        <div style={{ flex: 1, height: 36, borderRadius: 14, backgroundColor: MUTED, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 10px' }}>
+        {/* Trigger button */}
+        <button
+          onClick={() => setModelDropdownOpen(v => !v)}
+          style={{
+            flex: 1, height: 36, borderRadius: 14,
+            backgroundColor: modelDropdownOpen ? 'rgba(99,102,241,0.07)' : MUTED,
+            border: `1.5px solid ${modelDropdownOpen ? 'rgba(99,102,241,0.35)' : 'transparent'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '0 10px', cursor: 'pointer', transition: 'all 150ms',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <SparklesIcon size={13} />
-            <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(27,27,27,0.8)' }}>GPT-4o Vision</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(27,27,27,0.8)' }}>
+              {REVERSE_MODELS.find(m => m.id === selectedRevModel)?.name ?? 'GPT-4o Vision'}
+            </span>
           </div>
-          <ChevronDown size={12} style={{ color: '#9ca3af' }} />
-        </div>
+          <ChevronDown
+            size={12}
+            style={{ color: '#9ca3af', transition: 'transform 150ms', transform: modelDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </button>
+
+        {/* Dropdown list */}
+        {modelDropdownOpen && (
+          <div style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0, right: 0,
+            backgroundColor: '#fff',
+            border: '1px solid rgba(0,0,0,0.1)',
+            borderRadius: 12,
+            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+            zIndex: 50,
+            overflow: 'hidden',
+          }}>
+            {REVERSE_MODELS.map((m) => {
+              const active = m.id === selectedRevModel;
+              return (
+                <button
+                  key={m.id}
+                  onClick={() => { setSelectedRevModel(m.id); setModelDropdownOpen(false); }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '9px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    backgroundColor: active ? 'rgba(99,102,241,0.06)' : '#fff',
+                    transition: 'background-color 100ms',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#f9fafb'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = '#fff'; }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <SparklesIcon size={12} />
+                    <span style={{ fontSize: 12, fontWeight: active ? 600 : 400, color: active ? '#6366f1' : '#374151' }}>
+                      {m.name}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {m.badge && (
+                      <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 5px' }}>
+                        {m.badge}
+                      </span>
+                    )}
+                    {active && <span style={{ fontSize: 11, color: '#6366f1' }}>✓</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Generate button */}
@@ -356,7 +441,9 @@ const ReverseTab = ({ onClose }) => {
         </p>
       ) : (
         <p style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', margin: 0, flexShrink: 0 }}>
-          Balance: <strong style={{ color: '#6b7280' }}>{credits}</strong> credits
+          Free: <strong style={{ color: '#fbbf24' }}>{freeCredits}</strong>
+          {' '}·{' '}
+          Credits: <strong style={{ color: '#6b7280' }}>{credits}</strong>
         </p>
       )}
     </div>
@@ -385,7 +472,13 @@ const GenerateTab = () => {
     generateAPI.getModels()
       .then(list => {
         setModels(list);
-        if (list.length > 0) setSelectedModel(list[0].id);
+        if (list.length > 0) {
+          // 优先选 Nanobanana Pro (imagen-pro)，其次选第一个非 comingSoon 的模型
+          const preferred = list.find(m => m.id === 'imagen-pro' && !m.comingSoon)
+            ?? list.find(m => !m.comingSoon)
+            ?? list[0];
+          setSelectedModel(preferred.id);
+        }
         setModelsLoaded(true);
       })
       .catch(() => {});
@@ -422,7 +515,7 @@ const GenerateTab = () => {
     try {
       const data = await generateAPI.generateImage({ prompt, modelId: selectedModel, aspectRatio });
       setResult(data);
-      updateUser({ credits: data.creditsLeft });
+      updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
       toast.success(`Image generated! ${currentModel?.creditCost} credits used`);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Generation failed, please try again');
@@ -446,6 +539,7 @@ const GenerateTab = () => {
   };
 
   const credits = user?.credits ?? 0;
+  const freeCredits = user?.freeCredits ?? 0;
   const canGenerate = !isLoading && !!prompt.trim() && !!selectedModel;
 
   return (
@@ -569,7 +663,9 @@ const GenerateTab = () => {
         </p>
       ) : (
         <p style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', margin: 0, flexShrink: 0 }}>
-          Balance: <strong style={{ color: '#6b7280' }}>{credits}</strong> credits
+          Free: <strong style={{ color: '#fbbf24' }}>{freeCredits}</strong>
+          {' '}·{' '}
+          Credits: <strong style={{ color: '#6b7280' }}>{credits}</strong>
         </p>
       )}
 

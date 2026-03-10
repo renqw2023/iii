@@ -39,6 +39,14 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  freeCredits: {
+    type: Number,
+    default: 40
+  },
+  lastFreeCreditsRefreshAt: {
+    type: Date,
+    default: null
+  },
   lastCheckinAt: {
     type: Date,
     default: null

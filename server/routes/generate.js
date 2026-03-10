@@ -29,6 +29,15 @@ const MODELS = [
     description: 'Nanobanana 2 · Fast generation',
   },
   {
+    id: 'gemini25-flash',
+    name: 'Nanobanana',
+    provider: 'Google',
+    apiModel: 'gemini-2.5-flash-image',
+    creditCost: 4,
+    available: () => !!process.env.GEMINI_API_KEY,
+    description: 'Nanobanana · Fast & stable',
+  },
+  {
     id: 'imagen4-pro',
     name: 'Imagen 4 Pro',
     provider: 'Google',
@@ -149,12 +158,13 @@ router.post('/image', auth, async (req, res) => {
     const imageUrl = `/uploads/generated/${filename}`;
 
     // ── Gemini 3 Pro / 3.1 Flash（generateContent，IMAGE 输出）──
-    if (modelId === 'gemini3-pro' || modelId === 'gemini3-flash') {
+    if (modelId === 'gemini3-pro' || modelId === 'gemini3-flash' || modelId === 'gemini25-flash') {
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model.apiModel}:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(90000), // 90 秒超时
           body: JSON.stringify({
             contents: [{
               parts: [

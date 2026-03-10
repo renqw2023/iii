@@ -2,5 +2,6 @@ import api from './api';
 
 export const generateAPI = {
   getModels: () => api.get('/generate/models').then(r => r.data.models),
-  generateImage: (body) => api.post('/generate/image', body).then(r => r.data),
+  // 图像生成可能需要 30-60 秒，单独使用长 timeout
+  generateImage: (body) => api.post('/generate/image', body, { timeout: 120000 }).then(r => r.data),
 };

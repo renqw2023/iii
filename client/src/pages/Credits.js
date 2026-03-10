@@ -12,7 +12,9 @@ const REASON_LABELS = {
   invite_reward:  '邀请奖励',
   invite_bonus:   '邀请好友奖励',
   admin_grant:    '管理员赠送',
+  admin_deduct:   '管理员扣除',
   generate_image: '生成图片',
+  img2prompt:     '图像分析',
   purchase:       '积分购买',
 };
 
@@ -258,6 +260,11 @@ const Credits = () => {
                   <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                     {REASON_LABELS[tx.reason] || tx.reason}
                   </p>
+                  {tx.note && (
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {tx.note}
+                    </p>
+                  )}
                   <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     {new Date(tx.createdAt).toLocaleString('zh-CN')}
                   </p>

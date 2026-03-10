@@ -4,38 +4,47 @@ const path = require('path');
 const fs = require('fs');
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
-const CreditTransaction = require('../models/CreditTransaction');
 const { refreshFreeCreditsIfNeeded } = require('./credits');
+const { deductCredits, recordDeductTransactions } = require('../utils/creditsUtils');
 
 const MODELS = [
-  // ── Google Gemini / Imagen ── (排在最前，优先展示)
+  // ── Google Gemini 3 / Imagen ── (排在最前，优先展示)
   {
-    id: 'imagen-pro',
-    name: 'Nanobanana Pro',
+    id: 'gemini3-pro',
+    name: 'Gemini 3 Pro',
     provider: 'Google',
-    apiModel: 'imagen-3.0-generate-001',
-    creditCost: 8,
+    apiModel: 'gemini-3-pro-image-preview',
+    creditCost: 10,
     available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Imagen 3 · Best quality',
+    description: 'Gemini 3 Pro · Professional quality',
     badge: 'Pro',
   },
   {
-    id: 'gemini-flash',
-    name: 'Nanobanana 2',
+    id: 'gemini3-flash',
+    name: 'Gemini 3.1 Flash',
     provider: 'Google',
-    apiModel: 'gemini-2.0-flash-exp',   // 正确模型 ID（支持图片输出）
-    creditCost: 5,
+    apiModel: 'gemini-3.1-flash-image-preview',
+    creditCost: 6,
     available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Gemini 2.0 Flash · Fast & creative',
+    description: 'Gemini 3.1 Flash · Fast generation',
   },
   {
-    id: 'imagen-fast',
-    name: 'Nanobanana 2 Fast',
+    id: 'imagen4-pro',
+    name: 'Imagen 4 Pro',
     provider: 'Google',
-    apiModel: 'imagen-3.0-fast-generate-001',
+    apiModel: 'imagen-4.0-generate-001',
+    creditCost: 8,
+    available: () => !!process.env.GEMINI_API_KEY,
+    description: 'Imagen 4 · Best quality',
+  },
+  {
+    id: 'imagen4-fast',
+    name: 'Imagen 4 Fast',
+    provider: 'Google',
+    apiModel: 'imagen-4.0-fast-generate-001',
     creditCost: 4,
     available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Imagen 3 Fast · Economical',
+    description: 'Imagen 4 Fast · Economical',
   },
   // ── OpenAI ──
   {
@@ -81,25 +90,6 @@ const MODELS = [
     comingSoon: true,
   },
 ];
-
-/**
- * 双积分扣除：先扣 freeCredits，再扣 credits
- * 合计不足 → 返回 false（调用方应返回 402）
- * @returns {{ ok: boolean, freeDeducted: number, paidDeducted: number }}
- */
-async function deductCredits(user, cost) {
-  const freeAvail = user.freeCredits ?? 0;
-  const paidAvail = user.credits ?? 0;
-  if (freeAvail + paidAvail < cost) return { ok: false, freeDeducted: 0, paidDeducted: 0 };
-
-  let freeDeducted = Math.min(freeAvail, cost);
-  let paidDeducted = cost - freeDeducted;
-
-  user.freeCredits = freeAvail - freeDeducted;
-  user.credits = paidAvail - paidDeducted;
-  await user.save();
-  return { ok: true, freeDeducted, paidDeducted };
-}
 
 /**
  * GET /api/generate/models
@@ -158,8 +148,8 @@ router.post('/image', auth, async (req, res) => {
     const filePath = path.join(genDir, filename);
     const imageUrl = `/uploads/generated/${filename}`;
 
-    // ── Gemini 2.0 Flash Exp（文生图，支持 IMAGE 输出）──
-    if (modelId === 'gemini-flash') {
+    // ── Gemini 3 Pro / 3.1 Flash（generateContent，IMAGE 输出）──
+    if (modelId === 'gemini3-pro' || modelId === 'gemini3-flash') {
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model.apiModel}:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
@@ -167,14 +157,14 @@ router.post('/image', auth, async (req, res) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
           }),
         }
       );
 
       if (!geminiRes.ok) {
         const errBody = await geminiRes.json().catch(() => ({}));
-        console.error('Gemini Flash API 错误:', errBody);
+        console.error('Gemini API 错误:', errBody);
         return res.status(502).json({ message: `Gemini 服务错误: ${errBody?.error?.message || geminiRes.status}` });
       }
 
@@ -188,7 +178,7 @@ router.post('/image', auth, async (req, res) => {
       fs.writeFileSync(filePath, Buffer.from(part.inlineData.data, 'base64'));
 
     // ── Google Imagen 3 (Fast / Pro) via Generative Language API ──
-    } else if (modelId === 'imagen-fast' || modelId === 'imagen-pro') {
+    } else if (modelId === 'imagen4-fast' || modelId === 'imagen4-pro') {
       const imagenRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model.apiModel}:predict?key=${process.env.GEMINI_API_KEY}`,
         {
@@ -343,26 +333,7 @@ router.post('/image', auth, async (req, res) => {
 
     // 记录交易流水
     const note = `${model.name} — ${prompt.slice(0, 50)}`;
-    if (freeDeducted > 0) {
-      await CreditTransaction.create({
-        userId: user._id,
-        type: 'spend',
-        amount: freeDeducted,
-        reason: 'generate_image',
-        note: `[免费] ${note}`,
-        balanceAfter: user.freeCredits,
-      });
-    }
-    if (paidDeducted > 0) {
-      await CreditTransaction.create({
-        userId: user._id,
-        type: 'spend',
-        amount: paidDeducted,
-        reason: 'generate_image',
-        note: `[付费] ${note}`,
-        balanceAfter: user.credits,
-      });
-    }
+    await recordDeductTransactions(user._id, 'generate_image', note, freeDeducted, paidDeducted, user.freeCredits, user.credits);
 
     res.json({
       imageUrl,

@@ -28,10 +28,10 @@ const REVERSE_COST = 2;
 const RATIOS = ['1:1', '4:3', '3:4', '16:9'];
 const RESOLUTIONS = ['2K', '4K'];
 
-// 反推 Prompt 可用模型列表（按 available 动态过滤）
+// 反推 Prompt 可用模型列表
 const REVERSE_MODELS = [
-  { id: 'gpt-4o',      name: 'GPT-4o Vision',      provider: 'OpenAI', badge: null  },
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini Vision',  provider: 'OpenAI', badge: 'Fast' },
+  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash',      provider: 'Google', badge: null   },
+  { id: 'gemini-2.5-flash',       name: 'Gemini 2.5 Flash',    provider: 'Google', badge: 'Fast' },
 ];
 
 const FAQ_LINKS = [
@@ -473,8 +473,8 @@ const GenerateTab = () => {
       .then(list => {
         setModels(list);
         if (list.length > 0) {
-          // 优先选 Nanobanana Pro (imagen-pro)，其次选第一个非 comingSoon 的模型
-          const preferred = list.find(m => m.id === 'imagen-pro' && !m.comingSoon)
+          // 优先选 Gemini 3 Pro，其次选第一个非 comingSoon 的模型
+          const preferred = list.find(m => m.id === 'gemini3-pro' && !m.comingSoon)
             ?? list.find(m => !m.comingSoon)
             ?? list[0];
           setSelectedModel(preferred.id);

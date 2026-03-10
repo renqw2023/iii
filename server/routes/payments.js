@@ -30,7 +30,9 @@ router.post('/create-checkout', auth, async (req, res) => {
   const clientUrl = config.server.clientUrl;
 
   try {
+    const user = await User.findById(req.userId).select('email');
     const session = await stripe.checkout.sessions.create({
+      customer_email: user?.email || undefined,
       mode: 'payment',
       line_items: [
         {

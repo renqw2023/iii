@@ -23,7 +23,10 @@ const creditTransactionSchema = new mongoose.Schema({
       'invite_reward',    // 邀请奖励（被邀请人）
       'invite_bonus',     // 邀请奖励（邀请人）
       'admin_grant',      // 管理员赠送
-      'generate_image',   // 生成图片消耗（预留）
+      'admin_deduct',     // 管理员扣除
+      'generate_image',   // 生成图片消耗
+      'img2prompt',       // 图生文消耗
+      'purchase',         // 充值购买
     ],
     required: true
   },

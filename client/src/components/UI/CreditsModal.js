@@ -12,7 +12,9 @@
  */
 import React, { useEffect } from 'react';
 import { X, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { creditsAPI } from '../../services/creditsApi';
 
 const FREE_FEATURES = [
   '40 refresh credits every day',
@@ -123,10 +125,15 @@ const CreditsModal = ({ open, onClose }) => {
 
   if (!open) return null;
 
-  const handlePlanClick = (plan) => {
+  const handlePlanClick = async (plan) => {
     if (plan.cta.disabled) return;
     if (!isAuthenticated) { onClose(); openLoginModal(); return; }
-    window.location.href = `/credits?plan=${plan.id}`;
+    try {
+      const res = await creditsAPI.createCheckout(plan.id);
+      window.location.href = res.data.url;
+    } catch (err) {
+      toast.error(err.response?.data?.message || '支付失败，请稍后重试');
+    }
   };
 
   return (

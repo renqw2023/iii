@@ -2,6 +2,7 @@ const express = require('express');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
 const { auth } = require('../middleware/auth');
+const { deductCredits } = require('../utils/creditsUtils');
 
 const router = express.Router();
 
@@ -129,6 +130,79 @@ router.get('/history', auth, async (req, res) => {
   } catch (error) {
     console.error('获取积分流水失败:', error);
     res.status(500).json({ message: '获取积分流水失败' });
+  }
+});
+
+// POST /api/credits/admin/grant — 管理员赠积分
+router.post('/admin/grant', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId).select('role');
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ message: '无权限' });
+    }
+
+    const { userId, amount, note } = req.body;
+    if (!userId || !amount || amount <= 0) {
+      return res.status(400).json({ message: '参数错误' });
+    }
+
+    const target = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { credits: amount } },
+      { new: true }
+    );
+    if (!target) return res.status(404).json({ message: '目标用户不存在' });
+
+    const transaction = await CreditTransaction.create({
+      userId,
+      type: 'earn',
+      amount,
+      reason: 'admin_grant',
+      note: note || '管理员赠送',
+      balanceAfter: target.credits,
+    });
+
+    res.json({ credits: target.credits, transaction });
+  } catch (error) {
+    console.error('admin/grant 错误:', error);
+    res.status(500).json({ message: '操作失败' });
+  }
+});
+
+// POST /api/credits/admin/deduct — 管理员扣积分
+router.post('/admin/deduct', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId).select('role');
+    if (!admin || admin.role !== 'admin') {
+      return res.status(403).json({ message: '无权限' });
+    }
+
+    const { userId, amount, note } = req.body;
+    if (!userId || !amount || amount <= 0) {
+      return res.status(400).json({ message: '参数错误' });
+    }
+
+    const target = await User.findById(userId);
+    if (!target) return res.status(404).json({ message: '目标用户不存在' });
+
+    const { ok, freeDeducted, paidDeducted } = await deductCredits(target, amount);
+    if (!ok) {
+      return res.status(400).json({ message: '目标用户积分不足' });
+    }
+
+    const transaction = await CreditTransaction.create({
+      userId,
+      type: 'spend',
+      amount,
+      reason: 'admin_deduct',
+      note: note || '管理员扣除',
+      balanceAfter: target.credits,
+    });
+
+    res.json({ credits: target.credits, freeCredits: target.freeCredits, transaction });
+  } catch (error) {
+    console.error('admin/deduct 错误:', error);
+    res.status(500).json({ message: '操作失败' });
   }
 });
 

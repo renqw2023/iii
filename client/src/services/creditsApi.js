@@ -13,4 +13,13 @@ export const creditsAPI = {
 
   getHistory: (page = 1, limit = 20) =>
     axios.get(`/api/credits/history?page=${page}&limit=${limit}`, { headers: getAuthHeaders() }),
+
+  getPlans: () =>
+    axios.get('/api/payments/plans'),
+
+  createCheckout: (planId) =>
+    axios.post('/api/payments/create-checkout', { planId }, { headers: getAuthHeaders() }),
+
+  adminGrant: (userId, amount, note) =>
+    axios.post('/api/credits/admin/grant', { userId, amount, note }, { headers: getAuthHeaders() }),
 };

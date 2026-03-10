@@ -48,13 +48,14 @@ const SparklesIcon = ({ size = 13 }) => (
 );
 
 /* ═══════════════════════════════════════════════
-   Tab 1 — Reverse Prompt（图生文）
+   Tab 1 — Reverse Prompt（图生文 → 文生图）
 ═══════════════════════════════════════════════ */
 const ReverseTab = ({ onClose }) => {
   const { isAuthenticated, updateUser, openLoginModal } = useAuth();
   const { user } = useAuth();
   const fileInputRef = useRef(null);
   const modelDropdownRef = useRef(null);
+  const resultRef = useRef(null);
 
   const [preview,             setPreview]             = useState(null);
   const [file,                setFile]                = useState(null);
@@ -69,6 +70,24 @@ const ReverseTab = ({ onClose }) => {
   const [faqOpen,             setFaqOpen]             = useState(false);
   const [selectedRevModel,    setSelectedRevModel]    = useState(REVERSE_MODELS[0].id);
   const [modelDropdownOpen,   setModelDropdownOpen]   = useState(false);
+
+  // ── 生图状态 ──
+  const [genModels,        setGenModels]        = useState([]);
+  const [selectedGenModel, setSelectedGenModel] = useState(null);
+  const [isGenerating,     setIsGenerating]     = useState(false);
+  const [genResult,        setGenResult]        = useState(null);
+
+  // 拉取生图模型列表
+  useEffect(() => {
+    generateAPI.getModels()
+      .then(list => {
+        const available = list.filter(m => !m.comingSoon);
+        setGenModels(available);
+        const preferred = available.find(m => m.id === 'gemini3-pro') ?? available[0];
+        if (preferred) setSelectedGenModel(preferred.id);
+      })
+      .catch(() => {});
+  }, []);
 
   // 点击外部关闭下拉
   useEffect(() => {
@@ -149,9 +168,50 @@ const ReverseTab = ({ onClose }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── 文生图 ──
+  const handleGenerateImage = async () => {
+    if (!isAuthenticated) { openLoginModal(); return; }
+    const promptText = (result || prompt).trim();
+    if (!promptText) { toast.error('Please analyze an image or type a prompt first'); return; }
+    if (!selectedGenModel) { toast.error('No generation model available'); return; }
+    setIsGenerating(true);
+    setGenResult(null);
+    try {
+      const data = await generateAPI.generateImage({
+        prompt: promptText,
+        modelId: selectedGenModel,
+        aspectRatio: RATIOS[ratioIdx],
+      });
+      setGenResult(data);
+      updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
+      const genModel = genModels.find(m => m.id === selectedGenModel);
+      toast.success(`Image generated! ${genModel?.creditCost ?? '?'} credits used`);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Generation failed, please try again');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!genResult?.imageUrl) return;
+    const a = document.createElement('a');
+    a.href = genResult.imageUrl;
+    a.download = `generated_${Date.now()}.png`;
+    a.click();
+  };
+
+  const handleCopyUrl = async () => {
+    if (!genResult?.imageUrl) return;
+    await navigator.clipboard.writeText(`${window.location.origin}${genResult.imageUrl}`);
+    toast.success('URL copied');
+  };
+
   const credits = user?.credits ?? 0;
   const freeCredits = user?.freeCredits ?? 0;
-  const canGenerate = !isLoading && !!file;
+  const canAnalyze = !isLoading && !!file;
+  const canGenerateImage = !isGenerating && !!(result || prompt).trim() && !!selectedGenModel;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', paddingRight: 2 }}>
@@ -298,146 +358,139 @@ const ReverseTab = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Divider */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.07)' }} />
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>{REVERSE_COST} credits per generation</span>
-        <div style={{ flex: 1, height: 1, backgroundColor: 'rgba(0,0,0,0.07)' }} />
+      {/* ── Step 1: Analyze ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {/* Vision model dropdown */}
+        <div ref={modelDropdownRef} style={{ flex: 1, position: 'relative' }}>
+          <button
+            onClick={() => setModelDropdownOpen(v => !v)}
+            style={{
+              width: '100%', height: 34, borderRadius: 10,
+              backgroundColor: modelDropdownOpen ? 'rgba(99,102,241,0.07)' : MUTED,
+              border: `1.5px solid ${modelDropdownOpen ? 'rgba(99,102,241,0.35)' : 'transparent'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '0 10px', cursor: 'pointer', transition: 'all 150ms',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <SparklesIcon size={11} />
+              <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(27,27,27,0.75)' }}>
+                {REVERSE_MODELS.find(m => m.id === selectedRevModel)?.name ?? 'Gemini 3 Flash'}
+              </span>
+            </div>
+            <ChevronDown size={11} style={{ color: '#9ca3af', transition: 'transform 150ms', transform: modelDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+          </button>
+          {modelDropdownOpen && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, backgroundColor: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden' }}>
+              {REVERSE_MODELS.map(m => {
+                const active = m.id === selectedRevModel;
+                return (
+                  <button key={m.id} onClick={() => { setSelectedRevModel(m.id); setModelDropdownOpen(false); }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 11px', border: 'none', cursor: 'pointer', backgroundColor: active ? 'rgba(99,102,241,0.06)' : '#fff', transition: 'background-color 100ms' }}
+                    onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#f9fafb'; }}
+                    onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = active ? 'rgba(99,102,241,0.06)' : '#fff'; }}>
+                    <span style={{ fontSize: 12, fontWeight: active ? 600 : 400, color: active ? '#6366f1' : '#374151' }}>{m.name}</span>
+                    {m.badge && <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 5px' }}>{m.badge}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        {/* Analyze button */}
+        <button
+          onClick={() => { if (!isAuthenticated) { openLoginModal(); return; } if (!file) { toast.error('Please upload an image first'); return; } runGenerate(file, null); }}
+          disabled={!canAnalyze}
+          style={{
+            height: 34, padding: '0 14px', borderRadius: 10, border: 'none', flexShrink: 0,
+            backgroundColor: canAnalyze ? '#6366f1' : 'rgba(0,0,0,0.08)',
+            color: canAnalyze ? '#fff' : '#9ca3af',
+            fontSize: 12, fontWeight: 600,
+            display: 'flex', alignItems: 'center', gap: 5,
+            cursor: canAnalyze ? 'pointer' : 'not-allowed',
+            transition: 'all 150ms',
+          }}
+          onMouseEnter={e => { if (canAnalyze) e.currentTarget.style.opacity = '0.88'; }}
+          onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+        >
+          {isLoading ? <Loader2 size={12} className="animate-spin" /> : <SparklesIcon size={12} />}
+          {isLoading ? 'Analyzing…' : 'Analyze'}
+          {!isLoading && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 5, padding: '1px 5px', fontSize: 10 }}>
+              <Zap size={9} style={{ color: '#FFDBA4' }} />{REVERSE_COST}
+            </span>
+          )}
+        </button>
       </div>
 
-      {/* FAQ */}
+      <div style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.06)', flexShrink: 0 }} />
+
+      {/* ── Step 2: Generate Image ── */}
+      {/* Gen model pills */}
       <div style={{ flexShrink: 0 }}>
-        <button onClick={() => setFaqOpen(v => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: '2px 4px' }}>
-          <span style={{ fontSize: 12, fontWeight: 500 }}>FAQ</span>
-          {faqOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        </button>
-        {faqOpen && (
-          <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {FAQ_LINKS.map(({ label, href }) => (
-              <a key={href} href={href}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b7280', textDecoration: 'none', padding: '4px 4px', borderRadius: 6, transition: 'color 150ms' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#374151'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#6b7280'; }}>
-                <ExternalLink size={11} style={{ flexShrink: 0 }} />
-                {label}
-              </a>
+        <p style={{ fontSize: 10, color: '#9ca3af', margin: '0 0 5px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Generation Model</p>
+        {genModels.length === 0 ? (
+          <p style={{ fontSize: 11, color: '#f87171', margin: 0 }}>No models configured</p>
+        ) : (
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            {genModels.map(m => (
+              <button key={m.id} onClick={() => setSelectedGenModel(m.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '4px 9px', borderRadius: 99,
+                  border: `1.5px solid ${selectedGenModel === m.id ? '#6366f1' : 'rgba(0,0,0,0.1)'}`,
+                  backgroundColor: selectedGenModel === m.id ? 'rgba(99,102,241,0.08)' : 'transparent',
+                  color: selectedGenModel === m.id ? '#6366f1' : '#374151',
+                  fontSize: 11, fontWeight: selectedGenModel === m.id ? 600 : 400,
+                  cursor: 'pointer', transition: 'all 150ms',
+                }}>
+                <span>{m.name}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 5, padding: '1px 4px', fontSize: 10, color: '#6b7280' }}>
+                  <Zap size={8} style={{ color: '#f59e0b' }} />{m.creditCost}
+                </span>
+                {m.badge && <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 4px' }}>{m.badge}</span>}
+              </button>
             ))}
           </div>
         )}
       </div>
 
-      {/* Model row — 真正可交互的下拉选择器 */}
-      <div ref={modelDropdownRef} style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, position: 'relative' }}>
-        <span style={{ fontSize: 10, color: '#6b7280', backgroundColor: '#f3f4f6', borderRadius: 999, padding: '3px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          Now available ✨
-        </span>
-        {/* Trigger button */}
-        <button
-          onClick={() => setModelDropdownOpen(v => !v)}
-          style={{
-            flex: 1, height: 36, borderRadius: 14,
-            backgroundColor: modelDropdownOpen ? 'rgba(99,102,241,0.07)' : MUTED,
-            border: `1.5px solid ${modelDropdownOpen ? 'rgba(99,102,241,0.35)' : 'transparent'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '0 10px', cursor: 'pointer', transition: 'all 150ms',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <SparklesIcon size={13} />
-            <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(27,27,27,0.8)' }}>
-              {REVERSE_MODELS.find(m => m.id === selectedRevModel)?.name ?? 'GPT-4o Vision'}
-            </span>
-          </div>
-          <ChevronDown
-            size={12}
-            style={{ color: '#9ca3af', transition: 'transform 150ms', transform: modelDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-          />
-        </button>
-
-        {/* Dropdown list */}
-        {modelDropdownOpen && (
-          <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0, right: 0,
-            backgroundColor: '#fff',
-            border: '1px solid rgba(0,0,0,0.1)',
-            borderRadius: 12,
-            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-            zIndex: 50,
-            overflow: 'hidden',
-          }}>
-            {REVERSE_MODELS.map((m) => {
-              const active = m.id === selectedRevModel;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => { setSelectedRevModel(m.id); setModelDropdownOpen(false); }}
-                  style={{
-                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '9px 12px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                    backgroundColor: active ? 'rgba(99,102,241,0.06)' : '#fff',
-                    transition: 'background-color 100ms',
-                  }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#f9fafb'; }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = '#fff'; }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <SparklesIcon size={12} />
-                    <span style={{ fontSize: 12, fontWeight: active ? 600 : 400, color: active ? '#6366f1' : '#374151' }}>
-                      {m.name}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    {m.badge && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 5px' }}>
-                        {m.badge}
-                      </span>
-                    )}
-                    {active && <span style={{ fontSize: 11, color: '#6366f1' }}>✓</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Generate button */}
+      {/* Generate Image button — main CTA */}
       <button
-        onClick={() => { if (!isAuthenticated) { openLoginModal(); return; } if (!file) { toast.error('Please upload an image first'); return; } runGenerate(file, null); }}
-        disabled={!canGenerate}
+        onClick={handleGenerateImage}
+        disabled={!canGenerateImage}
         style={{
           height: 44, borderRadius: 14, border: 'none',
           backgroundColor: '#1B1B1B', color: '#fff',
           fontSize: 14, fontWeight: 600,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          cursor: canGenerate ? 'pointer' : 'not-allowed',
-          opacity: canGenerate ? 1 : 0.45,
+          cursor: canGenerateImage ? 'pointer' : 'not-allowed',
+          opacity: canGenerateImage ? 1 : 0.45,
           transition: 'transform 150ms, opacity 150ms', flexShrink: 0,
         }}
-        onMouseEnter={e => { if (canGenerate) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+        onMouseEnter={e => { if (canGenerateImage) e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        {isLoading ? (
-          <><Loader2 size={14} className="animate-spin" />Analyzing…</>
+        {isGenerating ? (
+          <><Loader2 size={14} className="animate-spin" />Generating…</>
         ) : (
           <>
-            <span style={{ fontSize: 15, fontWeight: 600 }}>Generate Prompt</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
-              <Zap size={10} style={{ color: '#FFDBA4' }} />
-              <span style={{ fontSize: 12 }}>{REVERSE_COST}</span>
-            </div>
+            <Wand2 size={15} />
+            <span>Generate Image</span>
+            {selectedGenModel && genModels.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
+                <Zap size={10} style={{ color: '#FFDBA4' }} />
+                <span style={{ fontSize: 12 }}>{genModels.find(m => m.id === selectedGenModel)?.creditCost ?? '?'}</span>
+              </div>
+            )}
           </>
         )}
       </button>
 
+      {/* Balance hint */}
       {!isAuthenticated ? (
         <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', margin: 0, flexShrink: 0 }}>
-          <button onClick={openLoginModal} style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: 12 }}>
-            Sign in
-          </button>{' '}to use this feature
+          <button onClick={openLoginModal} style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: 12 }}>Sign in</button>{' '}to use this feature
         </p>
       ) : (
         <p style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', margin: 0, flexShrink: 0 }}>
@@ -445,6 +498,30 @@ const ReverseTab = ({ onClose }) => {
           {' '}·{' '}
           Credits: <strong style={{ color: '#6b7280' }}>{credits}</strong>
         </p>
+      )}
+
+      {/* ── Generated image result ── */}
+      {genResult && (
+        <div
+          ref={resultRef}
+          style={{ flexShrink: 0, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', animation: 'fadeIn 0.3s ease-out' }}
+        >
+          <img src={genResult.imageUrl} alt="Generated" style={{ width: '100%', display: 'block' }} />
+          <div style={{ display: 'flex', gap: 6, padding: 8, backgroundColor: MUTED }}>
+            <button onClick={handleDownload}
+              style={{ flex: 1, height: 32, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#374151', fontWeight: 500, transition: 'background-color 150ms' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_H; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}>
+              <Download size={12} /> Download
+            </button>
+            <button onClick={handleCopyUrl}
+              style={{ flex: 1, height: 32, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#374151', fontWeight: 500, transition: 'background-color 150ms' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_H; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}>
+              <Link size={12} /> Copy URL
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

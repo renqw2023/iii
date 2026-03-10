@@ -53,23 +53,31 @@ const SparklesIcon = ({ size = 13 }) => (
 const ReverseTab = ({ onClose }) => {
   const { isAuthenticated, updateUser, openLoginModal } = useAuth();
   const { user } = useAuth();
-  const fileInputRef = useRef(null);
-  const modelDropdownRef = useRef(null);
-  const resultRef = useRef(null);
+  const reverseFileInputRef = useRef(null);  // Card 1 — 反推用图
+  const refFileInputRef     = useRef(null);  // Card 2 — 参考图
+  const modelDropdownRef    = useRef(null);
+  const resultRef           = useRef(null);
 
-  const [preview,             setPreview]             = useState(null);
-  const [file,                setFile]                = useState(null);
-  const [isDragging1,         setIsDragging1]         = useState(false);
-  const [isDragging3,         setIsDragging3]         = useState(false);
-  const [isLoading,           setIsLoading]           = useState(false);
-  const [result,              setResult]              = useState('');
-  const [copied,              setCopied]              = useState(false);
-  const [prompt,              setPrompt]              = useState('');
-  const [ratioIdx,            setRatioIdx]            = useState(2);
-  const [resolution,          setResolution]          = useState('2K');
-  const [faqOpen,             setFaqOpen]             = useState(false);
-  const [selectedRevModel,    setSelectedRevModel]    = useState(REVERSE_MODELS[0].id);
-  const [modelDropdownOpen,   setModelDropdownOpen]   = useState(false);
+  // ── 反推图片状态（Card 1）──
+  const [reverseFile,    setReverseFile]    = useState(null);
+  const [reversePreview, setReversePreview] = useState(null);
+  const [isDragging1,    setIsDragging1]    = useState(false);
+
+  // ── 参考图状态（Card 2）──
+  const [refImageFile,  setRefImageFile]  = useState(null);
+  const [refImageB64,   setRefImageB64]   = useState(null);
+  const [refMimeType,   setRefMimeType]   = useState(null);
+  const [refPreview,    setRefPreview]    = useState(null);
+  const [isDragging2,   setIsDragging2]   = useState(false);
+
+  const [isLoading,         setIsLoading]         = useState(false);
+  const [result,            setResult]            = useState('');
+  const [copied,            setCopied]            = useState(false);
+  const [prompt,            setPrompt]            = useState('');
+  const [ratioIdx,          setRatioIdx]          = useState(2);
+  const [resolution,        setResolution]        = useState('2K');
+  const [selectedRevModel,  setSelectedRevModel]  = useState(REVERSE_MODELS[0].id);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
 
   // ── 生图状态 ──
   const [genModels,        setGenModels]        = useState([]);
@@ -100,11 +108,27 @@ const ReverseTab = ({ onClose }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleFile = (f) => {
+  // Card 1 — 反推图片处理
+  const handleReverseFile = (f) => {
     if (!f?.type?.startsWith('image/')) { toast.error('Please select an image file'); return; }
-    setFile(f); setResult('');
+    setReverseFile(f); setResult('');
     const reader = new FileReader();
-    reader.onload = (e) => setPreview(e.target.result);
+    reader.onload = (e) => setReversePreview(e.target.result);
+    reader.readAsDataURL(f);
+  };
+
+  // Card 2 — 参考图处理（读取为 base64 供生图 API 使用）
+  const handleRefFile = (f) => {
+    if (!f?.type?.startsWith('image/')) { toast.error('Please select an image file'); return; }
+    setRefImageFile(f);
+    setRefMimeType(f.type);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      setRefPreview(dataUrl);
+      // 去掉 data:image/xxx;base64, 前缀，只保留 base64 数据
+      setRefImageB64(dataUrl.split(',')[1]);
+    };
     reader.readAsDataURL(f);
   };
 
@@ -136,28 +160,59 @@ const ReverseTab = ({ onClose }) => {
     }
   }, [isAuthenticated, openLoginModal, updateUser, selectedRevModel]);
 
-  const handleDrop = useCallback((e, setDragging) => {
+  // Card 1 onDrop — JSON 有 image → 反推；File → 设置反推图
+  const handleCard1Drop = useCallback((e) => {
     e.preventDefault();
-    setDragging(false);
+    setIsDragging1(false);
     const jsonData = e.dataTransfer.getData('application/json');
     if (jsonData) {
       try {
         const parsed = JSON.parse(jsonData);
         if (parsed.image) {
           if (!isAuthenticated) { openLoginModal(); return; }
-          setPreview(parsed.image);
-          setFile(null);
+          setReversePreview(parsed.image);
+          setReverseFile(null);
           runGenerate(null, parsed.image);
           return;
         }
       } catch (_) { /* ignore */ }
-      toast.error('Only image drops are supported');
       return;
     }
     const dropped = e.dataTransfer.files[0];
-    if (dropped) handleFile(dropped);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (dropped) handleReverseFile(dropped);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, openLoginModal, runGenerate]);
+
+  // Card 2 onDrop — 只处理 File，存为参考图；忽略 JSON
+  const handleCard2Drop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging2(false);
+    // 只处理文件，不处理 JSON（JSON 是 Gallery 卡片，不适合作参考图）
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) handleRefFile(dropped);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Card 3 onDrop — 只处理 JSON 中的 prompt 字段，填入文本框；不处理 File
+  const handleCard3Drop = useCallback((e) => {
+    e.preventDefault();
+    e.currentTarget.style.backgroundColor = MUTED;
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData) {
+      try {
+        const parsed = JSON.parse(jsonData);
+        if (parsed.prompt) {
+          setPrompt(parsed.prompt);
+          toast.success('Prompt filled from gallery card');
+        }
+        // 有 image 但无 prompt：提示用户拖到 Card 1
+        else if (parsed.image) {
+          toast('Drop to "Reverse Prompt" card to analyze this image', { icon: '💡' });
+        }
+      } catch (_) { /* ignore */ }
+    }
+    // 不处理文件（文件应拖到 Card 1 或 Card 2）
+  }, []);
 
   const handleCopy = async () => {
     const text = result || prompt;
@@ -181,6 +236,7 @@ const ReverseTab = ({ onClose }) => {
         prompt: promptText,
         modelId: selectedGenModel,
         aspectRatio: RATIOS[ratioIdx],
+        ...(refImageB64 ? { referenceImageData: refImageB64, referenceImageMime: refMimeType } : {}),
       });
       setGenResult(data);
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
@@ -210,16 +266,19 @@ const ReverseTab = ({ onClose }) => {
 
   const credits = user?.credits ?? 0;
   const freeCredits = user?.freeCredits ?? 0;
-  const canAnalyze = !isLoading && !!file;
+  const canAnalyze = !isLoading && !!reverseFile;
   const canGenerateImage = !isGenerating && !!(result || prompt).trim() && !!selectedGenModel;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', paddingRight: 2 }}>
 
-      {/* Card 1 — Reverse Prompt */}
+      {/* Card 1 — Reverse Prompt（hidden file input for reverse image） */}
+      <input ref={reverseFileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+             style={{ display: 'none' }}
+             onChange={(e) => e.target.files[0] && handleReverseFile(e.target.files[0])} />
       <div
-        onClick={() => fileInputRef.current?.click()}
-        onDrop={(e) => handleDrop(e, setIsDragging1)}
+        onClick={() => reverseFileInputRef.current?.click()}
+        onDrop={handleCard1Drop}
         onDragOver={(e) => { e.preventDefault(); setIsDragging1(true); }}
         onDragLeave={() => setIsDragging1(false)}
         style={{
@@ -245,10 +304,10 @@ const ReverseTab = ({ onClose }) => {
           </div>
         </div>
         <div style={{ position: 'relative', width: 48, height: 36, flexShrink: 0 }}>
-          {preview ? (
+          {reversePreview ? (
             <>
-              <img src={preview} alt="" style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, objectFit: 'cover', right: 4, bottom: -2, zIndex: 0, transform: 'rotate(-12deg)' }} />
-              <img src={preview} alt="" style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, objectFit: 'cover', right: -2, bottom: -4, zIndex: 1 }} />
+              <img src={reversePreview} alt="" style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, objectFit: 'cover', right: 4, bottom: -2, zIndex: 0, transform: 'rotate(-12deg)' }} />
+              <img src={reversePreview} alt="" style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, objectFit: 'cover', right: -2, bottom: -4, zIndex: 1 }} />
             </>
           ) : (
             <>
@@ -259,46 +318,59 @@ const ReverseTab = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Card 2 — Upload reference */}
+      {/* Card 2 — Upload reference image（独立 file input，独立 drop 区域） */}
+      <input ref={refFileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+             style={{ display: 'none' }}
+             onChange={(e) => e.target.files[0] && handleRefFile(e.target.files[0])} />
       <div
         style={{
           height: 64, borderRadius: 14, padding: '0 12px',
-          border: `1px dashed ${isDragging3 ? 'rgba(99,102,241,0.6)' : 'rgba(0,0,0,0.15)'}`,
-          backgroundColor: isDragging3 ? 'rgba(99,102,241,0.04)' : 'transparent',
+          border: `1px dashed ${isDragging2 ? 'rgba(99,102,241,0.6)' : 'rgba(0,0,0,0.15)'}`,
+          backgroundColor: isDragging2 ? 'rgba(99,102,241,0.04)' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           cursor: 'pointer', transition: 'all 150ms', flexShrink: 0,
         }}
-        onClick={() => fileInputRef.current?.click()}
-        onDrop={(e) => { e.preventDefault(); setIsDragging3(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-        onDragOver={(e) => { e.preventDefault(); setIsDragging3(true); }}
-        onDragLeave={() => setIsDragging3(false)}
-        onMouseEnter={e => { if (!isDragging3) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.25)'; }}
-        onMouseLeave={e => { if (!isDragging3) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; }}
+        onClick={() => refFileInputRef.current?.click()}
+        onDrop={handleCard2Drop}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging2(true); }}
+        onDragLeave={() => setIsDragging2(false)}
+        onMouseEnter={e => { if (!isDragging2) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.25)'; }}
+        onMouseLeave={e => { if (!isDragging2) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; }}
       >
-        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
-               style={{ display: 'none' }}
-               onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ImageIcon size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
+          {refPreview ? (
+            <img src={refPreview} alt="ref" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+          ) : (
+            <ImageIcon size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
+          )}
           <div>
             <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>
-              {file ? file.name.slice(0, 22) + (file.name.length > 22 ? '…' : '') : 'Drag or upload reference image'}
+              {refImageFile ? refImageFile.name.slice(0, 22) + (refImageFile.name.length > 22 ? '…' : '') : 'Drag or upload reference image'}
             </p>
-            <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>Optional</p>
+            <p style={{ fontSize: 11, color: refImageFile ? '#6366f1' : '#9ca3af', margin: 0 }}>
+              {refImageFile ? 'Will be sent with prompt' : 'Optional · sent to generation model'}
+            </p>
           </div>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-          style={{ width: 36, height: 36, borderRadius: 8, border: 'none', backgroundColor: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 150ms', flexShrink: 0, color: '#6b7280' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.09)'; }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}>
-          <Plus size={16} />
-        </button>
+        {refImageFile ? (
+          <button onClick={(e) => { e.stopPropagation(); setRefImageFile(null); setRefImageB64(null); setRefMimeType(null); setRefPreview(null); }}
+            style={{ width: 28, height: 28, borderRadius: 6, border: 'none', backgroundColor: 'rgba(239,68,68,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', flexShrink: 0 }}>
+            <X size={13} />
+          </button>
+        ) : (
+          <button onClick={(e) => { e.stopPropagation(); refFileInputRef.current?.click(); }}
+            style={{ width: 36, height: 36, borderRadius: 8, border: 'none', backgroundColor: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 150ms', flexShrink: 0, color: '#6b7280' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.09)'; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}>
+            <Plus size={16} />
+          </button>
+        )}
       </div>
 
-      {/* Card 3 — Prompt textarea */}
+      {/* Card 3 — Prompt textarea（只接收 JSON prompt，不处理文件或图片） */}
       <div
         style={{ borderRadius: 14, padding: 16, backgroundColor: MUTED, flexShrink: 0, transition: 'background-color 150ms' }}
-        onDrop={(e) => handleDrop(e, () => {})}
+        onDrop={handleCard3Drop}
         onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.backgroundColor = 'rgba(99,102,241,0.05)'; }}
         onDragLeave={(e) => { e.currentTarget.style.backgroundColor = MUTED; }}
       >
@@ -399,7 +471,7 @@ const ReverseTab = ({ onClose }) => {
         </div>
         {/* Analyze button */}
         <button
-          onClick={() => { if (!isAuthenticated) { openLoginModal(); return; } if (!file) { toast.error('Please upload an image first'); return; } runGenerate(file, null); }}
+          onClick={() => { if (!isAuthenticated) { openLoginModal(); return; } if (!reverseFile) { toast.error('Please upload an image first'); return; } runGenerate(reverseFile, null); }}
           disabled={!canAnalyze}
           style={{
             height: 34, padding: '0 14px', borderRadius: 10, border: 'none', flexShrink: 0,

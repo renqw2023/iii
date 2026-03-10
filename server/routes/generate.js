@@ -11,22 +11,22 @@ const MODELS = [
   // ── Google Gemini 3 / Imagen ── (排在最前，优先展示)
   {
     id: 'gemini3-pro',
-    name: 'Gemini 3 Pro',
+    name: 'Nanobanana Pro',
     provider: 'Google',
     apiModel: 'gemini-3-pro-image-preview',
     creditCost: 10,
     available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Gemini 3 Pro · Professional quality',
+    description: 'Nanobanana Pro · Professional quality',
     badge: 'Pro',
   },
   {
     id: 'gemini3-flash',
-    name: 'Gemini 3.1 Flash',
+    name: 'Nanobanana 2',
     provider: 'Google',
     apiModel: 'gemini-3.1-flash-image-preview',
     creditCost: 6,
     available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Gemini 3.1 Flash · Fast generation',
+    description: 'Nanobanana 2 · Fast generation',
   },
   {
     id: 'imagen4-pro',
@@ -109,7 +109,7 @@ router.get('/models', (req, res) => {
  */
 router.post('/image', auth, async (req, res) => {
   try {
-    const { prompt, modelId, aspectRatio = '1:1' } = req.body;
+    const { prompt, modelId, aspectRatio = '1:1', referenceImageData, referenceImageMime } = req.body;
 
     if (!prompt || !prompt.trim()) {
       return res.status(400).json({ message: '请输入生成描述' });
@@ -156,7 +156,12 @@ router.post('/image', auth, async (req, res) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{
+              parts: [
+                ...(referenceImageData ? [{ inlineData: { mimeType: referenceImageMime || 'image/jpeg', data: referenceImageData } }] : []),
+                { text: prompt },
+              ],
+            }],
             generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
           }),
         }

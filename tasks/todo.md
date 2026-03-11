@@ -434,3 +434,12 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - 将 `client/src/components/UI/Img2PromptPanel.js` 面板标题从 `Generate` 改为 `Image Generation`，保持入口与面板命名一致。
 - 跟进微调：将 `DesktopDock` 的 spring 响应再提快一点，并进一步弱化单个 icon 的背景和边框，让图标更像直接浮在毛玻璃 Dock 上。
 - 继续向 macOS Dock 手感微调：提高 `DesktopDock` 的 hover 放大幅度和影响半径，同时保持 icon 本身仍是轻背景、轻边框，不回到明显独立容器的视觉。
+- `DesktopDock` 新增按滚动位置显隐的“Back to Top”入口：滚动超过约 20-30 张图的可视深度后出现，回到顶部后自动消失，并带动 Dock 做居中横向展开 / 收回动效。
+## Result (2026-03-11 Homepage Background And Sidebar Tuning)
+
+- Confirmed the light theme base background is still `--bg-primary` (`#ffffff`), and the purple homepage look came from `.home-dark-area` using `--page-bg`.
+- Replaced the homepage `.home-dark-area` background with `var(--bg-primary)` so the landing content area can be reviewed on a plain white base.
+- Changed the footer container background from `var(--bg-secondary)` to `var(--bg-primary)` for a cleaner white surface.
+- Changed the desktop sidebar shell background to `rgba(255, 255, 255, 0.5)` to preserve a half-transparent white look.
+- Briefly enabled `MeshBackground` for visual comparison, confirmed that transparency becomes more visible only when a stronger background exists underneath, then restored the background layer to the default off state.
+- Added a detailed record at `docs/2026/20260311_首页背景与侧边栏透明度调试开发文档.md`.

@@ -1842,7 +1842,7 @@
 
 /* --- Dark Area Wrapper --- */
 .home-dark-area {
-  background: var(--page-bg);
+  background: var(--bg-primary);
   padding: 1.5rem 2rem 3rem;
   min-height: 60vh;
 }

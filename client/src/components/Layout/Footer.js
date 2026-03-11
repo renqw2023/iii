@@ -11,7 +11,7 @@ const Footer = () => {
     <footer
       className="w-full"
       style={{
-        backgroundColor: 'var(--bg-secondary)',
+        backgroundColor: 'var(--bg-primary)',
         color: 'var(--text-primary)',
         borderTop: '1px solid var(--border-color)',
       }}

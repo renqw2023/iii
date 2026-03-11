@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const SrefStyle = require('../models/SrefStyle');
 
@@ -117,8 +118,54 @@ router.get('/tags/popular', async (req, res) => {
  * GET /api/sref/:id
  * Sref 详情 + 浏览计数
  */
+router.get('/random', optionalAuth, async (req, res) => {
+    try {
+        const [post] = await SrefStyle.aggregate([
+            { $match: { isActive: true } },
+            { $sample: { size: 1 } },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    srefCode: 1,
+                    images: 1,
+                    videos: 1,
+                    previewImage: 1,
+                    likes: 1,
+                    views: 1
+                }
+            }
+        ]);
+
+        if (!post) {
+            return res.status(404).json({ message: 'No sref found' });
+        }
+
+        if (!post.previewImage && Array.isArray(post.images) && post.images.length > 0) {
+            post.previewImage = `/output/sref_${post.srefCode}/images/${post.images[0]}`;
+        }
+
+        post.likesCount = Array.isArray(post.likes) ? post.likes.length : 0;
+
+        if (req.user) {
+            post.isLiked = post.likes?.some((l) => l.user?.toString() === req.user.id) || false;
+        }
+
+        delete post.likes;
+
+        res.json({ post });
+    } catch (error) {
+        console.error('Random sref error:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
 router.get('/:id', optionalAuth, async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ message: 'Sref 未找到' });
+        }
+
         const sref = await SrefStyle.findOneAndUpdate(
             { _id: req.params.id, isActive: true },
             { $inc: { views: 1 } },

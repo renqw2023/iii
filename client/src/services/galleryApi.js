@@ -12,6 +12,11 @@ export const galleryAPI = {
         return api.get('/gallery/featured', { params: { limit } });
     },
 
+    // 获取随机作品
+    getRandom: () => {
+        return api.get('/gallery/random');
+    },
+
     // 获取热门标签
     getPopularTags: (limit = 20) => {
         return api.get('/gallery/tags/popular', { params: { limit } });

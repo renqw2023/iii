@@ -64,3 +64,13 @@
 ## 2026-03-11 Contact Row Note
 
 - When the user provides a screenshot for a single account-menu row, match the row's interaction pattern directly instead of keeping the old navigation behavior and only changing the label.
+
+## 2026-03-11 Express Dynamic Route Guard Note
+
+- When adding static Express routes like `/random` alongside an existing `/:id` detail route, do not rely on route order alone.
+- Add an explicit `ObjectId` validity check in the `/:id` handler so non-id segments fail fast with `404` instead of falling through to Mongoose cast errors.
+
+## 2026-03-11 Cross-Surface Detail Return Note
+
+- When a detail modal/page can be opened from more than one surface, carry an explicit `returnTo` route in navigation state instead of hardcoding close behavior to the default list page.
+- Preserve the original list behavior as a fallback, but let homepage-triggered flows return to the homepage on close.

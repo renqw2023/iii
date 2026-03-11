@@ -790,3 +790,48 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
     - `output/home-video-fast-hover-playing.png`
 - Notes:
   - homepage console still shows the pre-existing i18n missing-key noise and was not introduced by this change
+## 2026-03-11 Surprise Me detail-link plan
+
+- Goal: wire the homepage `Surprise Me` modal so its `Browse Works` button opens the detail view for the currently displayed random image.
+- Files to change:
+  - `server/routes/gallery.js`
+  - `client/src/services/galleryApi.js`
+  - `client/src/components/Home/Hero.js`
+- Step-by-step:
+  1. Confirm whether the current Hero random image source is tied to real gallery detail records.
+  2. Add a lightweight gallery random endpoint that returns one real public prompt with its `_id` and preview image.
+  3. Update the homepage Hero CTA to request a random work from the gallery dataset instead of a static `ImageFlow` asset.
+  4. Bind the modal `Browse Works` action to `/gallery/:id` for the currently shown work.
+  5. Verify the API response shape and run a production build for the client to catch integration regressions.
+- Risks:
+  - The previous Hero lightbox used static decorative assets, so switching to real gallery data must preserve the existing visual style and close behavior.
+  - Direct-opening `/gallery/:id` from the homepage should still render correctly when there is no `fromList` navigation state.
+
+## Result
+
+- Implemented `GET /api/gallery/random` so the homepage can fetch one real gallery work with a detail-page `_id`.
+- Updated the homepage Hero `Surprise Me` flow to open a random gallery work preview instead of a static decorative `ImageFlow` asset.
+- Wired the modal `Browse Works` CTA to the currently displayed work detail at `/gallery/:id`.
+- Verification:
+  - `client`: `npm run build` completed successfully after the change.
+  - `server`: direct Mongo-backed aggregate query for the random-work selection shape succeeded locally.
+  - Existing dev server on `http://127.0.0.1:5500` returned `500` for `/api/gallery/random`, which indicates the currently running server process likely needs a restart so it can pick up the new route instead of falling through old routing behavior.
+
+## 2026-03-11 Surprise Me mixed-source follow-up
+
+- Goal: expand `Surprise Me` so it can surface both `/gallery` and `/explore` content, and make closing the detail view return to the homepage when the flow started from the homepage.
+- Files changed:
+  - `server/routes/sref.js`
+  - `client/src/services/srefApi.js`
+  - `client/src/components/Home/Hero.js`
+  - `client/src/pages/Gallery/GalleryModal.js`
+  - `client/src/pages/SrefModal.js`
+
+## Result
+
+- `Surprise Me` now pulls one random candidate from `gallery` and one from `explore`, then randomly chooses between those real works before opening the preview modal.
+- `Browse Works` now routes to either `/gallery/:id` or `/explore/:id` based on the selected work type.
+- Homepage-triggered detail opens now carry `returnTo: '/'`, and both gallery/sref detail close handlers honor that state so clicking the top-right `X` returns the user to the homepage.
+- Verification:
+  - `client`: `npm run build` completed successfully.
+  - `server`: direct Mongo aggregate checks confirmed both random gallery and random sref sources return valid `_id` + preview image data.

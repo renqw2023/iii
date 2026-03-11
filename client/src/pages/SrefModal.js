@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -14,6 +14,7 @@ const SrefModal = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const [copied, setCopied] = useState(false);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [activeIdx, setActiveIdx] = useState(0);
@@ -23,7 +24,9 @@ const SrefModal = () => {
     const mediaLeftRef = useRef(null);
 
     const handleClose = () => {
-        if (location.state?.fromList) navigate(-1);
+        const returnTo = searchParams.get('returnTo') || location.state?.returnTo;
+        if (returnTo) navigate(returnTo);
+        else if (location.state?.fromList) navigate(-1);
         else navigate('/explore');
     };
 

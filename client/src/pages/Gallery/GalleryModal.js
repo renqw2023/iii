@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn } from 'lucide-react';
@@ -21,12 +21,15 @@ const GalleryModal = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const { t } = useTranslation();
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [translatedPrompt, setTranslatedPrompt] = useState(null);
 
     const handleClose = () => {
-        if (location.state?.fromList) navigate(-1);
+        const returnTo = searchParams.get('returnTo') || location.state?.returnTo;
+        if (returnTo) navigate(returnTo);
+        else if (location.state?.fromList) navigate(-1);
         else navigate('/gallery');
     };
 

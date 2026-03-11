@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
 const GalleryPrompt = require('../models/GalleryPrompt');
 
@@ -144,6 +145,59 @@ router.get('/featured', async (req, res) => {
 });
 
 /**
+ * GET /api/gallery/random
+ * Return one random public gallery prompt for the homepage surprise modal
+ */
+router.get('/random', optionalAuth, async (req, res) => {
+    try {
+        const [prompt] = await GalleryPrompt.aggregate([
+            {
+                $match: {
+                    isActive: true,
+                    isPublic: true,
+                    previewImage: { $exists: true, $ne: '' }
+                }
+            },
+            { $sample: { size: 1 } },
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    prompt: 1,
+                    previewImage: 1,
+                    model: 1,
+                    sourceAuthor: 1,
+                    views: 1,
+                    copyCount: 1,
+                    likes: 1,
+                    favorites: 1
+                }
+            }
+        ]);
+
+        if (!prompt) {
+            return res.status(404).json({ message: 'No gallery prompt found' });
+        }
+
+        prompt.likesCount = Array.isArray(prompt.likes) ? prompt.likes.length : 0;
+        prompt.favoritesCount = Array.isArray(prompt.favorites) ? prompt.favorites.length : 0;
+
+        if (req.user) {
+            prompt.isLiked = prompt.likes?.some((l) => l.user?.toString() === req.user.id) || false;
+            prompt.isFavorited = prompt.favorites?.some((f) => f.user?.toString() === req.user.id) || false;
+        }
+
+        delete prompt.likes;
+        delete prompt.favorites;
+
+        res.json({ prompt });
+    } catch (error) {
+        console.error('Random gallery prompt error:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+/**
  * GET /api/gallery/tags/popular
  * 热门标签
  */
@@ -249,6 +303,10 @@ router.get('/search', optionalAuth, async (req, res) => {
  */
 router.get('/:id', optionalAuth, async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ message: '提示词未找到' });
+        }
+
         const prompt = await GalleryPrompt.findOneAndUpdate(
             { _id: req.params.id, isActive: true },
             { $inc: { views: 1 } },

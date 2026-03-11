@@ -1,8 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, ArrowRight, Wand2, Banana, ImageIcon, Shuffle, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { galleryAPI } from '../../services/galleryApi';
+import { srefAPI } from '../../services/srefApi';
 
 // Count-up hook with ease-out cubic
 const useCountUp = (target, duration = 1800) => {
@@ -27,9 +30,12 @@ const formatCount = (val) => val >= 1000 ? Math.round(val / 1000) + 'K+' : val +
 
 const Hero = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const wrapperRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
-  const [randomImg, setRandomImg] = useState(null);
+  const [randomWork, setRandomWork] = useState(null);
+  const [isRandomLoading, setIsRandomLoading] = useState(false);
 
   // count-up targets — real data: sref=1306, nanobanana=100, gptimage=328
   const mjCount = useCountUp(1306);
@@ -48,6 +54,77 @@ const Hero = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  const handleOpenRandomWork = async () => {
+    if (isRandomLoading) return;
+
+    try {
+      setIsRandomLoading(true);
+      const [galleryResponse, srefResponse] = await Promise.allSettled([
+        galleryAPI.getRandom(),
+        srefAPI.getRandom(),
+      ]);
+
+      const candidates = [];
+
+      const galleryPrompt = galleryResponse.status === 'fulfilled'
+        ? galleryResponse.value?.data?.prompt
+        : null;
+      if (galleryPrompt?._id && galleryPrompt?.previewImage) {
+        candidates.push({
+          type: 'gallery',
+          id: galleryPrompt._id,
+          previewImage: galleryPrompt.previewImage,
+          title: galleryPrompt.title,
+        });
+      }
+
+      const srefPost = srefResponse.status === 'fulfilled'
+        ? srefResponse.value?.data?.post
+        : null;
+      if (srefPost?._id && srefPost?.previewImage) {
+        candidates.push({
+          type: 'explore',
+          id: srefPost._id,
+          previewImage: srefPost.previewImage,
+          title: srefPost.title || `--sref ${srefPost.srefCode || ''}`.trim(),
+        });
+      }
+
+      if (candidates.length === 0) {
+        throw new Error('No random work candidates available');
+      }
+
+      const nextWork = candidates[Math.floor(Math.random() * candidates.length)];
+      setRandomWork(nextWork);
+    } catch (error) {
+      console.error('Failed to load random work:', error);
+      toast.error('Failed to load a random work. Please try again.');
+    } finally {
+      setIsRandomLoading(false);
+    }
+  };
+
+  const handleCloseRandomWork = () => {
+    setRandomWork(null);
+  };
+
+  const handleBrowseRandomWork = () => {
+    if (!randomWork?.id) return;
+    const returnTo = `${location.pathname}${location.search}${location.hash}` || '/';
+    const targetPath = randomWork.type === 'explore'
+      ? `/explore/${randomWork.id}`
+      : `/gallery/${randomWork.id}`;
+    const targetUrl = `${targetPath}?returnTo=${encodeURIComponent(returnTo)}`;
+
+    setRandomWork(null);
+    navigate(targetUrl, {
+      state: {
+        fromHomeSurprise: true,
+        returnTo,
+      },
+    });
+  };
 
   // 支持多种格式的背景图片集合（包括WEBP、JPG格式）- 总计330张图片
   // 使用重命名后的正确文件路径，解决图片空白问题
@@ -517,23 +594,21 @@ const Hero = () => {
             className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
           >
             <button
-              onClick={() => {
-                const idx = Math.floor(Math.random() * backgroundImages.length);
-                setRandomImg(backgroundImages[idx]);
-              }}
+              onClick={handleOpenRandomWork}
               className="btn btn-ghost text-lg px-8 py-4 flex items-center gap-2"
               style={{ border: '1.5px solid rgba(100,116,139,0.35)', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.7)', color: '#475569', backdropFilter: 'blur(4px)' }}
+              disabled={isRandomLoading}
             >
               <Shuffle className="w-5 h-5" />
-              {t('home.hero.randomBtn')}
+              {isRandomLoading ? 'Loading...' : t('home.hero.randomBtn')}
             </button>
           </motion.div>
 
           {/* Random image lightbox */}
-          {randomImg && (
+          {randomWork && (
             <div
               className="hero-lightbox"
-              onClick={() => setRandomImg(null)}
+              onClick={handleCloseRandomWork}
             >
               <div
                 className="hero-lightbox-inner"
@@ -541,24 +616,24 @@ const Hero = () => {
               >
                 <button
                   className="hero-lightbox-close"
-                  onClick={() => setRandomImg(null)}
+                  onClick={handleCloseRandomWork}
                   aria-label="Close"
                 >
                   <X className="w-5 h-5" />
                 </button>
                 <img
-                  src={randomImg.src}
-                  alt={randomImg.alt}
+                  src={randomWork.previewImage}
+                  alt={randomWork.title || 'Random work preview'}
                   className="hero-lightbox-img"
                 />
                 <div className="hero-lightbox-footer">
-                  <Link
-                    to="/explore"
+                  <button
+                    type="button"
                     className="hero-lightbox-link"
-                    onClick={() => setRandomImg(null)}
+                    onClick={handleBrowseRandomWork}
                   >
                     {t('home.hero.exploreButton')} <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>

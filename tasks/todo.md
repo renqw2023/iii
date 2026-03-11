@@ -769,3 +769,24 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - Risks:
   - preloading too aggressively could increase bandwidth and slow the rest of the homepage
   - changing shared `VideoCard` behavior globally could accidentally alter Seedance list behavior, so the optimization should stay homepage-only
+
+## Result (2026-03-11 Homepage Video Gallery Fast Hover Playback)
+
+- Added a homepage-only fast preview mode to `client/src/components/Seedance/VideoCard.js`:
+  - cards can now keep the video `src` attached while in view
+  - homepage cards use `preload="metadata"` to warm the media before hover
+  - shared behavior for other video lists remains unchanged
+- Updated `client/src/pages/Home.js` so only the homepage `Video Gallery` passes the fast preview flag.
+- Verification:
+  - `npm run build` passed in `client/`
+  - browser verification on `http://localhost:3100/` confirmed the `Video Gallery` section still renders correctly
+  - browser verification confirmed the first homepage video card reaches:
+    - `preload: metadata`
+    - `readyState: 4`
+    - `paused: false`
+    - `className: video-card-video playing`
+  - screenshots saved to:
+    - `output/home-video-gallery-scrolled.png`
+    - `output/home-video-fast-hover-playing.png`
+- Notes:
+  - homepage console still shows the pre-existing i18n missing-key noise and was not introduced by this change

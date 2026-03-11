@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { seedanceAPI, getVideoSrc, getThumbnailSrc } from '../../services/seedanceApi';
 import toast from 'react-hot-toast';
 
-const VideoCard = ({ prompt, onLike, onFavorite }) => {
+const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview = false }) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const videoRef = useRef(null);
@@ -32,6 +32,14 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         if (containerRef.current) observer.observe(containerRef.current);
         return () => observer.disconnect();
     }, []);
+
+    // Keep the homepage preview path warm so hover playback can begin faster
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !fastHoverPreview || !isInView || !videoSrc) return;
+
+        video.load();
+    }, [fastHoverPreview, isInView, videoSrc]);
 
     // Auto-play on hover (only if in viewport)
     useEffect(() => {
@@ -84,6 +92,11 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
         if (containerRef.current) containerRef.current.style.background = 'var(--bg-card)';
     };
 
+    const handleMouseLeave = () => {
+        setIsHovering(false);
+        handleMouseLeaveHalo();
+    };
+
     return (
         <motion.div
             ref={containerRef}
@@ -93,13 +106,12 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
             exit={{ opacity: 0, y: -20 }}
             whileHover={{ y: -4 }}
             onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeaveHalo}
             draggable={!!thumbnailSrc}
             onDragStart={handleDragStart}
             className="video-card group cursor-pointer"
             onClick={() => navigate(`/seedance/${prompt._id}`, { state: { fromList: true } })}
             onMouseEnter={() => setIsHovering(true)}
-            onMouseLeave={() => setIsHovering(false)}
+            onMouseLeave={handleMouseLeave}
         >
             {/* 视频预览 */}
             <div className="video-card-media">
@@ -125,11 +137,11 @@ const VideoCard = ({ prompt, onLike, onFavorite }) => {
                 {isInView && prompt.videoUrl && (
                     <video
                         ref={videoRef}
-                        src={isHovering ? videoSrc : undefined}
+                        src={fastHoverPreview ? videoSrc : (isHovering ? videoSrc : undefined)}
                         muted
                         loop
                         playsInline
-                        preload="none"
+                        preload={fastHoverPreview ? 'metadata' : 'none'}
                         poster={thumbnailSrc || undefined}
                         className={`video-card-video ${isHovering && videoReady ? 'playing' : ''}`}
                         onCanPlay={() => setVideoReady(true)}

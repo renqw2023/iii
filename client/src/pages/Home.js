@@ -132,7 +132,7 @@ const Home = () => {
           ) : (
             <div className="seedance-grid">
               {videoPosts.map((prompt) => (
-                <VideoCard key={prompt._id} prompt={prompt} />
+                <VideoCard key={prompt._id} prompt={prompt} fastHoverPreview />
               ))}
             </div>
           )}

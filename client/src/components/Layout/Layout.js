@@ -8,6 +8,7 @@ import DesktopDock from '../UI/DesktopDock';
 import CreditsModal from '../UI/CreditsModal';
 import Img2PromptPanel from '../UI/Img2PromptPanel';
 import InviteModal from '../UI/InviteModal';
+import MeshBackground from '../UI/MeshBackground';
 import { useSidebar } from '../../contexts/SidebarContext';
 
 const Layout = () => {
@@ -17,7 +18,10 @@ const Layout = () => {
   const [inviteOpen, setInviteOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" style={{ position: 'relative' }}>
+      {/* Dynamic mesh gradient background */}
+      <MeshBackground />
+
       {/* Desktop sidebar: sticky, hidden on mobile */}
       <div
         className="hidden md:block sticky top-0 h-screen flex-shrink-0 overflow-hidden"

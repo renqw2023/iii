@@ -415,3 +415,14 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - `client/src/pages/Favorites.js` — 重写为多类型 Tab
 - `client/src/pages/Dashboard.js` — 积分卡片 + 快捷入口
 - `client/src/pages/Home.js` — FanGallery 替换旧 gallery-grid
+## Result (2026-03-11 Dynamic Background)
+
+- 阅读并对照 `meigen_dynamic_background_analysis.md.resolved`，确认当前目标背景是纯 CSS mesh gradient 双层漂浮轨道动画，不依赖 Canvas / WebGL。
+- 核对最近开发进度：截至 2026-03-10，项目已完成桌面 Dock、积分系统、Reverse Prompt 参考图等阶段；动态背景组件 `MeshBackground` 与样式文件已经落地，并已接入 `client/src/components/Layout/Layout.js`。
+- 本次完成实际补全：将 `client/src/components/Layout/HomeLayout.js` 接入 `MeshBackground`，让首页、登录、注册、找回密码等公共页面与内容页使用同一套动态背景。
+- 为公共布局补上 `relative isolate` 与 `relative z-10` 层级，确保背景固定在底层、不拦截交互，且内容稳定覆盖在动画之上。
+## Result (2026-03-11 Dynamic Background Default Off)
+
+- 保留 `MeshBackground` 组件与整套 mesh 动态背景样式，但将默认状态改为关闭显示。
+- `MeshBackground` 新增 `enabled` 参数，只有显式传入时才会显示背景；当前布局层仍保留挂载，但默认不会渲染出动态背景。
+- 恢复 `theme-variables.css` 中此前被动态背景调整过的 `--page-bg` / `--stage-bg`，让默认白色背景和原有暗色模式视觉都回到之前状态。

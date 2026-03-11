@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, Trash2, Image, Film, Palette } from 'lucide-react';
+import { Clock, Trash2, Image, Film, Palette, ArrowRight } from 'lucide-react';
 import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
+import { PageShell, SectionCard } from '../components/Page/PageShell';
 
 const TYPE_ICONS = {
-  sref:     { icon: Palette, label: 'Sref',    color: '#a855f7' },
-  gallery:  { icon: Image,   label: 'Gallery', color: '#3b82f6' },
-  seedance: { icon: Film,    label: 'Video',   color: '#10b981' },
+  sref: { icon: Palette, label: 'Sref', color: '#a855f7' },
+  gallery: { icon: Image, label: 'Gallery', color: '#3b82f6' },
+  seedance: { icon: Film, label: 'Video', color: '#10b981' },
 };
 
 const History = () => {
@@ -20,7 +21,7 @@ const History = () => {
   }, [getHistory]);
 
   const handleClear = () => {
-    if (window.confirm('确定清空全部浏览历史？')) {
+    if (window.confirm('Are you sure you want to clear your browsing history?')) {
       clearHistory();
       setItems([]);
     }
@@ -28,124 +29,119 @@ const History = () => {
 
   const handleRemove = (id, type) => {
     removeFromHistory(id, type);
-    setItems(prev => prev.filter(h => !(h.id === id && h.type === type)));
+    setItems((prev) => prev.filter((entry) => !(entry.id === id && entry.type === type)));
   };
 
-  const filtered = filter === 'all' ? items : items.filter(h => h.type === filter);
+  const filtered = filter === 'all' ? items : items.filter((item) => item.type === filter);
 
   const formatTime = (iso) => {
     const date = new Date(iso);
-    const now = new Date();
-    const diff = now - date;
-    if (diff < 60 * 1000) return '刚刚';
-    if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60000)} 分钟前`;
-    if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / 3600000)} 小时前`;
-    return date.toLocaleDateString('zh-CN');
+    const diff = Date.now() - date.getTime();
+    if (diff < 60 * 1000) return 'Just now';
+    if (diff < 60 * 60 * 1000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 24 * 60 * 60 * 1000) return `${Math.floor(diff / 3600000)}h ago`;
+    return date.toLocaleDateString();
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-          <Clock size={24} />
-          浏览历史
-        </h1>
-        {items.length > 0 && (
-          <button
-            onClick={handleClear}
-            className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg transition-colors"
-            style={{ color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)' }}
-          >
-            <Trash2 size={14} />
-            清空历史
+    <PageShell
+      showHeader={false}
+      actions={
+        items.length > 0 ? (
+          <button type="button" onClick={handleClear} className="btn btn-secondary" style={{ color: '#dc2626' }}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Clear history
           </button>
-        )}
-      </div>
-
-      {/* 筛选 Tab */}
-      <div className="flex gap-2 mb-5">
-        {['all', 'sref', 'gallery', 'seedance'].map(t => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className="px-3 py-1.5 text-sm rounded-lg transition-colors"
-            style={{
-              backgroundColor: filter === t ? 'var(--accent-primary)' : 'var(--bg-card)',
-              color: filter === t ? '#fff' : 'var(--text-secondary)',
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            {{ all: '全部', sref: 'Sref', gallery: 'Gallery', seedance: '视频' }[t]}
-          </button>
-        ))}
-      </div>
+        ) : null
+      }
+    >
+      <SectionCard icon={<Clock size={20} />} title="Filter by content type" description="Use these filters to narrow the return path instead of scanning the full archive.">
+        <div className="flex flex-wrap gap-2">
+          {['all', 'sref', 'gallery', 'seedance'].map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => setFilter(type)}
+              className="rounded-full border px-4 py-2 text-sm transition-colors"
+              style={{
+                borderColor: filter === type ? 'transparent' : 'var(--border-color)',
+                backgroundColor: filter === type ? 'var(--accent-primary)' : 'rgba(255,255,255,0.72)',
+                color: filter === type ? '#fff' : 'var(--text-secondary)',
+              }}
+            >
+              {{ all: 'All', sref: 'Sref', gallery: 'Gallery', seedance: 'Video' }[type]}
+            </button>
+          ))}
+        </div>
+      </SectionCard>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16" style={{ color: 'var(--text-tertiary)' }}>
-          <Clock size={48} className="mx-auto mb-4 opacity-20" />
-          <p>暂无浏览记录</p>
-        </div>
+        <SectionCard icon={<Clock size={20} />} title="No history yet" description="Once you open cards from Explore, Gallery, or Seedance, they will appear here for quick return.">
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Try opening a style, gallery item, or video prompt first.
+          </p>
+        </SectionCard>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {filtered.map(item => {
-            const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.gallery;
-            const TypeIcon = typeInfo.icon;
-            return (
-              <div
-                key={`${item.type}-${item.id}`}
-                className="group relative rounded-xl overflow-hidden cursor-pointer"
-                style={{ border: '1px solid var(--border-color)' }}
-                onClick={() => navigate(item.url, { state: { fromList: true } })}
-              >
-                {/* 图片 */}
-                <div className="aspect-square bg-gray-800">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-20">
-                      <TypeIcon size={32} />
-                    </div>
-                  )}
-                </div>
+        <SectionCard icon={<ArrowRight size={20} />} title="Recent visits" description="Most recent items stay at the top so the page behaves like a working queue, not an archive.">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((item) => {
+              const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.gallery;
+              const TypeIcon = typeInfo.icon;
 
-                {/* 底部信息 */}
+              return (
                 <div
-                  className="p-2"
-                  style={{ backgroundColor: 'var(--bg-card)' }}
+                  key={`${item.type}-${item.id}`}
+                  className="group relative overflow-hidden rounded-[22px] border"
+                  style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.82)' }}
                 >
-                  <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                    {item.title}
-                  </p>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs" style={{ color: typeInfo.color }}>
-                      {typeInfo.label}
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      {formatTime(item.visitedAt)}
-                    </span>
-                  </div>
-                </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(item.url, { state: { fromList: true } })}
+                    className="w-full text-left"
+                  >
+                    <div className="aspect-[4/3] bg-slate-100">
+                      {item.image ? (
+                        <img src={item.image} alt={item.title} className="h-full w-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center opacity-25">
+                          <TypeIcon size={32} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-2 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: typeInfo.color }}>
+                          {typeInfo.label}
+                        </span>
+                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          {formatTime(item.visitedAt)}
+                        </span>
+                      </div>
+                      <p className="line-clamp-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                        {item.title}
+                      </p>
+                    </div>
+                  </button>
 
-                {/* hover 删除按钮 */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleRemove(item.id, item.type); }}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff' }}
-                  title="移除"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRemove(item.id, item.type);
+                    }}
+                    className="absolute right-3 top-3 rounded-full p-2 opacity-0 transition-opacity group-hover:opacity-100"
+                    style={{ backgroundColor: 'rgba(15,23,42,0.72)', color: '#fff' }}
+                    title="Remove"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </SectionCard>
       )}
-    </div>
+    </PageShell>
   );
 };
 

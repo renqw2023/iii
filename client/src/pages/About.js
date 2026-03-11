@@ -1,162 +1,158 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Github, Twitter, Mail, MessageCircle, Heart, Users, Target } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import {
+  Compass,
+  Sparkles,
+  GalleryVertical,
+  Film,
+  PenSquare,
+  HeartHandshake,
+  Radar,
+  Rocket,
+  Mail,
+  Users,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { PageShell, SectionCard, SectionGrid, DetailList } from '../components/Page/PageShell';
 
 const About = () => {
   const { t } = useTranslation();
-  
+
+  const productAreas = [
+    { title: 'Explore', description: 'Midjourney style references and searchable inspiration loops.', icon: <Compass size={20} /> },
+    { title: 'Gallery', description: 'Prompt-centric image library for collecting and comparing visual ideas.', icon: <GalleryVertical size={20} /> },
+    { title: 'Seedance', description: 'Video-oriented inspiration space for motion prompts and cinematic references.', icon: <Film size={20} /> },
+    { title: 'Create', description: 'A publishing flow for prompts, media, and process notes in one place.', icon: <PenSquare size={20} /> },
+  ];
+
+  const principles = [
+    { label: t('about.features.community.title'), value: t('about.features.community.description') },
+    { label: t('about.features.creativity.title'), value: t('about.features.creativity.description') },
+    { label: t('about.features.service.title'), value: t('about.features.service.description') },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* 页面标题 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <Sparkles className="w-10 h-10 text-primary-500" />
-            <h1 className="text-4xl font-bold text-slate-800">{t('about.title')}</h1>
-          </div>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            {t('about.subtitle')}
+    <PageShell
+      showHeader={false}
+      width="xl"
+      actions={
+        <>
+          <Link to="/explore" className="btn btn-primary">
+            Explore Styles
+          </Link>
+          <Link to="/contact" className="btn btn-secondary">
+            Contact Us
+          </Link>
+        </>
+      }
+      aside={
+        <div className="space-y-4">
+          <p className="text-xs uppercase tracking-[0.2em]" style={{ color: 'var(--text-tertiary)' }}>
+            What is changing
           </p>
-        </motion.div>
-
-        {/* items目介绍 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-lg p-8 mb-8"
-        >
-          <div className="flex items-center space-x-3 mb-6">
-            <Target className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-slate-800">{t('about.vision.title')}</h2>
-          </div>
-          <p className="text-slate-600 leading-relaxed mb-6">
-            {t('about.vision.description')}
+          <p className="text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+            III.PICS is shifting from a static showcase site into a creator operations surface: a place to discover,
+            save, revisit, and publish reference-driven AI work with less friction.
           </p>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-slate-50 rounded-xl">
-              <Users className="w-8 h-8 text-primary-500 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('about.features.community.title')}</h3>
-              <p className="text-sm text-slate-600">{t('about.features.community.description')}</p>
-            </div>
-            <div className="text-center p-4 bg-slate-50 rounded-xl">
-              <Sparkles className="w-8 h-8 text-primary-500 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('about.features.creativity.title')}</h3>
-              <p className="text-sm text-slate-600">{t('about.features.creativity.description')}</p>
-            </div>
-            <div className="text-center p-4 bg-slate-50 rounded-xl">
-              <Heart className="w-8 h-8 text-primary-500 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-800 mb-2">{t('about.features.service.title')}</h3>
-              <p className="text-sm text-slate-600">{t('about.features.service.description')}</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 开发者信息 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="bg-white rounded-2xl shadow-lg p-8 mb-8"
+          <DetailList
+            items={[
+              { label: 'Audience', value: 'Creators, prompt collectors, visual researchers' },
+              { label: 'Value', value: 'Faster discovery and better publishing context' },
+              { label: 'Priority', value: 'Useful tools before marketing pages' },
+            ]}
+          />
+        </div>
+      }
+    >
+      <SectionGrid columns="two">
+        <SectionCard icon={<Radar size={20} />} title={t('about.vision.title')} description={t('about.vision.description')} />
+        <SectionCard
+          icon={<HeartHandshake size={20} />}
+          title="Operating principles"
+          description="The product direction is now centered on practical creator support rather than generic platform copy."
         >
-          <div className="flex items-center space-x-3 mb-6">
-            <Users className="w-6 h-6 text-primary-500" />
-            <h2 className="text-2xl font-bold text-slate-800">{t('about.team.title')}</h2>
-          </div>
-          
-          <div className="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-            <div className="flex-shrink-0">
-              <div className="w-24 h-24 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">COOLAI</span>
+          <div className="grid gap-3">
+            {principles.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border px-4 py-3"
+                style={{ borderColor: 'rgba(148, 163, 184, 0.18)', backgroundColor: 'rgba(248,250,252,0.72)' }}
+              >
+                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {item.label}
+                </p>
+                <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {item.value}
+                </p>
               </div>
-            </div>
-            
-            <div className="flex-1 text-center md:text-left">
-              <h3 className="text-xl font-bold text-slate-800 mb-2">COOLAI (renqw)</h3>
-              <p className="text-slate-600 mb-4">
-                {t('about.team.description')}
+            ))}
+          </div>
+        </SectionCard>
+      </SectionGrid>
+
+      <SectionCard icon={<Sparkles size={20} />} title="Current product surfaces" description="These are the areas the rest of the content system should now reflect.">
+        <SectionGrid columns="four">
+          {productAreas.map((area) => (
+            <div
+              key={area.title}
+              className="rounded-[22px] border p-5"
+              style={{ borderColor: 'rgba(148, 163, 184, 0.18)', backgroundColor: 'rgba(255,255,255,0.72)' }}
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', color: 'var(--accent-primary)' }}
+              >
+                {area.icon}
+              </div>
+              <h3 className="mt-4 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {area.title}
+              </h3>
+              <p className="mt-2 text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+                {area.description}
               </p>
-              
-              <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                <a 
-                  href="https://github.com/renqw2023" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors duration-200"
-                >
-                  <Github className="w-4 h-4" />
-                  <span className="text-sm font-medium">GitHub</span>
-                </a>
-                
-                <a 
-                  href="https://x.com/renqw5271" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors duration-200"
-                >
-                  <Twitter className="w-4 h-4" />
-                  <span className="text-sm font-medium">Twitter</span>
-                </a>
-                
-                <a 
-                  href="mailto:i@mail.iii.pics"
-                  className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors duration-200"
-                >
-                  <Mail className="w-4 h-4" />
-                  <span className="text-sm font-medium">{t('about.team.email')}</span>
-                </a>
-                
-                <div className="flex items-center space-x-2 px-4 py-2 bg-green-100 rounded-lg">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">{t('about.team.wechat')}</span>
-                </div>
-              </div>
             </div>
-          </div>
-        </motion.div>
+          ))}
+        </SectionGrid>
+      </SectionCard>
 
-        {/* 技术栈 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="bg-white rounded-2xl shadow-lg p-8"
-        >
-          <h2 className="text-2xl font-bold text-slate-800 mb-6">{t('about.tech.title')}</h2>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold text-slate-700 mb-3">{t('about.tech.frontend')}</h3>
-              <div className="flex flex-wrap gap-2">
-                {['React', 'Tailwind CSS', 'Framer Motion', 'React Query', 'React Router'].map((tech) => (
-                  <span key={tech} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-slate-700 mb-3">{t('about.tech.backend')}</h3>
-              <div className="flex flex-wrap gap-2">
-                {['Node.js', 'Express', 'MongoDB', 'JWT', 'Multer'].map((tech) => (
-                  <span key={tech} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </div>
+      <SectionGrid columns="two">
+        <SectionCard icon={<Rocket size={20} />} title="Near-term roadmap" description="The highest-leverage improvements are not new marketing copy, but better creator workflows.">
+          <ul className="space-y-3 text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+            <li>Unify utility pages under a consistent shell and stronger information hierarchy.</li>
+            <li>Reduce overlap between dashboard, favorites, history, and credits surfaces.</li>
+            <li>Make publish flows feel like creator tools, not back-office forms.</li>
+          </ul>
+        </SectionCard>
+
+        <SectionCard icon={<Users size={20} />} title={t('about.team.title')} description={t('about.team.description')}>
+          <DetailList
+            items={[
+              { label: 'Owner', value: 'COOLAI (renqw)' },
+              { label: 'Email', value: 'i@mail.iii.pics' },
+              { label: 'WeChat', value: t('about.team.wechat') },
+            ]}
+          />
+        </SectionCard>
+      </SectionGrid>
+
+      <SectionCard
+        icon={<Mail size={20} />}
+        title="Need more context?"
+        description="If you are deciding whether III.PICS fits your workflow, the quickest next step is to browse a live surface instead of reading more brochure text."
+      >
+        <div className="flex flex-wrap gap-3">
+          <Link to="/gallery" className="btn btn-secondary">
+            Open Gallery
+          </Link>
+          <Link to="/seedance" className="btn btn-secondary">
+            Open Seedance
+          </Link>
+          <a href="mailto:i@mail.iii.pics" className="btn btn-primary">
+            Email the team
+          </a>
+        </div>
+      </SectionCard>
+    </PageShell>
   );
 };
 

@@ -13,7 +13,7 @@ import { useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
-  LayoutDashboard, Settings, LogOut, HelpCircle, Languages,
+  LayoutDashboard, Settings, LogOut, Languages, BookOpenText,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -353,7 +353,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     { icon: Settings,        label: 'Settings',  to: '/settings' },
                     { icon: Clock,           label: 'History',   to: '/history' },
                     { icon: Heart,           label: 'Favorites', to: '/favorites' },
-                    { icon: HelpCircle,      label: 'Help',      to: '/help' },
+                    { icon: BookOpenText,    label: 'Docs',      to: '/docs' },
                   ].map(({ icon: Icon, label, to }) => (
                     <Link
                       key={to} to={to}

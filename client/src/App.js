@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from 'react-hot-toast';
@@ -13,6 +13,7 @@ import LoginModal from './components/Auth/LoginModal';
 import SearchModal from './components/Search/SearchModal';
 import Layout from './components/Layout/Layout';
 import HomeLayout from './components/Layout/HomeLayout';
+import DocsLayout from './components/Layout/DocsLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -30,11 +31,7 @@ import Explore from './pages/Explore';
 import SrefModal from './pages/SrefModal';
 import Favorites from './pages/Favorites';
 import Settings from './pages/Settings';
-import About from './pages/About';
-import Help from './pages/Help';
-import Privacy from './pages/Privacy';
-import Terms from './pages/Terms';
-import Contact from './pages/Contact';
+import DocsCenter from './pages/DocsCenter';
 import Notifications from './pages/Notifications';
 import Credits from './pages/Credits';
 import History from './pages/History';
@@ -127,14 +124,19 @@ function App() {
                         <Route path="user/:id" element={<Profile />} />
                         <Route path="history" element={<History />} />
                         <Route path="health" element={<Health />} />
-                        <Route path="about" element={<About />} />
-                        <Route path="help" element={<Help />} />
-                        <Route path="privacy" element={<Privacy />} />
-                        <Route path="terms" element={<Terms />} />
-                        <Route path="contact" element={<Contact />} />
                         <Route path="error-demo" element={<ErrorDemo />} />
                         <Route path="img2prompt" element={<Img2Prompt />} />
                       </Route>
+
+                      <Route path="/" element={<DocsLayout />}>
+                        <Route path="docs" element={<DocsCenter />} />
+                      </Route>
+
+                      <Route path="about" element={<Navigate to={{ pathname: '/docs', hash: '#about' }} replace />} />
+                      <Route path="help" element={<Navigate to={{ pathname: '/docs', hash: '#help' }} replace />} />
+                      <Route path="privacy" element={<Navigate to={{ pathname: '/docs', hash: '#privacy' }} replace />} />
+                      <Route path="terms" element={<Navigate to={{ pathname: '/docs', hash: '#terms' }} replace />} />
+                      <Route path="contact" element={<Navigate to={{ pathname: '/docs', hash: '#contact' }} replace />} />
 
                       {/* 需要登录的路由 */}
                       <Route path="/" element={

@@ -462,3 +462,202 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - Increased the popup width and internal spacing so the extra control fits without crowding the menu.
 - Changed the sidebar shell overflow from hidden to visible so the popup is no longer clipped by the sidebar container.
 - Verified with `npm run build` in `client/`: build succeeded, with only pre-existing ESLint warnings remaining elsewhere in the project.
+## Current Task (2026-03-11 Legacy Utility Pages Refactor Plan)
+
+- Goal:
+  - 为 `/history`、`/favorites`、`/dashboard`、`/create`、`/help`、`/about`、`/privacy`、`/terms`、`/contact` 制定一份完整的重构优化计划，使其内容、信息架构、视觉层级、交互方式与当前项目的首页 / 侧边栏 / stage 风格保持一致。
+- Scope / likely files:
+  - `client/src/pages/History.js`
+  - `client/src/pages/Favorites.js`
+  - `client/src/pages/Dashboard.js`
+  - `client/src/pages/CreatePost.js`
+  - `client/src/pages/About.js`
+  - `client/src/pages/Help.js`
+  - `client/src/pages/Privacy.js`
+  - `client/src/pages/Terms.js`
+  - `client/src/pages/Contact.js`
+  - `client/src/components/Dashboard/*`
+  - `client/src/components/Layout/Footer.js`
+  - `client/src/components/UI/*`（抽离统一 page shell / section header / empty state / legal block 时使用）
+  - `client/src/i18n/modules/about.js`
+  - `client/src/i18n/modules/help.js`
+  - `client/src/i18n/modules/privacy.js`
+  - `client/src/i18n/modules/contact.js`
+  - `client/src/i18n/locales/*.json`
+- Current-state findings:
+  - 这些页面大多仍使用早期的 `bg-gradient-to-br from-slate-50 to-blue-50 + bg-white card + shadow-lg` 模板，和当前项目已经形成的 `MeshBackground + glass sidebar + stage / gallery` 风格脱节。
+  - 功能页存在重复与割裂：`/dashboard` 只保留 Saved / History / Credits 的轻量整合版，而 `/favorites`、`/history`、`/credits` 各自又有独立管理页，信息架构缺少清晰主次。
+  - `/create` 仍是一个大体量表单页，视觉和结构都停留在旧版样式，尚未吸收 `CreatePrompt` 的模块化拆分经验。
+  - `/contact` 仍是前端 `setTimeout` 模拟提交，不符合“真实支持入口”的内容预期。
+  - `/about`、`/help`、`/privacy`、`/terms` 使用大段静态/翻译文案堆叠，缺少目录、跳转、更新时间、适用范围、产品模块映射，也没有反映项目当前已有能力（Explore / Gallery / Seedance / Credits / Invite / Img2Prompt 等）。
+  - 多处页面存在硬编码英文、旧品牌表述和过时联系方式展示方式，与全局 i18n 和当前导航结构不完全一致。
+- Refactor principles:
+  - 内容先行：先按当前产品能力重写信息结构，再做 UI 包装，避免“旧内容套新皮”。
+  - 统一 page shell：公共信息页与工具页都应落在统一的 page shell 上，继承当前项目的留白、圆角、边框、glass / stage 关系和响应式断点。
+  - 分层展示：首屏只放关键信息、主要 CTA 和最近操作；长文档内容用目录、锚点、折叠、摘要卡片降低阅读成本。
+  - 功能去重：把 dashboard 定位成“个人工作台入口”，把 favorites / history 定位成“深度管理页”，避免二者互相替代。
+  - 组件复用：把 hero header、section title、stat card、filter chips、empty state、legal content block 抽成共享组件，减少九个页面各写一套。
+  - 文案可维护：将法律/帮助/品牌介绍内容改成结构化配置，支持多语言和后续内容增删。
+
+### Planned tasks
+
+1. Information architecture refresh
+   - 重新定义九个页面的角色：
+   - `/dashboard` = 个人概览、快捷入口、关键状态、最近行为
+   - `/favorites` = 收藏资产管理
+   - `/history` = 最近浏览与回访入口
+   - `/create` = 发布入口与创作引导
+   - `/about` `/help` `/privacy` `/terms` `/contact` = 品牌、支持、合规、联系四类信息页
+
+2. Shared page-shell system
+   - 新增统一的 `PageHero / PageSection / PagePanel / EmptyState / LegalSection / SupportCard / UtilityActionBar` 组件。
+   - 将旧页面从“单页堆卡片”切到“hero + summary + content sections + CTA”结构。
+
+3. Dashboard restructuring
+   - 保留当前顶部用户信息与积分状态，但升级为更明确的工作台。
+   - 增加“继续浏览 / 最近收藏 / 创作入口 / 账户状态 / 快捷操作”五个模块。
+   - 将历史、收藏、积分列表压缩为预览区块，并始终提供通往独立管理页的 CTA。
+
+4. Favorites page redesign
+   - 从单纯 tab + 网格改为“统计摘要 + 类型筛选 + 排序/分页 + 批量管理预留”结构。
+   - 补齐空状态引导，直接链接到 `/explore`、`/gallery`、`/seedance`。
+   - 卡片信息增加收藏时间、来源类型、快速移除反馈。
+
+5. History page redesign
+   - 从纯缩略图网格改为“最近访问时间线 + 媒体网格混合布局”，突出“继续上次浏览”。
+   - 支持按内容类型、最近时间、是否有封面过滤。
+   - 将“清空历史”下沉到二级危险操作区，减少误触。
+
+6. Create page modernization
+   - 参考 `CreatePrompt` 的拆分方式，把 `CreatePost.js` 拆成上传区、基础信息、参数编辑、预览、提交流程几个子模块。
+   - 首屏加入创作说明、支持格式、最佳实践、草稿/示例提示。
+   - 参数区改成更强的分组与即时预览，弱化传统后台表单感。
+   - 后续 UI 分析阶段可使用 `mcp` 做表单流和可视布局核验。
+
+7. Static content pages rewrite
+   - `About`: 从“团队介绍页”升级为“平台定位 + 核心能力 + 内容生态 + 路线图/价值观”。
+   - `Help`: 改成按任务组织的帮助中心，不再只是长 FAQ；增加搜索、快速入口、联系支持 CTA。
+   - `Privacy` / `Terms`: 改成法律文档中心样式，支持目录导航、更新时间、适用模块说明、联系法务入口。
+   - `Contact`: 改成真实支持中心，区分商务合作、问题反馈、账号/支付支持；如后端未接 API，则先明确为邮件主入口，避免伪表单。
+
+8. Content and i18n cleanup
+   - 清理硬编码文案、旧产品描述、过时链接和模拟逻辑。
+   - 将页面文案切成结构化配置，便于多语言和后续运营维护。
+   - 对 `Footer` 的相关入口文案进行同步校准，避免信息页改版后导航描述仍旧。
+
+9. Verification plan
+   - 实施阶段完成后，对每个重构页执行桌面 / 移动断点检查、功能流验证、SEO 标题与元信息检查。
+   - 进入 UI 核验时，使用 `mcp__chrome-devtools__navigate_page`、`take_snapshot`、`take_screenshot`、`list_console_messages` 做真实页面复核。
+
+- Risks:
+  - `dashboard`、`favorites`、`history` 之间边界不清，若不先定角色，后续很容易再次重复建设。
+  - `contact` 真正提交链路可能依赖后端或第三方服务，若本次只做前端，需要明确降级方案。
+  - 法律与品牌文案需要产品/运营确认，如果没有最终版本，建议先做结构与占位策略，再逐步替换正式内容。
+  - `CreatePost` 体积较大，拆分时要避免影响现有上传、参数预览和提交逻辑。
+  - i18n 文案量较大，建议和 UI 重构拆成两批提交，降低回归风险。
+
+## Result (2026-03-11 Legacy Utility Pages Refactor Phase 1)
+
+- 新增统一页面骨架组件：
+  - `client/src/components/Page/PageShell.js`
+  - 提供 `PageShell`、`SectionCard`、`SectionGrid`、`AnchorNav`、`DetailList`
+- 已完成统一骨架迁移的页面：
+  - `client/src/pages/About.js`
+  - `client/src/pages/Help.js`
+  - `client/src/pages/Privacy.js`
+  - `client/src/pages/Terms.js`
+  - `client/src/pages/Contact.js`
+  - `client/src/pages/History.js`
+  - `client/src/pages/Favorites.js`
+  - `client/src/pages/Dashboard.js`
+  - `client/src/pages/CreatePost.js`
+- 本轮重点成果：
+  - 把旧的“浅色渐变 + 白卡片”信息页统一迁移到新的 page shell 体系
+  - `About` 改成平台定位 + 产品面向 + 路线图表达，不再只是旧式团队介绍页
+  - `Help` 改成任务导向结构，增加搜索和快捷入口
+  - `Privacy` / `Terms` 改成法律文档中心样式，加入锚点导航
+  - `Contact` 去掉伪异步提交，改为真实的 `mailto` 草稿发起流程
+  - `History` / `Favorites` / `Dashboard` / `CreatePost` 完成首屏结构、信息层级和视觉风格的第一阶段统一
+- 验证：
+  - `npm run build` 通过
+  - 浏览器核验已执行：
+    - `http://127.0.0.1:3100/about`
+    - `http://127.0.0.1:3100/contact`
+  - 验证截图：
+    - `output/about-refactor-check.png`
+    - `output/contact-refactor-check.png`
+- 剩余深化项：
+  - `Dashboard` 还可以继续补回更丰富的预览模块，而不只是快捷工作台骨架
+  - `CreatePost` 还没有拆成独立子组件，当前先保留原逻辑外层升级
+  - 部分页面仍有中英混排，需要进入下一轮内容细化和 i18n 收口
+  - 浏览器控制台里仍有与现有全局面板/后端接口相关的旧 CORS 噪音，不是这轮页面骨架改动引入的
+## Result (2026-03-11 Legacy Utility Pages Refactor Phase 2)
+
+- Deepened `client/src/pages/Dashboard.js` into a real workspace overview:
+  - kept the existing header and stats modules
+  - added quick actions for create, favorites, history, and credits
+  - added live preview panels for recent browsing history, favorites, and credit activity
+- Reworked `client/src/pages/CreatePost.js` into a guided publishing surface without changing submit behavior:
+  - added creator guidance and parameter tips in the page aside
+  - split the page into clearer upload, basic info, style parameters, and review/publish sections
+  - added draft summary cards and a stronger live parameter preview treatment
+- Verification:
+  - `npm run build` passed in `client/`
+  - browser verification executed for protected routes
+  - `http://127.0.0.1:3100/create` redirected to `http://127.0.0.1:3100/login` with no console errors
+  - `http://127.0.0.1:3100/dashboard` redirected to `http://127.0.0.1:3100/login` with no console errors
+  - screenshots saved to:
+    - `output/create-route-check.png`
+    - `output/dashboard-route-check.png`
+- Remaining follow-up:
+  - authenticated visual verification is still needed for the full in-app appearance of `/create` and `/dashboard`
+  - project-wide ESLint warnings remain in unrelated files and were not introduced by this phase
+## Result (2026-03-11 Docs Center Consolidation)
+
+- Replaced the separate `/about`, `/help`, `/privacy`, `/terms`, and `/contact` experience with a single docs-style hub:
+  - new page: `client/src/pages/DocsCenter.js`
+  - layout follows the reference pattern: left section navigation, central long-form docs content, right-side "On this page"
+  - includes Quick Start, About, Help, Privacy, Terms, and Contact sections in one place
+- Updated routing in `client/src/App.js`:
+  - added `/docs`
+  - legacy routes now redirect to section anchors:
+    - `/about` → `/docs#about`
+    - `/help` → `/docs#help`
+    - `/privacy` → `/docs#privacy`
+    - `/terms` → `/docs#terms`
+    - `/contact` → `/docs#contact`
+- Updated the sidebar avatar menu in `client/src/components/Layout/Sidebar.js`:
+  - replaced the previous `Help` entry with a new `Docs` entry pointing to `/docs`
+- Verification:
+  - `npm run build` passed in `client/`
+  - browser verification confirmed:
+    - `/docs` renders the new docs center layout
+    - `/help` redirects to `http://127.0.0.1:3100/docs#help`
+  - screenshot saved to:
+    - `output/docs-center-check.png`
+- Known limitation:
+  - the avatar popup entry is wired in code, but full click-through verification still needs an authenticated session
+  - console still shows the existing global CORS noise from `localhost:5500`, unrelated to this docs refactor
+## Result (2026-03-11 Docs Center Refinement)
+
+- Refined the standalone docs experience to be closer to the reference quickstart page:
+  - updated `client/src/components/Layout/DocsLayout.js` to use a dedicated docs-style shell without the app sidebar
+  - tightened the docs header and overall page rhythm so the content reads more like a documentation article than a utility dashboard
+- Rebuilt `client/src/pages/DocsCenter.js` around a more documentation-oriented information hierarchy:
+  - article-style main content
+  - left section navigation
+  - right-side "On this page" navigation
+  - cleaner section/subsection flow with less card-heavy framing
+- Extracted docs copy into a dedicated localized content source:
+  - new file: `client/src/content/docsContent.js`
+  - English, Chinese, and Japanese versions are now defined from one content model
+  - docs content no longer depends on the older mixed-language page fragments
+- Verification:
+  - `npm run build` passed in `client/`
+  - browser verification confirmed `/docs` renders in the standalone layout
+  - browser verification confirmed legacy routes like `/contact` still redirect into the docs page anchor
+  - `document.title` on `/docs` resolves to `Quick Start - III.PICS Docs`
+  - screenshots saved to:
+    - `output/docs-refined-check.png`
+- Remaining note:
+  - existing project-wide ESLint warnings remain in unrelated files and were not introduced by this docs refinement

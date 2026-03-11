@@ -1,19 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
-import { 
-  Upload, 
-  X, 
-  Video, 
+import {
+  Upload,
+  X,
+  Video,
   Copy,
   Sparkles,
-  Plus
+  Plus,
+  CheckCircle2,
+  FileImage,
+  SlidersHorizontal,
+  Send,
 } from 'lucide-react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import toast from 'react-hot-toast';
 import { enhancedPostAPI, clearAPICache } from '../services/enhancedApi';
 import { useTranslation } from 'react-i18next';
+import { DetailList, PageShell, SectionCard, SectionGrid } from '../components/Page/PageShell';
+
+const CREATOR_GUIDE = [
+  'Start with the strongest 1-3 media files first so the post reads clearly in feeds.',
+  'Use the title for the outcome, then keep description for process notes and prompt context.',
+  'Treat parameters as reusable building blocks that others can copy into their next run.',
+];
+
+const PARAMETER_TIPS = [
+  { label: 'Sref', value: 'Visual anchor', description: 'Use when the result should stay close to a reference style.' },
+  { label: 'Stylize', value: 'Prompt intensity', description: 'Higher values lean harder into Midjourney interpretation.' },
+  { label: 'Chaos', value: 'Variation spread', description: 'Raise this when you want less predictable generations.' },
+  { label: 'Seed', value: 'Reproducibility', description: 'Keep it when you expect to revisit the same composition.' },
+];
 
 const CreatePost = () => {
   const { t } = useTranslation();
@@ -24,15 +42,33 @@ const CreatePost = () => {
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm();
 
-  // 监听风格参数变化
-  const watchedParams = watch(['sref', 'style', 'stylize', 'chaos', 'aspect', 'version', 'videoVersion', 'quality', 'seed', 'other']);
+  const watchedParams = watch([
+    'sref',
+    'style',
+    'stylize',
+    'chaos',
+    'aspect',
+    'version',
+    'videoVersion',
+    'quality',
+    'seed',
+    'other',
+  ]);
 
-  React.useEffect(() => {
+  const descriptionLength = watch('description')?.length || 0;
+
+  useEffect(() => {
     const params = [];
     const [sref, style, stylize, chaos, aspect, version, videoVersion, quality, seed, other] = watchedParams;
-    
+
     if (sref) params.push(`--sref ${sref}`);
     if (style) params.push(`--style ${style}`);
     if (stylize) params.push(`--stylize ${stylize}`);
@@ -43,28 +79,37 @@ const CreatePost = () => {
     if (quality) params.push(`--q ${quality}`);
     if (seed) params.push(`--seed ${seed}`);
     if (other) params.push(other);
-    
+
     setPreviewParams(params.join(' '));
   }, [watchedParams]);
+
+  const uploadSummary = useMemo(
+    () => [
+      { label: 'Files in draft', value: String(files.length), note: files.length > 0 ? 'Ready for preview' : 'Add at least one media file' },
+      { label: 'Tags', value: String(tags.length), note: tags.length > 0 ? 'Useful for discovery' : 'Optional but recommended' },
+      { label: 'Prompt params', value: previewParams ? 'Configured' : 'Pending', note: previewParams ? 'Live preview available' : 'Add reusable run settings' },
+    ],
+    [files.length, previewParams, tags.length],
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
-      'video/*': ['.mp4', '.mov', '.avi']
+      'video/*': ['.mp4', '.mov', '.avi'],
     },
     maxFiles: 9,
-    maxSize: 200 * 1024 * 1024, // 200MB
+    maxSize: 200 * 1024 * 1024,
     onDrop: (acceptedFiles) => {
-      const newFiles = acceptedFiles.map(file => ({
+      const newFiles = acceptedFiles.map((file) => ({
         file,
         preview: URL.createObjectURL(file),
-        type: file.type.startsWith('image/') ? 'image' : 'video'
+        type: file.type.startsWith('image/') ? 'image' : 'video',
       }));
-      setFiles(prev => [...prev, ...newFiles]);
+      setFiles((prev) => [...prev, ...newFiles]);
     },
     onDropRejected: (rejectedFiles) => {
-      rejectedFiles.forEach(({ errors }) => {
-        errors.forEach(error => {
+      rejectedFiles.forEach(({ errors: rejectedErrors }) => {
+        rejectedErrors.forEach((error) => {
           if (error.code === 'file-too-large') {
             toast.error(t('createPost.error.fileTooLarge'));
           } else if (error.code === 'file-invalid-type') {
@@ -72,11 +117,15 @@ const CreatePost = () => {
           }
         });
       });
-    }
+    },
   });
 
+  useEffect(() => () => {
+    files.forEach((item) => URL.revokeObjectURL(item.preview));
+  }, [files]);
+
   const removeFile = (index) => {
-    setFiles(prev => {
+    setFiles((prev) => {
       const newFiles = [...prev];
       URL.revokeObjectURL(newFiles[index].preview);
       newFiles.splice(index, 1);
@@ -84,27 +133,25 @@ const CreatePost = () => {
     });
   };
 
-  // 标签处理函数
   const addTag = (tag) => {
     const trimmedTag = tag.trim();
     if (trimmedTag && !tags.includes(trimmedTag)) {
-      setTags(prev => [...prev, trimmedTag]);
+      setTags((prev) => [...prev, trimmedTag]);
     }
   };
 
   const removeTag = (index) => {
-    setTags(prev => prev.filter((_, i) => i !== index));
+    setTags((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleTagKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
+  const handleTagKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
       if (tagInput.trim()) {
         addTag(tagInput);
         setTagInput('');
       }
-    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-      // 如果输入框为空且按下退格键，删除最后一个标签
+    } else if (event.key === 'Backspace' && !tagInput && tags.length > 0) {
       removeTag(tags.length - 1);
     }
   };
@@ -115,7 +162,6 @@ const CreatePost = () => {
       return;
     }
 
-    // 前端验证描述长度
     if (data.description && data.description.length > 2000) {
       toast.error(t('common.descriptionTooLong'));
       return;
@@ -126,18 +172,21 @@ const CreatePost = () => {
       const formData = new FormData();
       formData.append('title', data.title);
       formData.append('description', data.description || '');
-      formData.append('styleParams', JSON.stringify({
-        sref: data.sref,
-        style: data.style,
-        stylize: data.stylize ? parseInt(data.stylize) : undefined,
-        chaos: data.chaos ? parseInt(data.chaos) : undefined,
-        aspect: data.aspect,
-        version: data.version,
-        videoVersion: data.videoVersion,
-        quality: data.quality,
-        seed: data.seed ? parseInt(data.seed) : undefined,
-        other: data.other
-      }));
+      formData.append(
+        'styleParams',
+        JSON.stringify({
+          sref: data.sref,
+          style: data.style,
+          stylize: data.stylize ? parseInt(data.stylize, 10) : undefined,
+          chaos: data.chaos ? parseInt(data.chaos, 10) : undefined,
+          aspect: data.aspect,
+          version: data.version,
+          videoVersion: data.videoVersion,
+          quality: data.quality,
+          seed: data.seed ? parseInt(data.seed, 10) : undefined,
+          other: data.other,
+        }),
+      );
       formData.append('tags', tags.join(','));
 
       files.forEach(({ file }) => {
@@ -146,29 +195,24 @@ const CreatePost = () => {
 
       const response = await enhancedPostAPI.createPost(formData);
       toast.success(t('createPost.success.published'));
-      
-      // 清理相关缓存，确保状态完全重置
+
       clearAPICache('post');
-      
-      // 重置表单状态，避免状态管理问题
+
+      files.forEach((item) => URL.revokeObjectURL(item.preview));
       setFiles([]);
       setTags([]);
       setTagInput('');
       setPreviewParams('');
-      
-      // 重置useForm管理的表单字段
       reset();
-      
+
       navigate(`/post/${response.data.post._id}`);
     } catch (error) {
       console.error('Publish failed:', error);
-      
-      // 处理不同类型的错误
+
       if (error.response?.status === 400) {
         const errorData = error.response.data;
         if (errorData.errors && Array.isArray(errorData.errors)) {
-          // 显示验证错误的详细信息
-          errorData.errors.forEach(err => {
+          errorData.errors.forEach((err) => {
             toast.error(`${err.path}: ${err.msg}`);
           });
         } else {
@@ -187,77 +231,126 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-primary-500 mr-2" />
-            <h1 className="text-3xl font-bold text-slate-900">{t('createPost.title')}</h1>
-          </div>
-          <p className="text-slate-600">{t('createPost.subtitle')}</p>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-          {/* 文件上传区域 */}
-          <div className="card p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">{t('createPost.upload.title')}</h2>
-            
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer ${
-                isDragActive 
-                  ? 'border-primary-500 bg-primary-50' 
-                  : 'border-slate-300 hover:border-primary-400 hover:bg-slate-50'
-              }`}
-            >
-              <input {...getInputProps()} />
-              <Upload className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-lg font-medium text-slate-700 mb-2">
-                {isDragActive ? t('createPost.upload.dropToUpload') : t('createPost.upload.dragOrClick')}
-              </p>
-              <p className="text-sm text-slate-500">
-                {t('createPost.upload.supportedFiles')}
-              </p>
+    <PageShell
+      showHeader={false}
+      width="2xl"
+      aside={
+        <div className="space-y-5">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--text-tertiary)' }}>
+              Publishing guide
+            </h2>
+            <div className="mt-3 space-y-3 text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+              {CREATOR_GUIDE.map((item) => (
+                <p key={item}>{item}</p>
+              ))}
             </div>
+          </div>
+          <DetailList items={PARAMETER_TIPS} />
+        </div>
+      }
+    >
+      <SectionGrid columns="three">
+        {uploadSummary.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-[22px] border px-5 py-5"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.82), rgba(248,250,252,0.72))',
+            }}
+          >
+            <p className="text-xs uppercase tracking-[0.18em]" style={{ color: 'var(--text-tertiary)' }}>
+              {item.label}
+            </p>
+            <p className="mt-3 text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {item.value}
+            </p>
+            <p className="mt-2 text-sm leading-6" style={{ color: 'var(--text-secondary)' }}>
+              {item.note}
+            </p>
+          </div>
+        ))}
+      </SectionGrid>
 
-            {/* 文件预览 */}
-            {files.length > 0 && (
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {files.map((file, index) => (
-                  <div key={index} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden bg-slate-100">
-                      {file.type === 'image' ? (
-                        <img
-                          src={file.preview}
-                          alt={t('createPost.upload.preview')}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Video className="w-8 h-8 text-slate-400" />
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <SectionCard
+          icon={<FileImage size={20} />}
+          title={t('createPost.upload.title')}
+          description="Bring in the strongest files first. This section is designed to behave like a staging area before you write any metadata."
+        >
+          <div
+            {...getRootProps()}
+            className="rounded-[24px] border-2 border-dashed p-8 text-center transition-all duration-200 cursor-pointer"
+            style={{
+              borderColor: isDragActive ? 'var(--accent-primary)' : 'rgba(148,163,184,0.3)',
+              background: isDragActive ? 'rgba(99,102,241,0.08)' : 'rgba(248,250,252,0.72)',
+            }}
+          >
+            <input {...getInputProps()} />
+            <div
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl"
+              style={{ backgroundColor: 'rgba(99,102,241,0.08)', color: 'var(--accent-primary)' }}
+            >
+              <Upload className="h-8 w-8" />
+            </div>
+            <p className="mt-5 text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {isDragActive ? t('createPost.upload.dropToUpload') : t('createPost.upload.dragOrClick')}
+            </p>
+            <p className="mt-2 text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+              {t('createPost.upload.supportedFiles')}
+            </p>
           </div>
 
-          {/* 基本信息 */}
-          <div className="card p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">{t('createPost.basicInfo.title')}</h2>
-            
-            <div className="space-y-4">
+          {files.length > 0 ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {files.map((file, index) => (
+                <div
+                  key={`${file.file.name}-${index}`}
+                  className="group relative overflow-hidden rounded-[22px] border"
+                  style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.82)' }}
+                >
+                  <div className="aspect-square bg-slate-100">
+                    {file.type === 'image' ? (
+                      <img src={file.preview} alt={t('createPost.upload.preview')} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <Video className="h-10 w-10 text-slate-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 p-3">
+                    <p className="min-w-0 truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {file.file.name}
+                    </p>
+                    <span className="rounded-full px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ backgroundColor: 'rgba(15,23,42,0.06)', color: 'var(--text-tertiary)' }}>
+                      {file.type}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    style={{ backgroundColor: 'rgba(15,23,42,0.72)' }}
+                    aria-label="Remove file"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </SectionCard>
+
+        <SectionGrid columns="two">
+          <SectionCard
+            icon={<Sparkles size={20} />}
+            title={t('createPost.basicInfo.title')}
+            description="Use this section to explain what the output is, what makes it interesting, and how someone else should discover it."
+          >
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.basicInfo.titleLabel')} *
                 </label>
                 <input
@@ -266,13 +359,11 @@ const CreatePost = () => {
                   className="input"
                   placeholder={t('createPost.basicInfo.titlePlaceholder')}
                 />
-                {errors.title && (
-                  <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
-                )}
+                {errors.title ? <p className="mt-1 text-sm text-red-600">{errors.title.message}</p> : null}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.basicInfo.descriptionLabel')}
                 </label>
                 <div className="relative">
@@ -280,89 +371,76 @@ const CreatePost = () => {
                     {...register('description', {
                       maxLength: {
                         value: 2000,
-                        message: 'Description must be under 2000 characters'
-                      }
+                        message: 'Description must be under 2000 characters',
+                      },
                     })}
-                    rows={3}
+                    rows={5}
                     className={`textarea ${errors.description ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
                     placeholder={t('createPost.basicInfo.descriptionPlaceholder')}
                     maxLength={2000}
                   />
-                  <div className="absolute bottom-2 right-2 text-xs text-slate-500">
-                    {watch('description')?.length || 0}/2000
-                  </div>
+                  <div className="absolute bottom-2 right-2 text-xs text-slate-500">{descriptionLength}/2000</div>
                 </div>
-                {errors.description && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <span className="w-4 h-4 mr-1">⚠️</span>
-                    {errors.description.message}
-                  </p>
-                )}
+                {errors.description ? (
+                  <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                ) : null}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.basicInfo.tagsLabel')}
                 </label>
-                <div className="space-y-2">
-                  {/* 标签显示区域 */}
-                  {tags.length > 0 && (
+                <div className="space-y-3">
+                  {tags.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {tags.map((tag, index) => (
                         <span
-                          key={index}
-                          className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 border border-blue-200"
+                          key={`${tag}-${index}`}
+                          className="inline-flex items-center rounded-full border px-3 py-1 text-sm"
+                          style={{ borderColor: 'rgba(59,130,246,0.2)', backgroundColor: 'rgba(59,130,246,0.08)', color: '#1d4ed8' }}
                         >
                           {tag}
                           <button
                             type="button"
                             onClick={() => removeTag(index)}
                             className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                            aria-label={`Remove tag ${tag}`}
                           >
                             <X size={14} />
                           </button>
                         </span>
                       ))}
                     </div>
-                  )}
-                  {/* 标签输入框 */}
+                  ) : null}
                   <input
                     type="text"
                     value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
+                    onChange={(event) => setTagInput(event.target.value)}
                     onKeyDown={handleTagKeyDown}
                     className="input"
                     placeholder={t('createPost.basicInfo.tagsPlaceholder')}
                   />
-                  <input
-                    type="hidden"
-                    {...register('tags')}
-                    value={tags.join(',')}
-                  />
+                  <input type="hidden" {...register('tags')} value={tags.join(',')} />
                 </div>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Midjourney风格参数 */}
-          <div className="card p-6">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">{t('createPost.styleParams.title')}</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <SectionCard
+            icon={<SlidersHorizontal size={20} />}
+            title={t('createPost.styleParams.title')}
+            description="Treat this as a reusable prompt recipe. Group only the parameters you actually want future readers to reuse."
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.sref')}
                 </label>
-                <input
-                  type="text"
-                  {...register('sref')}
-                  className="input font-mono"
-                  placeholder="3311400918"
-                />
+                <input type="text" {...register('sref')} className="input font-mono" placeholder="3311400918" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.style')}
                 </label>
                 <select {...register('style')} className="select">
@@ -375,35 +453,21 @@ const CreatePost = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.stylize')}
                 </label>
-                <input
-                  type="number"
-                  {...register('stylize')}
-                  className="input font-mono"
-                  placeholder="100"
-                  min="0"
-                  max="1000"
-                />
+                <input type="number" {...register('stylize')} className="input font-mono" placeholder="100" min="0" max="1000" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.chaos')}
                 </label>
-                <input
-                  type="number"
-                  {...register('chaos')}
-                  className="input font-mono"
-                  placeholder="0"
-                  min="0"
-                  max="100"
-                />
+                <input type="number" {...register('chaos')} className="input font-mono" placeholder="0" min="0" max="100" />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.aspect')}
                 </label>
                 <select {...register('aspect')} className="select">
@@ -418,7 +482,7 @@ const CreatePost = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.version')}
                 </label>
                 <select {...register('version')} className="select">
@@ -432,7 +496,7 @@ const CreatePost = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.videoVersion')}
                 </label>
                 <select {...register('videoVersion')} className="select">
@@ -442,7 +506,7 @@ const CreatePost = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.quality')}
                 </label>
                 <select {...register('quality')} className="select">
@@ -454,21 +518,16 @@ const CreatePost = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.seed')}
                 </label>
-                <input
-                  type="number"
-                  {...register('seed')}
-                  className="input font-mono"
-                  placeholder="123456"
-                />
+                <input type="number" {...register('seed')} className="input font-mono" placeholder="123456" />
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                 {t('createPost.styleParams.otherParams')}
               </label>
               <input
@@ -479,60 +538,82 @@ const CreatePost = () => {
               />
             </div>
 
-            {/* 参数预览 */}
-            {previewParams && (
-              <div className="relative">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+            {previewParams ? (
+              <div className="relative mt-5">
+                <label className="mb-2 block text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                   {t('createPost.styleParams.preview')}
                 </label>
-                <div className="bg-slate-50 rounded-lg p-4 font-mono text-sm text-slate-700 border-l-4 border-primary-500 pr-12">
+                <div
+                  className="rounded-[20px] border px-4 py-4 pr-14 font-mono text-sm"
+                  style={{ borderColor: 'rgba(99,102,241,0.18)', backgroundColor: 'rgba(248,250,252,0.82)', color: 'var(--text-primary)' }}
+                >
                   {previewParams}
                 </div>
-                <CopyToClipboard 
-                  text={previewParams} 
-                  onCopy={() => toast.success(t('createPost.styleParams.paramsCopied'))}
-                >
+                <CopyToClipboard text={previewParams} onCopy={() => toast.success(t('createPost.styleParams.paramsCopied'))}>
                   <button
                     type="button"
-                    className="absolute top-8 right-3 w-8 h-8 bg-white rounded-md flex items-center justify-center text-slate-500 hover:text-slate-700 shadow-sm"
+                    className="absolute right-3 top-9 flex h-9 w-9 items-center justify-center rounded-xl border"
+                    style={{ borderColor: 'rgba(148,163,184,0.18)', backgroundColor: 'rgba(255,255,255,0.9)', color: 'var(--text-secondary)' }}
+                    aria-label="Copy style parameters"
                   >
-                    <Copy className="w-4 h-4" />
+                    <Copy className="h-4 w-4" />
                   </button>
                 </CopyToClipboard>
               </div>
+            ) : (
+              <div
+                className="mt-5 rounded-[20px] border border-dashed px-4 py-4 text-sm leading-7"
+                style={{ borderColor: 'rgba(148,163,184,0.26)', color: 'var(--text-secondary)', backgroundColor: 'rgba(248,250,252,0.6)' }}
+              >
+                Add style parameters to generate a reusable command preview here.
+              </div>
             )}
-          </div>
+          </SectionCard>
+        </SectionGrid>
 
-          {/* 提交按钮 */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="btn btn-secondary"
-            >
-              {t('createPost.buttons.cancel')}
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="btn btn-primary"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  {t('createPost.buttons.publishing')}
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t('createPost.buttons.publish')}
-                </>
-              )}
-            </button>
+        <SectionCard
+          icon={<Send size={20} />}
+          title="Review and publish"
+          description="This final section keeps the workflow explicit: confirm the draft, then submit when everything reads cleanly."
+        >
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="space-y-3">
+              <div
+                className="flex items-start gap-3 rounded-[20px] border px-4 py-4"
+                style={{ borderColor: 'rgba(16,185,129,0.18)', backgroundColor: 'rgba(16,185,129,0.06)' }}
+              >
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                <div className="text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+                  Your current submit logic is unchanged, so this pass focuses on layout, readability, and guidance rather than backend behavior.
+                </div>
+              </div>
+              <div className="text-sm leading-7" style={{ color: 'var(--text-secondary)' }}>
+                Double-check title clarity, media order, and whether your prompt parameters are worth copying. If not, simplify before publishing.
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <button type="button" onClick={() => navigate(-1)} className="btn btn-secondary w-full">
+                {t('createPost.buttons.cancel')}
+              </button>
+              <button type="submit" disabled={isSubmitting} className="btn btn-primary w-full">
+                {isSubmitting ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                    {t('createPost.buttons.publishing')}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('createPost.buttons.publish')}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </form>
-      </div>
-    </div>
+        </SectionCard>
+      </form>
+    </PageShell>
   );
 };
 

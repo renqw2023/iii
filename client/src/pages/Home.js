@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useQuery } from 'react-query';
 import { Link, useNavigationType, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Palette, Film, BookOpen } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { srefAPI } from '../services/srefApi';
 import { galleryAPI } from '../services/galleryApi';
 import { seedanceAPI } from '../services/seedanceApi';
@@ -10,7 +10,6 @@ import VideoCard from '../components/Seedance/VideoCard';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Hero from '../components/Home/Hero';
 import FanGallery from '../components/Home/FanGallery';
-
 import { useHomeSEO } from '../hooks/useSEO';
 
 const HOME_SCROLL_KEY = 'home_scrollY';
@@ -22,14 +21,12 @@ const Home = () => {
 
   useHomeSEO();
 
-  // 实时保存首页滚动位置
   useEffect(() => {
     const save = () => sessionStorage.setItem(HOME_SCROLL_KEY, String(Math.round(window.scrollY)));
     window.addEventListener('scroll', save, { passive: true });
     return () => window.removeEventListener('scroll', save);
   }, []);
 
-  // ========== 三个预览查询 ==========
   const { data: srefData, status: srefStatus } = useQuery(
     ['home-sref-preview'],
     () => srefAPI.getPosts({ page: 1, limit: 15, sort: 'createdAt' }),
@@ -42,7 +39,7 @@ const Home = () => {
   );
   const { data: videoData, status: videoStatus } = useQuery(
     ['home-video-preview'],
-    () => seedanceAPI.getPrompts({ page: 1, limit: 4, sort: 'newest' }),
+    () => seedanceAPI.getPrompts({ page: 1, limit: 12, sort: 'newest' }),
     { staleTime: 5 * 60 * 1000, refetchOnWindowFocus: false }
   );
 
@@ -51,7 +48,6 @@ const Home = () => {
   const videoPosts = videoData?.data?.prompts || [];
   const isLoading = srefStatus === 'loading' || galleryStatus === 'loading' || videoStatus === 'loading';
 
-  // POP 导航时恢复首页滚动位置
   useEffect(() => {
     if (navigationType !== 'POP') return;
     if (isLoading) return;
@@ -68,47 +64,6 @@ const Home = () => {
       <Hero />
 
       <div className="home-dark-area">
-        {/* Explore collections */}
-        <section className="home-section">
-          <div className="home-section-header">
-            <h2>
-              <span className="gradient-text">{t('home.explore.title')}</span>
-              <span className="home-section-header-text"> {t('home.explore.titleSuffix')}</span>
-            </h2>
-            <p className="home-section-desc">{t('home.explore.description')}</p>
-          </div>
-
-          <div className="home-entry-grid">
-            <Link to="/explore" className="home-entry-card home-entry-mj">
-              <div className="home-entry-icon">
-                <Palette size={28} />
-              </div>
-              <h3>🎨 {t('home.explore.mj.title')}</h3>
-              <p>{t('home.explore.mj.description')}</p>
-              <span className="home-entry-arrow"><ArrowRight size={16} /></span>
-            </Link>
-
-            <Link to="/gallery" className="home-entry-card home-entry-gallery">
-              <div className="home-entry-icon">
-                <BookOpen size={28} />
-              </div>
-              <h3>📝 {t('home.explore.gallery.title')}</h3>
-              <p>{t('home.explore.gallery.description')}</p>
-              <span className="home-entry-arrow"><ArrowRight size={16} /></span>
-            </Link>
-
-            <Link to="/seedance" className="home-entry-card home-entry-seedance">
-              <div className="home-entry-icon">
-                <Film size={28} />
-              </div>
-              <h3>🎬 {t('home.explore.seedance.title')}</h3>
-              <p>{t('home.explore.seedance.description')}</p>
-              <span className="home-entry-arrow"><ArrowRight size={16} /></span>
-            </Link>
-          </div>
-        </section>
-
-        {/* Sref preview */}
         <section className="home-section home-content-section">
           <div className="home-section-header">
             <div>
@@ -134,7 +89,6 @@ const Home = () => {
           )}
         </section>
 
-        {/* Gallery preview */}
         <section className="home-section home-content-section">
           <div className="home-section-header">
             <div>
@@ -160,7 +114,6 @@ const Home = () => {
           )}
         </section>
 
-        {/* Video preview */}
         <section className="home-section home-content-section">
           <div className="home-section-header">
             <div>
@@ -178,7 +131,9 @@ const Home = () => {
             <div className="gallery-loading"><LoadingSpinner size="md" /></div>
           ) : (
             <div className="seedance-grid">
-              {videoPosts.map(prompt => <VideoCard key={prompt._id} prompt={prompt} />)}
+              {videoPosts.map((prompt) => (
+                <VideoCard key={prompt._id} prompt={prompt} />
+              ))}
             </div>
           )}
         </section>

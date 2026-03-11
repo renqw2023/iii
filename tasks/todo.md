@@ -661,3 +661,111 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
     - `output/docs-refined-check.png`
 - Remaining note:
   - existing project-wide ESLint warnings remain in unrelated files and were not introduced by this docs refinement
+
+## 2026-03-11 Avatar Menu Refinement Plan
+
+- Goal: narrow the avatar popup update to only `Contact Us` and `Language >`.
+- Files to change:
+  - `client/src/components/Layout/Sidebar.js`
+  - `tasks/lessons.md`
+- Steps:
+  1. Inspect the current avatar dropdown rows and leave unrelated items untouched.
+  2. Add a `Contact Us` row that routes to `/docs#contact`.
+  3. Replace the inline language selector block with a submenu-style `Language >` interaction.
+  4. Run `npm run build` and browser verification on the updated popup.
+- Risks:
+  - the submenu could close unexpectedly because the dropdown already uses outside-click dismissal
+  - the flyout could overflow if its position is not anchored carefully
+
+## Result (2026-03-11 Avatar Menu Refinement)
+
+- Updated `client/src/components/Layout/Sidebar.js` to keep the avatar popup focused on the two approved additions:
+  - added a `Contact Us` row pointing to `/docs#contact`
+  - replaced the inline language selector block with a flyout-style `Language` submenu
+- Interaction details:
+  - closing the avatar popup also closes the language flyout
+  - navigating through menu links now resets the submenu state cleanly
+- Verification:
+  - `npm run build` passed in `client/`
+  - screenshot saved to `output/avatar-menu-home-check.png`
+  - browser console still shows the pre-existing homepage CORS noise from `localhost:5500`
+- Limitation:
+  - full click-through verification of the authenticated avatar popup still requires a logged-in session in the browser
+
+## 2026-03-11 Contact Us Flyout Plan
+
+- Goal: change the avatar popup `Contact Us` row from a direct link into a right-side flyout matching the provided reference more closely.
+- Files to change:
+  - `client/src/components/Layout/Sidebar.js`
+  - `tasks/lessons.md`
+- Steps:
+  1. Reuse the current avatar popup shell and keep existing menu order intact.
+  2. Replace the direct `Contact Us` link with a submenu trigger.
+  3. Add compact contact actions with copy/external affordances that fit the reference layout.
+  4. Verify on `http://localhost:3100/` and record any auth-state limitation.
+- Risks:
+  - nested flyouts can overlap or feel crowded next to the avatar popup
+  - copy/external affordances can look inconsistent if icon spacing is not tuned carefully
+
+## Result (2026-03-11 Contact Us Flyout)
+
+- Updated `client/src/components/Layout/Sidebar.js` so the avatar popup `Contact Us` row now opens a right-side flyout instead of navigating away immediately.
+- The flyout now uses compact action rows with:
+  - copyable email support
+  - copyable WeChat contact
+  - external link to X
+- Interaction details:
+  - `Contact Us` and `Language` flyouts now close each other so only one submenu stays open at a time
+  - closing the avatar popup resets both submenu states
+  - clicking the email copy action shows the copied state in the button label/tooltip
+- Verification:
+  - `npm run build` passed in `client/`
+  - browser verification completed on `http://localhost:3100/dashboard`
+  - screenshots saved to:
+    - `output/dashboard-before-contact-flyout.png`
+    - `output/dashboard-contact-flyout-check.png`
+- Notes:
+  - the project does not currently expose a real Discord URL, so the flyout uses the existing real contact channels from the codebase instead of inventing a fake Discord destination
+  - console still shows unrelated pre-existing issues, including one accessibility warning and existing translation noise elsewhere
+
+## 2026-03-11 Home Simplification Plan
+
+- Goal: remove the `Explore Our Collections` section from the home page and expand the `Video Gallery` preview to 12 videos.
+- Files to change:
+  - `client/src/pages/Home.js`
+- Steps:
+  1. Remove the Explore collections section and any now-unused imports.
+  2. Increase the home video preview query limit from 4 to 12.
+  3. Rebuild and verify the home page layout on `http://localhost:3100/`.
+- Risks:
+  - removing the section may change vertical spacing around the hero-to-content transition
+  - the video preview could become visually too dense if the existing grid styles do not balance 12 cards well
+
+## Result (2026-03-11 Home Simplification)
+
+- Updated `client/src/pages/Home.js` to simplify the home flow:
+  - removed the `Explore Our Collections` module entirely
+  - increased the home `Video Gallery` preview query from 4 items to 12 items
+- Verification:
+  - `npm run build` passed in `client/`
+  - browser verification on `http://localhost:3100/` confirmed the `Explore Our Collections` section is no longer rendered
+  - browser verification confirmed the `Video Gallery` section now renders 12 video cards
+  - screenshot saved to `output/home-video-12-check.png`
+- Notes:
+  - console still shows pre-existing i18n missing-key noise on the home page and was not introduced by this change
+
+## 2026-03-11 Homepage Video Gallery Fast Hover Playback Plan
+
+- Goal: first checkpoint the current docs/avatar/home cleanup work, then only optimize the homepage `Video Gallery` so hover playback starts noticeably faster.
+- Files to change:
+  - `docs/2026/20260311_阶段17_文档中心头像弹窗与首页内容调整开发日志.md`
+  - `client/src/components/Seedance/VideoCard.js`
+  - `client/src/pages/Home.js`
+- Steps:
+  1. Write a detailed development log for the completed docs/avatar/footer/home work and keep it as a persistent record.
+  2. Commit and push the current verified codebase as a checkpoint before changing playback behavior.
+  3. Isolate the hover-play optimization to the homepage `Video Gallery` instead of changing all video cards globally.
+  4. Rebuild and run browser verification on `http://localhost:3100/` to confirm the faster preview path introduces no UI regressions or new console errors.
+- Risks:
+  - preloading too aggressively could increase bandwidth and slow the rest of the homepage
+  - changing shared `VideoCard` behavior globally could accidentally alter Seedance list behavior, so the optimization should stay homepage-only

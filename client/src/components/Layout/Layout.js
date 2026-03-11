@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
-import Footer from './Footer';
 import Sidebar from './Sidebar';
 import MobileDock from '../UI/MobileDock';
 import DesktopDock from '../UI/DesktopDock';
@@ -44,8 +43,6 @@ const Layout = () => {
         <main className="flex-1 pb-safe-bottom md:pb-20">
           <Outlet />
         </main>
-
-        <Footer />
       </div>
 
       {/* Mobile bottom dock */}

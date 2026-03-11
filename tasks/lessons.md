@@ -56,3 +56,11 @@
 ## 2026-03-11 UI Analysis Note
 
 - 当用户明确说明后续 UI 分析可以使用 `mcp` 工具时，要把这个约束记录下来；进入视觉核对、交互复核、页面验收阶段时，优先使用 `mcp__chrome-devtools__navigate_page`、`take_snapshot`、`take_screenshot`、`list_console_messages` 做真实页面检查，而不是只依据源码做静态判断。
+## 2026-03-11 Menu Scope Note
+
+- When the user narrows a menu request to specific entries, keep the implementation equally narrow and avoid turning the account popup into a larger IA refactor.
+- For avatar-menu work, match the approved menu shape first and leave extra entries as optional follow-up ideas.
+
+## 2026-03-11 Contact Row Note
+
+- When the user provides a screenshot for a single account-menu row, match the row's interaction pattern directly instead of keeping the old navigation behavior and only changing the label.

@@ -13,7 +13,8 @@ import { useQuery } from 'react-query';
 import { useTranslation } from 'react-i18next';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
-  LayoutDashboard, Settings, LogOut, Languages, BookOpenText,
+  LayoutDashboard, Settings, LogOut, Languages, BookOpenText, Headphones,
+  Mail, Copy, MessageCircle, ExternalLink,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -163,6 +164,9 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
   const location = useLocation();
 
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const [contactMenuOpen, setContactMenuOpen] = useState(false);
+  const [copiedContact, setCopiedContact] = useState('');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -170,6 +174,8 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setAvatarOpen(false);
+        setLanguageMenuOpen(false);
+        setContactMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -202,6 +208,48 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
     { value: 'en-US', label: t('language.en-US', 'English') },
     { value: 'ja-JP', label: t('language.ja-JP', '日本語') },
   ];
+
+  const contactItems = [
+    {
+      id: 'email',
+      label: 'i@mail.iii.pics',
+      href: 'mailto:i@mail.iii.pics',
+      icon: Mail,
+      action: 'copy',
+      copyValue: 'i@mail.iii.pics',
+    },
+    {
+      id: 'wechat',
+      label: 'WeChat RPW000',
+      href: null,
+      icon: MessageCircle,
+      action: 'copy',
+      copyValue: 'RPW000',
+    },
+    {
+      id: 'x',
+      label: 'Follow me on X',
+      href: 'https://x.com/renqw5271',
+      icon: ExternalLink,
+      action: 'link',
+    },
+  ];
+
+  const handleLanguageChange = (value) => {
+    i18n.changeLanguage(value);
+    setLanguageMenuOpen(false);
+    setAvatarOpen(false);
+  };
+
+  const handleCopyContact = async (itemId, value) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedContact(itemId);
+      window.setTimeout(() => setCopiedContact(''), 1500);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div
@@ -285,7 +333,16 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
             {/* Avatar dropdown trigger */}
             <div className="relative" ref={dropdownRef}>
               <button
-                onClick={() => setAvatarOpen(v => !v)}
+                onClick={() => {
+                  setAvatarOpen((open) => {
+                    const nextOpen = !open;
+                    if (!nextOpen) {
+                      setLanguageMenuOpen(false);
+                      setContactMenuOpen(false);
+                    }
+                    return nextOpen;
+                  });
+                }}
                 title="Account"
                 className="flex items-center justify-center transition-colors duration-200"
                 style={{
@@ -357,7 +414,11 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                   ].map(({ icon: Icon, label, to }) => (
                     <Link
                       key={to} to={to}
-                      onClick={() => setAvatarOpen(false)}
+                      onClick={() => {
+                        setLanguageMenuOpen(false);
+                        setContactMenuOpen(false);
+                        setAvatarOpen(false);
+                      }}
                       className="flex items-center no-underline transition-colors duration-100"
                       style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#1B1B1B',
                                borderRadius: 10, display: 'flex', textDecoration: 'none' }}
@@ -369,43 +430,171 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     </Link>
                   ))}
 
-                  <div
-                    className="flex flex-col"
-                    style={{
-                      gap: 8,
-                      padding: '10px 12px',
-                      borderRadius: 10,
-                      color: '#1B1B1B',
-                    }}
-                  >
-                    <div
-                      className="flex items-center"
-                      style={{ gap: 12 }}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLanguageMenuOpen(false);
+                        setContactMenuOpen((open) => !open);
+                      }}
+                      className="flex items-center w-full transition-colors duration-100"
+                      style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#1B1B1B',
+                               borderRadius: 10, background: contactMenuOpen ? 'rgba(0,0,0,0.05)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = contactMenuOpen ? 'rgba(0,0,0,0.05)' : 'transparent'; }}
+                      aria-haspopup="menu"
+                      aria-expanded={contactMenuOpen}
+                    >
+                      <Headphones size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                      <span style={{ flex: 1 }}>Contact Us</span>
+                      <ChevronRight size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                    </button>
+
+                    {contactMenuOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: 'calc(100% + 8px)',
+                          top: -8,
+                          width: 292,
+                          borderRadius: 18,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -4px rgba(0,0,0,0.10)',
+                          padding: 8,
+                          zIndex: 210,
+                        }}
+                        role="menu"
+                        aria-label="Contact Us"
+                      >
+                        {contactItems.map(({ id, label, href, icon: Icon, action, copyValue }) => (
+                          <div
+                            key={id}
+                            className="flex items-center"
+                            style={{
+                              gap: 12,
+                              padding: '10px 12px',
+                              borderRadius: 12,
+                              color: '#1B1B1B',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                          >
+                            <Icon size={18} style={{ color: '#374151', flexShrink: 0 }} />
+                            <span style={{ flex: 1, fontSize: 13, color: '#1F2937', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {label}
+                            </span>
+
+                            {action === 'copy' ? (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyContact(id, copyValue)}
+                                aria-label={`Copy ${label}`}
+                                title={copiedContact === id ? 'Copied' : 'Copy'}
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  cursor: 'pointer',
+                                  color: copiedContact === id ? '#111827' : '#6B7280',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  padding: 0,
+                                }}
+                              >
+                                <Copy size={17} />
+                              </button>
+                            ) : (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={label}
+                                style={{
+                                  color: '#6B7280',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                }}
+                                onClick={() => {
+                                  setContactMenuOpen(false);
+                                  setAvatarOpen(false);
+                                }}
+                              >
+                                <ExternalLink size={17} />
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContactMenuOpen(false);
+                        setLanguageMenuOpen((open) => !open);
+                      }}
+                      className="flex items-center w-full transition-colors duration-100"
+                      style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#1B1B1B',
+                               borderRadius: 10, background: languageMenuOpen ? 'rgba(0,0,0,0.05)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = languageMenuOpen ? 'rgba(0,0,0,0.05)' : 'transparent'; }}
+                      aria-haspopup="menu"
+                      aria-expanded={languageMenuOpen}
                     >
                       <Languages size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
-                      <span style={{ fontSize: 13 }}>{t('language.select', 'Select language')}</span>
-                    </div>
-                    <select
-                      value={i18n.language}
-                      onChange={(e) => i18n.changeLanguage(e.target.value)}
-                      aria-label={t('language.select', 'Select language')}
-                      style={{
-                        width: '100%',
-                        border: '1px solid #d1d5db',
-                        borderRadius: 8,
-                        backgroundColor: '#f8fafc',
-                        color: '#111827',
-                        fontSize: 12,
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {languageOptions.map((language) => (
-                        <option key={language.value} value={language.value}>
-                          {language.label}
-                        </option>
-                      ))}
-                    </select>
+                      <span style={{ flex: 1 }}>Language</span>
+                      <ChevronRight size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                    </button>
+
+                    {languageMenuOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: 'calc(100% + 8px)',
+                          top: -8,
+                          width: 188,
+                          borderRadius: 16,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -4px rgba(0,0,0,0.10)',
+                          padding: 8,
+                          zIndex: 210,
+                        }}
+                        role="menu"
+                        aria-label={t('language.select', 'Select language')}
+                      >
+                        {languageOptions.map((language) => {
+                          const isSelected = i18n.language === language.value;
+
+                          return (
+                            <button
+                              key={language.value}
+                              type="button"
+                              onClick={() => handleLanguageChange(language.value)}
+                              className="flex items-center w-full transition-colors duration-100"
+                              style={{
+                                gap: 10,
+                                padding: '8px 12px',
+                                fontSize: 13,
+                                color: '#1B1B1B',
+                                borderRadius: 10,
+                                background: isSelected ? 'rgba(0,0,0,0.05)' : 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.backgroundColor = isSelected ? 'rgba(0,0,0,0.05)' : 'transparent'; }}
+                            >
+                              <span style={{ flex: 1 }}>{language.label}</span>
+                              {isSelected && <span style={{ fontSize: 11, color: '#6b7280' }}>Current</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Separator */}
@@ -413,7 +602,13 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
 
                   {/* Sign out */}
                   <button
-                    onClick={() => { setAvatarOpen(false); logout(); navigate('/'); }}
+                    onClick={() => {
+                      setLanguageMenuOpen(false);
+                      setContactMenuOpen(false);
+                      setAvatarOpen(false);
+                      logout();
+                      navigate('/');
+                    }}
                     className="flex items-center w-full transition-colors duration-100"
                     style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#ef4444',
                              borderRadius: 10, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}

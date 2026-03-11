@@ -24,9 +24,9 @@ const Layout = () => {
 
       {/* Desktop sidebar: sticky, hidden on mobile */}
       <div
-        className="hidden md:block sticky top-0 h-screen flex-shrink-0 overflow-hidden"
+        className="hidden md:block sticky top-0 h-screen flex-shrink-0 overflow-visible"
         style={{
-          width: collapsed ? 64 : 240,
+          width: collapsed ? 64 : 264,
           transition: 'width 0.25s ease',
         }}
       >

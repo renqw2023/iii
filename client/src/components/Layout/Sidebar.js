@@ -10,9 +10,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
-  LayoutDashboard, Settings, LogOut, HelpCircle, Plus,
+  LayoutDashboard, Settings, LogOut, HelpCircle, Languages,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -157,6 +158,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
 const Sidebar = ({ onCreditsClick, onInviteClick }) => {
   const { collapsed, toggleCollapsed, SidebarPanel } = useSidebar();
   const { isAuthenticated, user, openSearch, openLoginModal, logout } = useAuth();
+  const { i18n, t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -195,12 +197,17 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
   );
 
   const Panel = SidebarPanel || DefaultPanel;
+  const languageOptions = [
+    { value: 'zh-CN', label: t('language.zh-CN', '简体中文') },
+    { value: 'en-US', label: t('language.en-US', 'English') },
+    { value: 'ja-JP', label: t('language.ja-JP', '日本語') },
+  ];
 
   return (
     <div
-      className="flex flex-col h-full overflow-hidden"
+      className="flex flex-col h-full overflow-visible"
       style={{
-        width: collapsed ? 64 : 240,
+        width: collapsed ? 64 : 264,
         background: 'rgba(255, 255, 255, 0.5)',
         borderRight: '1px solid var(--border-color)',
         transition: 'width 0.25s ease',
@@ -308,12 +315,12 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                 <div
                   className="absolute bottom-full mb-2 left-0 z-[200]"
                   style={{
-                    width: 245,
-                    borderRadius: 14,
+                    width: 236,
+                    borderRadius: 16,
                     backgroundColor: '#fff',
                     border: '1px solid #e5e7eb',
                     boxShadow: '0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -4px rgba(0,0,0,0.10)',
-                    padding: 6,
+                    padding: 8,
                     animation: 'fadeInUp 0.15s ease-out',
                   }}
                 >
@@ -338,7 +345,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                   </div>
 
                   {/* Separator */}
-                  <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '2px -6px 2px' }} />
+                  <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '4px -8px' }} />
 
                   {/* Menu items — MeiGen: gap-3 rounded-lg px-3 py-1.5 text-[13px] */}
                   {[
@@ -362,8 +369,47 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     </Link>
                   ))}
 
+                  <div
+                    className="flex flex-col"
+                    style={{
+                      gap: 8,
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      color: '#1B1B1B',
+                    }}
+                  >
+                    <div
+                      className="flex items-center"
+                      style={{ gap: 12 }}
+                    >
+                      <Languages size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                      <span style={{ fontSize: 13 }}>{t('language.select', 'Select language')}</span>
+                    </div>
+                    <select
+                      value={i18n.language}
+                      onChange={(e) => i18n.changeLanguage(e.target.value)}
+                      aria-label={t('language.select', 'Select language')}
+                      style={{
+                        width: '100%',
+                        border: '1px solid #d1d5db',
+                        borderRadius: 8,
+                        backgroundColor: '#f8fafc',
+                        color: '#111827',
+                        fontSize: 12,
+                        padding: '6px 8px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {languageOptions.map((language) => (
+                        <option key={language.value} value={language.value}>
+                          {language.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Separator */}
-                  <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '2px -6px 2px' }} />
+                  <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '4px -8px' }} />
 
                   {/* Sign out */}
                   <button

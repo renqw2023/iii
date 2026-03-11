@@ -443,3 +443,22 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - Changed the desktop sidebar shell background to `rgba(255, 255, 255, 0.5)` to preserve a half-transparent white look.
 - Briefly enabled `MeshBackground` for visual comparison, confirmed that transparency becomes more visible only when a stronger background exists underneath, then restored the background layer to the default off state.
 - Added a detailed record at `docs/2026/20260311_首页背景与侧边栏透明度调试开发文档.md`.
+## Current Task (2026-03-11 Sidebar Avatar Menu Language Entry)
+
+- Goal: add the homepage language switching capability into the sidebar avatar popup and fix the popup being clipped.
+- Files to change:
+  - `client/src/components/Layout/Sidebar.js`
+- Approach:
+  - reuse the existing i18n language state in the sidebar menu
+  - add a single `Language` row with an inline selector in the avatar popup
+  - enlarge the popup and relax sidebar overflow so the menu is no longer cut off
+- Risks:
+  - the popup currently lives inside the sidebar shell, so overflow settings can still clip it if not adjusted correctly
+  - the selector must only use supported runtime languages: `zh-CN`, `en-US`, `ja-JP`
+
+## Result (2026-03-11 Sidebar Avatar Menu Language Entry)
+
+- Added a language selector directly inside `client/src/components/Layout/Sidebar.js` avatar popup, reusing the existing i18n language state.
+- Increased the popup width and internal spacing so the extra control fits without crowding the menu.
+- Changed the sidebar shell overflow from hidden to visible so the popup is no longer clipped by the sidebar container.
+- Verified with `npm run build` in `client/`: build succeeded, with only pre-existing ESLint warnings remaining elsewhere in the project.

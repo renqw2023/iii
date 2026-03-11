@@ -6,7 +6,7 @@
 .gallery-page,
 .seedance-page {
   width: 100%;
-  padding: 1.25rem 1.25rem 4rem;
+  padding: 0.75rem 0.875rem 3rem;
   background: var(--page-bg);
   color: var(--text-primary);
 }
@@ -19,7 +19,7 @@
   border-radius: 20px;
   border: 1px solid var(--stage-border);
   box-shadow: var(--stage-shadow);
-  padding: 1.25rem;
+  padding: 0.875rem;
 }
 
 .gallery-stage-header {
@@ -120,7 +120,7 @@
 .gallery-main {
   flex: 1;
   min-width: 0;
-  padding: 1.25rem;
+  padding: 0.875rem;
 }
 
 /* --- Toolbar (above grid) --- */

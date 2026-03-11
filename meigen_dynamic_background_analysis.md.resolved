@@ -1,0 +1,244 @@
+# MeiGen.ai 动态彩色背景效果深度分析
+
+**分析日期**: 2026-03-10
+**分析方法**: Chrome DevTools 实时 DOM/CSS/JS 提取 + 源码分析
+
+---
+
+## 一、实现技术：纯 CSS Mesh Gradient 动画
+
+MeiGen 的炫酷动态背景 **不是 Canvas / WebGL / JavaScript 动画**，而是一种非常巧妙的**纯 CSS 方案**，由三个核心要素组合而成：
+
+| 技术 | 作用 |
+|------|------|
+| **多重径向渐变** (`radial-gradient`) | 构建多个半透明彩色光球 |
+| **大面积模糊滤镜** (`filter: blur()`) | 让光球边缘柔和融合，产生"mesh"效果 |
+| **CSS Keyframe 动画** | 让光球缓慢漂浮、旋转、缩放 |
+
+> [!TIP]
+> 纯 CSS 方案的优势：GPU 加速、零 JavaScript 开销、电池友好、实现简单
+
+---
+
+## 二、DOM 结构
+
+```
+<body>
+  └── <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        ├── <div class="animate-mesh-orbit">      ← 光球层 1（主层）
+        │     width: ~4200px, filter: blur(60px)
+        │     animation: mesh-orbit 16s cubic-bezier(...) infinite
+        │     background: 多重 radial-gradient（蓝/紫/橙/白）
+        │
+        └── <div class="animate-mesh-orbit-reverse"> ← 光球层 2（反向辅层）
+              width: ~3400px, filter: blur(80px)
+              animation: mesh-orbit-reverse 20s cubic-bezier(...) infinite
+              background: 多重 radial-gradient（青蓝/粉紫，更低透明度）
+```
+
+> [!IMPORTANT]
+> 关键设计：`pointer-events: none` 确保背景不会拦截用户点击，`z-0` 确保它在所有内容之下。
+
+---
+
+## 三、光球颜色配置
+
+### 层 1（主层 — 高透明度，色彩鲜明）
+
+```css
+background:
+  /* 蓝色光球 — 左上区域 */
+  radial-gradient(circle at 10% 20%, rgba(41, 130, 255, 0.42) 0%, transparent 50%),
+  /* 紫色光球 — 右上区域 */
+  radial-gradient(circle at 90% 30%, rgba(184, 112, 255, 0.38) 0%, transparent 50%),
+  /* 橙色光球 — 中下区域 */
+  radial-gradient(circle at 30% 60%, rgba(255, 166, 77, 0.38) 0%, transparent 50%),
+  /* 中性白色光球  — 居中 */
+  radial-gradient(circle at 50% 50%, rgba(247, 247, 247, 0.50) 0%, transparent 60%);
+```
+
+### 层 2（辅层 — 低透明度，增加深度）
+
+```css
+background:
+  /* 青蓝色光球 — 右上区域 */
+  radial-gradient(circle at 80% 10%, rgba(76, 166, 255, 0.12) 0%, transparent 50%),
+  /* 粉紫色光球 — 左下区域 */
+  radial-gradient(circle at 20% 90%, rgba(216, 148, 249, 0.10) 0%, transparent 50%);
+```
+
+### 色彩视觉汇总
+
+| 光球 | 颜色 | RGBA | 位置 | 用途 |
+|------|------|------|------|------|
+| 🔵 蓝 | 品牌蓝 | `rgba(41,130,255,0.42)` | 左上 10%,20% | 主色调，科技感 |
+| 🟣 紫 | 薰衣草紫 | `rgba(184,112,255,0.38)` | 右上 90%,30% | 创意/AI 感 |
+| 🟠 橙 | 暖橙 | `rgba(255,166,77,0.38)` | 中下 30%,60% | 温暖平衡 |
+| ⚪ 白 | 中性白 | `rgba(247,247,247,0.50)` | 居中 50%,50% | 中和色彩 |
+| 🔷 青 | 天青蓝 | `rgba(76,166,255,0.12)` | 右上 80%,10% | 深度层次 |
+| 🩷 粉 | 粉紫 | `rgba(216,148,249,0.10)` | 左下 20%,90% | 深度层次 |
+
+---
+
+## 四、动画 Keyframes
+
+```css
+@keyframes mesh-orbit {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25%  { transform: translate(-5%, 3%) rotate(2deg) scale(1.02); }
+  50%  { transform: translate(3%, -4%) rotate(-1deg) scale(0.98); }
+  75%  { transform: translate(-2%, 2%) rotate(1.5deg) scale(1.01); }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes mesh-orbit-reverse {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25%  { transform: translate(4%, -2%) rotate(-2deg) scale(0.98); }
+  50%  { transform: translate(-3%, 5%) rotate(1.5deg) scale(1.03); }
+  75%  { transform: translate(2%, -3%) rotate(-1deg) scale(0.99); }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+```
+
+| 属性 | 层 1 (`mesh-orbit`) | 层 2 (`mesh-orbit-reverse`) |
+|------|---------------------|---------------------------|
+| 时长 | **16s** | **20s** |
+| 缓动 | `cubic-bezier(0.4,0,0.6,1)` | `cubic-bezier(0.4,0,0.6,1)` |
+| 循环 | `infinite` | `infinite` |
+| 方向 | 正向 | 反向（位移方向相反） |
+| 模糊 | `blur(60px)` | `blur(80px)` |
+| 元素宽 | ~4200px | ~3400px |
+
+> [!NOTE]
+> 两个层的动画速度不同（16s vs 20s），方向相反，且模糊程度不同（60px vs 80px），制造出丰富的层次感和永不重复的视觉节奏。
+
+---
+
+## 五、我们项目（III.PICS）的现状
+
+目前我们 **没有** 页面级的动态背景效果。已有的 `radial-gradient` 仅用于：
+
+| 位置 | 用途 |
+|------|------|
+| [SrefCard.js](file:///E:/pm01/client/src/components/Sref/SrefCard.js) / [GalleryCard.js](file:///E:/pm01/client/src/components/Gallery/GalleryCard.js) / [VideoCard.js](file:///E:/pm01/client/src/components/Seedance/VideoCard.js) | 鼠标跟随光晕 hover 效果 |
+| [InviteModal.js](file:///E:/pm01/client/src/components/UI/InviteModal.js) / [CreditsModal.js](file:///E:/pm01/client/src/components/UI/CreditsModal.js) | Modal 头部装饰性渐变 |
+
+---
+
+## 六、参考实现方案
+
+以下是一份**可直接复用**的 CSS + JSX 代码：
+
+### CSS 文件新增
+
+```css
+/* ========== Mesh Gradient 动态背景 ========== */
+@keyframes mesh-orbit {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25%  { transform: translate(-5%, 3%) rotate(2deg) scale(1.02); }
+  50%  { transform: translate(3%, -4%) rotate(-1deg) scale(0.98); }
+  75%  { transform: translate(-2%, 2%) rotate(1.5deg) scale(1.01); }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes mesh-orbit-reverse {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25%  { transform: translate(4%, -2%) rotate(-2deg) scale(0.98); }
+  50%  { transform: translate(-3%, 5%) rotate(1.5deg) scale(1.03); }
+  75%  { transform: translate(2%, -3%) rotate(-1deg) scale(0.99); }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+.mesh-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mesh-bg-orb-primary {
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  filter: blur(60px);
+  opacity: 0.7;
+  animation: mesh-orbit 16s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.35) 0%, transparent 50%),
+    radial-gradient(circle at 90% 30%, rgba(168, 85, 247, 0.30) 0%, transparent 50%),
+    radial-gradient(circle at 30% 60%, rgba(244, 114, 182, 0.25) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(30, 30, 30, 0.40) 0%, transparent 60%);
+}
+
+.mesh-bg-orb-secondary {
+  position: absolute;
+  width: 170%;
+  height: 170%;
+  top: -35%;
+  left: -35%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: mesh-orbit-reverse 20s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 20% 90%, rgba(192, 132, 252, 0.10) 0%, transparent 50%);
+}
+
+/* 深色模式下增强显示 */
+[data-theme="dark"] .mesh-bg-orb-primary {
+  opacity: 0.5;
+}
+[data-theme="dark"] .mesh-bg-orb-secondary {
+  opacity: 0.3;
+}
+
+/* 减弱动画（辅助功能） */
+@media (prefers-reduced-motion: reduce) {
+  .mesh-bg-orb-primary,
+  .mesh-bg-orb-secondary {
+    animation: none;
+  }
+}
+```
+
+### JSX 组件
+
+```jsx
+// MeshBackground.js
+const MeshBackground = () => (
+  <div className="mesh-bg-container">
+    <div className="mesh-bg-orb-primary" />
+    <div className="mesh-bg-orb-secondary" />
+  </div>
+);
+
+export default MeshBackground;
+```
+
+### 在 Layout.js 中使用
+
+```jsx
+import MeshBackground from '../UI/MeshBackground';
+
+function Layout({ children }) {
+  return (
+    <>
+      <MeshBackground />   {/* ← 添加到最顶层 */}
+      <Sidebar />
+      <main>{children}</main>
+    </>
+  );
+}
+```
+
+> [!IMPORTANT]
+> 上面的颜色已针对我们的**深色主题**做了调整（用了 indigo/purple/pink 替代 MeiGen 的蓝/紫/橙），你可以根据喜好调整色值。
+
+---
+
+## 七、效果录屏
+
+![MeiGen.ai 动态背景浏览器分析过程](C:/Users/reki/.gemini/antigravity/brain/2fabfc4e-9d22-4f31-93aa-538f8f33d4a8/meigen_background_analysis_1773132963880.webp)

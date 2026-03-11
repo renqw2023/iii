@@ -10,13 +10,13 @@
  *   - Tooltip：hover 时从下向上淡入
  *   - 激活项底部圆点 + 辉光
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   motion, AnimatePresence,
   useMotionValue, useSpring, useTransform,
 } from 'framer-motion';
-import { Home, Layers, Image, Clapperboard } from 'lucide-react';
+import { Home, Layers, Image, Clapperboard, ArrowUp } from 'lucide-react';
 
 const SparklesIcon = ({ size = 20, color = 'currentColor', strokeWidth = 1.5 }) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
@@ -42,6 +42,8 @@ const ROUTE_ITEMS = [
 const MAG_RADIUS  = 116;   // px — 鼠标影响半径
 const SCALE_MAX   = 1.34;  // 最大放大倍率
 const SPRING_CFG  = { mass: 0.14, stiffness: 320, damping: 24 };
+const MIN_SCROLL_TOP_THRESHOLD = 1800;
+const VIEWPORT_SCROLL_MULTIPLIER = 3.6;
 
 /* ── 单个 Dock 图标 ── */
 const DockItem = ({ mouseX, active, label, onClick, isButton, to, children }) => {
@@ -177,8 +179,32 @@ const DockItem = ({ mouseX, active, label, onClick, isButton, to, children }) =>
 const DesktopDock = ({ onImg2PromptClick }) => {
   const location = useLocation();
   const isImg2PromptActive = location.pathname.startsWith('/img2prompt');
-
   const mouseX = useMotionValue(Infinity);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const getThreshold = () => Math.max(
+      MIN_SCROLL_TOP_THRESHOLD,
+      Math.round(window.innerHeight * VIEWPORT_SCROLL_MULTIPLIER),
+    );
+
+    const updateVisibility = () => {
+      setShowScrollTop(window.scrollY >= getThreshold());
+    };
+
+    updateVisibility();
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    window.addEventListener('resize', updateVisibility);
+
+    return () => {
+      window.removeEventListener('scroll', updateVisibility);
+      window.removeEventListener('resize', updateVisibility);
+    };
+  }, []);
+
+  const handleScrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div
@@ -194,7 +220,9 @@ const DesktopDock = ({ onImg2PromptClick }) => {
         onMouseLeave={() => mouseX.set(Infinity)}
       >
         {/* 毛玻璃胶囊 */}
-        <div
+        <motion.div
+          layout
+          transition={{ layout: { type: 'spring', stiffness: 360, damping: 28 } }}
           style={{
             display: 'flex',
             alignItems: 'flex-end',
@@ -204,7 +232,7 @@ const DesktopDock = ({ onImg2PromptClick }) => {
             backgroundColor: 'rgba(255, 255, 255, 0.62)',
             backdropFilter: 'blur(28px) saturate(200%)',
             WebkitBackdropFilter: 'blur(28px) saturate(200%)',
-            border: '1px solid rgba(255, 255, 255, 0.6)',
+            border: '1px solid transparent',
             boxShadow:
               '0 20px 60px -8px rgba(0,0,0,0.16),' +
               '0 4px 16px rgba(0,0,0,0.07),' +
@@ -245,7 +273,39 @@ const DesktopDock = ({ onImg2PromptClick }) => {
               strokeWidth={isImg2PromptActive ? 1.8 : 1.5}
             />
           </DockItem>
-        </div>
+
+          <AnimatePresence initial={false}>
+            {showScrollTop && (
+              <motion.div
+                key="scroll-top"
+                layout
+                initial={{ opacity: 0, scale: 0.82, x: 16 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.82, x: 16 }}
+                transition={{ type: 'spring', stiffness: 360, damping: 26 }}
+                style={{ display: 'flex', alignItems: 'flex-end' }}
+              >
+                <div style={{
+                  width: 1,
+                  height: 26,
+                  backgroundColor: 'rgba(0,0,0,0.12)',
+                  margin: '0 2px 4px',
+                  alignSelf: 'center',
+                }} />
+
+                <DockItem
+                  isButton
+                  mouseX={mouseX}
+                  active={false}
+                  label="Back to Top"
+                  onClick={handleScrollToTop}
+                >
+                  <ArrowUp size={20} strokeWidth={1.9} />
+                </DockItem>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </motion.nav>
     </div>
   );

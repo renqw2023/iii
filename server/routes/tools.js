@@ -10,6 +10,7 @@ const { deductCredits, recordDeductTransactions } = require('../utils/creditsUti
 
 const CREDIT_COST = 2; // img2prompt 每次消耗积分
 const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview'; // Vision 默认模型
+const FALLBACK_GEMINI_MODEL = 'gemini-2.5-flash';       // 503 时自动降级
 const ALLOWED_VISION_MODELS = new Set(['gemini-3-flash-preview', 'gemini-2.5-flash']);
 
 // 相对路径 → 服务器本地文件系统绝对路径
@@ -108,25 +109,36 @@ router.post(
         base64Data = Buffer.from(arrayBuffer).toString('base64');
       }
 
-      // 调用 Gemini Vision API
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { inlineData: { mimeType, data: base64Data } },
-                {
-                  text: 'Describe this image as a detailed Midjourney/Stable Diffusion prompt in English. Focus on: subject, style, lighting, colors, composition, mood, and any notable visual elements. Output ONLY the prompt text, no explanation.',
-                },
-              ],
-            }],
-            generationConfig: { maxOutputTokens: 1024 },
-          }),
-        }
-      );
+      // 调用 Gemini Vision API，503 时自动降级到 fallback 模型
+      const callGeminiVision = async (modelName) => {
+        return fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(60000),
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { inlineData: { mimeType, data: base64Data } },
+                  { text: 'Describe this image as a detailed Midjourney/Stable Diffusion prompt in English. Focus on: subject, style, lighting, colors, composition, mood, and any notable visual elements. Output ONLY the prompt text, no explanation.' },
+                ],
+              }],
+              generationConfig: { maxOutputTokens: 1024 },
+            }),
+          }
+        );
+      };
+
+      let geminiRes = await callGeminiVision(GEMINI_MODEL);
+      let usedModel = GEMINI_MODEL;
+
+      // 503 过载时自动降级到稳定版模型重试一次
+      if (geminiRes.status === 503 && GEMINI_MODEL !== FALLBACK_GEMINI_MODEL) {
+        console.warn(`Gemini Vision 503，降级到 ${FALLBACK_GEMINI_MODEL} 重试`);
+        geminiRes = await callGeminiVision(FALLBACK_GEMINI_MODEL);
+        usedModel = FALLBACK_GEMINI_MODEL;
+      }
 
       if (!geminiRes.ok) {
         const errBody = await geminiRes.json().catch(() => ({}));
@@ -149,7 +161,7 @@ router.post(
         return res.status(402).json({ message: `积分不足，需要 ${CREDIT_COST} 积分` });
       }
 
-      const note = `图生文（反推 Prompt）— ${GEMINI_MODEL}`;
+      const note = `图生文（反推 Prompt）— ${usedModel}`;
       await recordDeductTransactions(user._id, 'img2prompt', note, freeDeducted, paidDeducted, user.freeCredits, user.credits);
 
       res.json({ prompt, creditsLeft: user.credits, freeCreditsLeft: user.freeCredits });

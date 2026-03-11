@@ -39,9 +39,9 @@ const ROUTE_ITEMS = [
 ];
 
 /* 放大参数 */
-const MAG_RADIUS  = 120;   // px — 鼠标影响半径
-const SCALE_MAX   = 1.55;  // 最大放大倍率
-const SPRING_CFG  = { mass: 0.12, stiffness: 200, damping: 14 };
+const MAG_RADIUS  = 116;   // px — 鼠标影响半径
+const SCALE_MAX   = 1.34;  // 最大放大倍率
+const SPRING_CFG  = { mass: 0.14, stiffness: 320, damping: 24 };
 
 /* ── 单个 Dock 图标 ── */
 const DockItem = ({ mouseX, active, label, onClick, isButton, to, children }) => {
@@ -85,13 +85,14 @@ const DockItem = ({ mouseX, active, label, onClick, isButton, to, children }) =>
           justifyContent: 'center',
           cursor: 'pointer',
           backgroundColor: active
-            ? 'rgba(99,102,241,0.18)'
-            : hovered ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.15)',
+            ? 'rgba(255,255,255,0.16)'
+            : hovered ? 'rgba(255,255,255,0.1)' : 'transparent',
           color: active ? '#6366f1' : 'var(--text-secondary)',
-          border: active ? '1px solid rgba(99,102,241,0.22)' : '1px solid rgba(255,255,255,0.4)',
+          border: hovered || active ? '1px solid rgba(255,255,255,0.22)' : '1px solid transparent',
           padding: 0,
           position: 'relative',
-          transition: 'background-color 0.15s ease, border-color 0.15s ease',
+          boxShadow: active ? 'inset 0 1px 0 rgba(255,255,255,0.18)' : 'none',
+          transition: 'background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease',
         }}
       >
         {children}
@@ -197,7 +198,7 @@ const DesktopDock = ({ onImg2PromptClick }) => {
           style={{
             display: 'flex',
             alignItems: 'flex-end',
-            gap: 6,
+            gap: 4,
             padding: '10px 14px 12px',
             borderRadius: 22,
             backgroundColor: 'rgba(255, 255, 255, 0.62)',
@@ -235,7 +236,7 @@ const DesktopDock = ({ onImg2PromptClick }) => {
             isButton
             mouseX={mouseX}
             active={isImg2PromptActive}
-            label="Image → Prompt"
+            label="Image Generation"
             onClick={onImg2PromptClick}
           >
             <SparklesIcon

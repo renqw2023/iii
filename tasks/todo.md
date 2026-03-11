@@ -426,3 +426,11 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - 保留 `MeshBackground` 组件与整套 mesh 动态背景样式，但将默认状态改为关闭显示。
 - `MeshBackground` 新增 `enabled` 参数，只有显式传入时才会显示背景；当前布局层仍保留挂载，但默认不会渲染出动态背景。
 - 恢复 `theme-variables.css` 中此前被动态背景调整过的 `--page-bg` / `--stage-bg`，让默认白色背景和原有暗色模式视觉都回到之前状态。
+
+## Result (2026-03-11 Desktop Dock Motion Tuning)
+
+- 调整 `client/src/components/UI/DesktopDock.js` 的 Dock hover 动效，降低放大强度并提高阻尼，让跟随感更稳、更顺。
+- 将 Dock 入口 tooltip 从 `Image → Prompt` 改为 `Image Generation`。
+- 将 `client/src/components/UI/Img2PromptPanel.js` 面板标题从 `Generate` 改为 `Image Generation`，保持入口与面板命名一致。
+- 跟进微调：将 `DesktopDock` 的 spring 响应再提快一点，并进一步弱化单个 icon 的背景和边框，让图标更像直接浮在毛玻璃 Dock 上。
+- 继续向 macOS Dock 手感微调：提高 `DesktopDock` 的 hover 放大幅度和影响半径，同时保持 icon 本身仍是轻背景、轻边框，不回到明显独立容器的视觉。

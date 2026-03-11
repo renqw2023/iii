@@ -92,7 +92,8 @@ const GalleryList = () => {
             </Helmet>
 
             <div className="gallery-page">
-                <div style={{ padding: '0.25rem 1rem 0' }}>
+                <div className="gallery-stage">
+                    <div className="gallery-stage-header">
                     <span className="gallery-results-info">
                         {total} prompts
                         {isFetching && !isFetchingNextPage && (
@@ -112,7 +113,7 @@ const GalleryList = () => {
                         <p>No prompts found. Try adjusting your filters.</p>
                     </div>
                 ) : (
-                    <div className="gallery-grid" style={{ padding: '1rem' }}>
+                    <div className="gallery-grid gallery-stage-grid">
                         {prompts.map((prompt) => (
                             <GalleryCard
                                 key={prompt._id}
@@ -135,6 +136,7 @@ const GalleryList = () => {
                         <span className="home-load-more-hint">—</span>
                     </div>
                 )}
+                </div>
             </div>
             <Outlet />
         </>

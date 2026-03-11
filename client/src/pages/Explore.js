@@ -68,7 +68,8 @@ const Explore = () => {
       </Helmet>
 
       <div className="gallery-page">
-        <div style={{ padding: '0.25rem 1rem 0' }}>
+        <div className="gallery-stage">
+          <div className="gallery-stage-header">
           <span className="gallery-results-info">
             {total} styles
             {isFetching && !isFetchingNextPage && (
@@ -88,7 +89,7 @@ const Explore = () => {
             <p>No styles found. Try adjusting your filters.</p>
           </div>
         ) : (
-          <div className="gallery-grid" style={{ padding: '1rem' }}>
+          <div className="gallery-grid gallery-stage-grid">
             {srefs.map((sref) => (
               <SrefCard key={sref._id} sref={sref} />
             ))}
@@ -106,6 +107,7 @@ const Explore = () => {
             <span className="home-load-more-hint">—</span>
           </div>
         )}
+        </div>
       </div>
       <Outlet />
     </>

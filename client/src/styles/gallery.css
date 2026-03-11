@@ -11,6 +11,25 @@
   color: var(--text-primary);
 }
 
+.gallery-stage {
+  width: 100%;
+  background: var(--stage-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid var(--stage-border);
+  box-shadow: var(--stage-shadow);
+  padding: 1.25rem;
+}
+
+.gallery-stage-header {
+  margin-bottom: 0.25rem;
+}
+
+.gallery-stage-grid {
+  padding-top: 0.5rem;
+}
+
 /* --- Sidebar + Main Layout --- */
 .gallery-layout {
   display: flex;
@@ -1266,6 +1285,11 @@
   .gallery-page,
   .seedance-page {
     padding: 0.5rem 0.5rem 3rem;
+  }
+
+  .gallery-stage {
+    padding: 0.875rem;
+    border-radius: 16px;
   }
 
   .detail-page {

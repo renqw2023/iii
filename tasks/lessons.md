@@ -74,3 +74,9 @@
 
 - When a detail modal/page can be opened from more than one surface, carry an explicit `returnTo` route in navigation state instead of hardcoding close behavior to the default list page.
 - Preserve the original list behavior as a fallback, but let homepage-triggered flows return to the homepage on close.
+
+## 2026-03-11 Search UX And Parsing Note
+
+- If a modal search UI only shows an `X` as a clear-input control, empty-state users effectively lose the close affordance; keep a dedicated close action visible or let the backdrop close reliably.
+- When wiring search results, verify the frontend is reading the actual response shape (`posts` vs `srefs`, etc.) before debugging the backend search quality.
+- For user-entered search strings, always escape regex metacharacters before building `RegExp` objects, otherwise random symbols like `?` or `(` can silently break the search flow.

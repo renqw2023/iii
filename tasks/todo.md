@@ -835,3 +835,22 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - Verification:
   - `client`: `npm run build` completed successfully.
   - `server`: direct Mongo aggregate checks confirmed both random gallery and random sref sources return valid `_id` + preview image data.
+
+## 2026-03-11 Search Modal close + real-search fix
+
+- Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.
+- Files changed:
+  - `client/src/components/Search/SearchModal.js`
+  - `server/routes/gallery.js`
+  - `server/routes/sref.js`
+  - `tasks/lessons.md`
+
+## Result
+
+- Added a dedicated close button to the search modal input row and made clicking the backdrop close the modal reliably.
+- Fixed the frontend `sref` result mapping bug: the modal now reads `posts` from the API response instead of incorrectly waiting for a non-existent `srefs` field.
+- Switched gallery search from strict `$text` matching to escaped regex-based keyword matching across title/prompt/description/tags/sourceAuthor, which is much more forgiving for short strings.
+- Escaped user input before creating `RegExp` objects in the sref route, so special characters no longer break search execution.
+- Verification:
+  - `client`: `npm run build` completed successfully after the search changes.
+  - `server`: direct Mongo checks confirmed why the old gallery `$text` search was missing short-keyword matches (`a` had `0` text matches vs `429` regex matches), and the sref dataset does contain many matches for short queries.

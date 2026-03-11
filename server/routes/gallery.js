@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const GalleryPrompt = require('../models/GalleryPrompt');
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // 可选认证中间件 - 未登录也可浏览，登录后可收藏/点赞
 const optionalAuth = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
@@ -54,8 +56,16 @@ router.get('/', optionalAuth, async (req, res) => {
         if (featured === 'true') filter.isFeatured = true;
 
         // 全文搜索
-        if (search) {
-            filter.$text = { $search: search };
+        if (search?.trim()) {
+            const safeSearch = escapeRegex(search.trim());
+            const searchRegex = new RegExp(safeSearch, 'i');
+            filter.$or = [
+                { title: searchRegex },
+                { prompt: searchRegex },
+                { description: searchRegex },
+                { tags: { $in: [searchRegex] } },
+                { sourceAuthor: searchRegex },
+            ];
         }
 
         // 排序
@@ -66,8 +76,6 @@ router.get('/', optionalAuth, async (req, res) => {
             case 'oldest': sortOption = { createdAt: 1 }; break;
             default: sortOption = { createdAt: -1 }; // newest
         }
-        if (search) sortOption = { score: { $meta: 'textScore' }, ...sortOption };
-
         const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
         const skip = (pageNum - 1) * pageSize;
@@ -264,22 +272,31 @@ router.get('/stats', async (req, res) => {
 router.get('/search', optionalAuth, async (req, res) => {
     try {
         const { q, page = 1, limit = 20 } = req.query;
-        if (!q || q.trim().length < 2) {
+        if (!q || !q.trim()) {
             return res.status(400).json({ message: '搜索词至少2个字符' });
         }
 
         const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, parseInt(limit));
         const skip = (pageNum - 1) * pageSize;
+        const safeSearch = escapeRegex(q.trim());
+        const searchRegex = new RegExp(safeSearch, 'i');
 
         const filter = {
-            isActive: true, isPublic: true,
-            $text: { $search: q }
+            isActive: true,
+            isPublic: true,
+            $or: [
+                { title: searchRegex },
+                { prompt: searchRegex },
+                { description: searchRegex },
+                { tags: { $in: [searchRegex] } },
+                { sourceAuthor: searchRegex },
+            ]
         };
 
         const [prompts, total] = await Promise.all([
-            GalleryPrompt.find(filter, { score: { $meta: 'textScore' } })
-                .sort({ score: { $meta: 'textScore' } })
+            GalleryPrompt.find(filter)
+                .sort({ views: -1, createdAt: -1 })
                 .skip(skip)
                 .limit(pageSize)
                 .select('-likes -favorites -__v')

@@ -58,7 +58,7 @@ const SearchModal = ({ isOpen, onClose }) => {
       searchSref(debouncedQuery, 5).catch(() => null),
       searchGallery(debouncedQuery, 5).catch(() => null),
     ]).then(([srefRes, galleryRes]) => {
-      setSrefResults(srefRes?.data?.srefs || srefRes?.data?.data || []);
+      setSrefResults(srefRes?.data?.posts || srefRes?.data?.srefs || srefRes?.data?.data || []);
       setGalleryResults(galleryRes?.data?.prompts || galleryRes?.data?.data || []);
     }).finally(() => setIsLoading(false));
   }, [debouncedQuery]);
@@ -76,7 +76,6 @@ const SearchModal = ({ isOpen, onClose }) => {
       {isOpen && (
         <div
           className="fixed inset-0 z-[998] flex items-start justify-center pt-20 px-4"
-          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
           <motion.div
             className="absolute inset-0"
@@ -84,6 +83,7 @@ const SearchModal = ({ isOpen, onClose }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={onClose}
           />
 
           <motion.div
@@ -111,6 +111,9 @@ const SearchModal = ({ isOpen, onClose }) => {
                   <X size={16} />
                 </button>
               )}
+              <button onClick={onClose} aria-label="Close search" style={{ color: 'var(--text-tertiary)' }}>
+                <X size={16} />
+              </button>
               {isLoading && (
                 <div className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--accent-primary)' }} />
               )}
@@ -161,13 +164,13 @@ const SearchModal = ({ isOpen, onClose }) => {
                           onClick={() => goTo(`/explore/${item._id}`)}
                           className="w-full flex items-center gap-3 px-2 py-2 rounded-lg text-left transition-colors hover:bg-white/5"
                         >
-                          {item.images?.[0] ? (
-                            <img src={item.images[0]} alt="" className="w-8 h-8 rounded-md object-cover flex-shrink-0" />
+                          {item.previewImage ? (
+                            <img src={item.previewImage} alt="" className="w-8 h-8 rounded-md object-cover flex-shrink-0" />
                           ) : (
                             <div className="w-8 h-8 rounded-md flex-shrink-0" style={{ backgroundColor: 'var(--bg-tertiary)' }} />
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>{item.sref || item.code || item._id}</p>
+                            <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>{item.srefCode || item.sref || item.code || item._id}</p>
                             {item.tags?.length > 0 && (
                               <p className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>{item.tags.slice(0, 3).join(' · ')}</p>
                             )}

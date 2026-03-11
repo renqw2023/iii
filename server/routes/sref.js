@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const router = express.Router();
 const SrefStyle = require('../models/SrefStyle');
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const optionalAuth = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (token) {
@@ -38,8 +40,8 @@ router.get('/', optionalAuth, async (req, res) => {
         if (tags && tags !== 'all') {
             filter.tags = { $in: tags.split(',').map(t => t.trim()) };
         }
-        if (search) {
-            const re = new RegExp(search.trim(), 'i');
+        if (search?.trim()) {
+            const re = new RegExp(escapeRegex(search.trim()), 'i');
             filter.$or = [{ title: re }, { srefCode: re }, { tags: re }];
         }
 

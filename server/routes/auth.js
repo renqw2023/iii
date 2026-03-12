@@ -167,7 +167,7 @@ router.post('/verify-email', [
     user.clearEmailVerificationCode();
 
     // 注册奖励积分
-    const REGISTER_BONUS = 80;
+    const REGISTER_BONUS = 40;
     const INVITE_BONUS = 200;
     user.credits = (user.credits || 0) + REGISTER_BONUS;
     user.freeCredits = 40;  // 首日免费额度
@@ -661,7 +661,7 @@ router.post('/google', [
           invitedBy: inviter ? inviter._id : null,
           emailVerified: true,
           isActive: true,
-          credits: 80,  // 注册欢迎奖励
+          credits: 40,  // 注册欢迎奖励
           freeCredits: 40,  // 首日免费额度
         });
         await user.save();
@@ -670,7 +670,7 @@ router.post('/google', [
         await CreditTransaction.create({
           userId: user._id,
           type: 'earn',
-          amount: 80,
+          amount: 40,
           reason: 'register_bonus',
           note: 'Google sign-up bonus',
           walletType: 'paid',

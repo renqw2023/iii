@@ -836,6 +836,13 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
   - `client`: `npm run build` completed successfully.
   - `server`: direct Mongo aggregate checks confirmed both random gallery and random sref sources return valid `_id` + preview image data.
 
+## Result (2026-03-12 Credits System Alignment)
+
+- Clarified the product rule that free credits are a fixed daily allowance that resets to 40 and does not accumulate.
+- Updated the main credits surfaces to present total available credits while still separating free daily and permanent balances.
+- Standardized referral links on `?ref=` and kept registration compatible with the older `?invite=` parameter.
+- Extended the credits ledger schema with wallet-aware balance fields so the UI can explain free vs permanent credit movements more clearly.
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

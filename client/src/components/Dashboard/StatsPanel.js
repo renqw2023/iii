@@ -34,12 +34,14 @@ const StatsPanel = ({ user }) => {
         queryClient.invalidateQueries(['credits-balance']);
       },
       onError: (err) => {
-        toast.error(err.response?.data?.message || '签到失败');
+        toast.error(err.response?.data?.message || 'Check-in failed');
       },
     }
   );
 
-  const balance = balanceData?.credits ?? '—';
+  const freeCredits = balanceData?.freeCredits ?? 0;
+  const paidCredits = balanceData?.credits ?? 0;
+  const balance = balanceData?.totalCredits ?? (freeCredits + paidCredits);
   const checkedInToday = balanceData?.checkedInToday ?? false;
   const savedCount = favsData ?? '—';
   const historyCount = getHistory().length;
@@ -49,7 +51,6 @@ const StatsPanel = ({ user }) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* Credits card — spans 2 cols on sm+ */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -66,6 +67,9 @@ const StatsPanel = ({ user }) => {
             <Coins size={22} />
             <span className="text-3xl font-bold">{balance}</span>
           </div>
+          <p className="text-xs opacity-75 mt-1 mb-0">
+            {freeCredits} free today + {paidCredits} permanent
+          </p>
         </div>
         <button
           onClick={() => checkinMutation.mutate()}
@@ -85,7 +89,6 @@ const StatsPanel = ({ user }) => {
         </button>
       </motion.div>
 
-      {/* Saved */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -105,7 +108,6 @@ const StatsPanel = ({ user }) => {
         </div>
       </motion.div>
 
-      {/* History */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,7 +127,6 @@ const StatsPanel = ({ user }) => {
         </div>
       </motion.div>
 
-      {/* Member Since — hidden on sm (only 4 cols on lg) */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

@@ -17,7 +17,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { creditsAPI } from '../../services/creditsApi';
 
 const FREE_FEATURES = [
-  '40 refresh credits every day',
+  '40 free credits reset to 40 each day',
+  'Unused free credits do not roll over',
   'Up to 20 images (image 1.5)',
   '2K resolution',
   '1 concurrent task',
@@ -26,7 +27,8 @@ const FREE_FEATURES = [
 ];
 
 const PAID_FEATURES = [
-  '40 refresh credits every day',
+  '40 free credits reset to 40 each day',
+  'Unused free credits do not roll over',
   'Up to 4K resolution',
   '4 concurrent tasks',
   'Credits never expire',
@@ -42,8 +44,8 @@ const PLANS = [
     price: '0',
     currency: '$',
     priceSub: 'No credit card required',
-    creditsLabel: 'Daily Credits',
-    creditsSub: 'Refreshes every day',
+    creditsLabel: '40 Free Credits',
+    creditsSub: 'Reset to 40 daily, not cumulative',
     cta: { label: 'Current Plan', disabled: true, style: 'free' },
     noAutoRenew: false,
     features: FREE_FEATURES,
@@ -198,7 +200,7 @@ const CreditsModal = ({ open, onClose }) => {
                 Pay Once. Keep Forever.
               </h2>
               <p style={{ fontSize: 15, color: '#6b7280', marginTop: 8, marginBottom: 0 }}>
-                Unlock 4K generation, batch mode, and create stunning images on your own timeline
+                Get a fixed free daily allowance plus permanent credits that never expire
               </p>
             </div>
           </div>

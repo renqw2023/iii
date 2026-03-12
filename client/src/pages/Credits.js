@@ -7,15 +7,21 @@ import { creditsAPI } from '../services/creditsApi';
 import { useAuth } from '../contexts/AuthContext';
 
 const REASON_LABELS = {
-  daily_checkin:  '每日签到',
-  register_bonus: '注册奖励',
-  invite_reward:  '邀请奖励',
-  invite_bonus:   '邀请好友奖励',
-  admin_grant:    '管理员赠送',
-  admin_deduct:   '管理员扣除',
-  generate_image: '生成图片',
-  img2prompt:     '图像分析',
-  purchase:       '积分购买',
+  daily_checkin: 'Daily check-in',
+  register_bonus: 'Sign-up bonus',
+  invite_reward: 'Invitee reward',
+  invite_bonus: 'Referral reward',
+  admin_grant: 'Admin grant',
+  admin_deduct: 'Admin deduction',
+  generate_image: 'Image generation',
+  img2prompt: 'Image analysis',
+  purchase: 'Credits purchase',
+};
+
+const WALLET_LABELS = {
+  free: 'Free daily',
+  paid: 'Permanent',
+  mixed: 'Mixed',
 };
 
 const getAuthHeaders = () => ({
@@ -44,7 +50,6 @@ const Credits = () => {
     { staleTime: 5 * 60 * 1000 }
   );
 
-  // Handle Stripe redirect result
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
@@ -56,7 +61,7 @@ const Credits = () => {
       toast.error('Payment cancelled.');
       window.history.replaceState({}, '', '/credits');
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [queryClient]);
 
   const handlePurchase = async (planId) => {
     try {
@@ -76,25 +81,24 @@ const Credits = () => {
         queryClient.invalidateQueries(['credits-history']);
       },
       onError: (err) => {
-        toast.error(err.response?.data?.message || '签到失败');
+        toast.error(err.response?.data?.message || 'Check-in failed');
       }
     }
   );
 
-  const freeCredits  = balanceData?.freeCredits  ?? 0;
-  const paidCredits  = balanceData?.credits       ?? 0;
-  const dailyFree    = balanceData?.dailyFreeAmount ?? 40;
-  const totalBalance = freeCredits + paidCredits;
+  const freeCredits = balanceData?.freeCredits ?? 0;
+  const paidCredits = balanceData?.credits ?? 0;
+  const dailyFree = balanceData?.dailyFreeAmount ?? 40;
+  const totalBalance = balanceData?.totalCredits ?? (freeCredits + paidCredits);
   const checkedInToday = balanceData?.checkedInToday ?? false;
   const transactions = historyData?.transactions ?? [];
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
-        我的积分
+        My Credits
       </h1>
 
-      {/* 余额卡片 */}
       <div
         className="rounded-2xl p-6 mb-6 flex items-center justify-between"
         style={{
@@ -103,21 +107,23 @@ const Credits = () => {
         }}
       >
         <div>
-          <p className="text-sm opacity-80 mb-1">当前积分</p>
+          <p className="text-sm opacity-80 mb-1">Total available credits</p>
           <div className="flex items-center gap-2 mb-2">
             <Coins size={28} />
             <span className="text-4xl font-bold">{totalBalance}</span>
           </div>
-          {/* 双积分明细 */}
           <div className="flex items-center gap-3 text-xs opacity-80">
             <span>
-              <span style={{ color: '#fde68a' }}>↺</span> 每日免费 {freeCredits}/{dailyFree}
+              <span style={{ color: '#fde68a' }}>→</span> Free daily {freeCredits}/{dailyFree}
             </span>
             <span style={{ opacity: 0.5 }}>·</span>
             <span>
-              <span style={{ color: '#fde68a' }}>✦</span> 永久积分 {paidCredits}
+              <span style={{ color: '#fde68a' }}>+</span> Permanent {paidCredits}
             </span>
           </div>
+          <p className="text-xs opacity-80 mt-2 mb-0">
+            Free credits reset to {dailyFree} each day and do not accumulate.
+          </p>
         </div>
 
         <button
@@ -133,23 +139,24 @@ const Credits = () => {
           {checkedInToday ? (
             <>
               <CheckCircle size={16} />
-              今日已签到
+              Checked in today
             </>
           ) : (
             <>
               <Coins size={16} />
-              {checkinMutation.isLoading ? '签到中...' : '每日签到 +10'}
+              {checkinMutation.isLoading ? 'Checking...' : 'Daily check-in +10'}
             </>
           )}
         </button>
       </div>
 
-      {/* 购买套餐 */}
       {plansData && plansData.length > 0 && (
         <div className="mb-6">
           <div className="mb-3">
             <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Upgrade your credits</h2>
-            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>One-time payment · Credits never expire</p>
+            <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+              One-time payment · Permanent credits never expire
+            </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {plansData.map(plan => (
@@ -185,7 +192,6 @@ const Credits = () => {
         </div>
       )}
 
-      {/* 我的邀请码 */}
       {user?.inviteCode && (
         <div
           className="rounded-xl p-4 mb-6 flex items-center justify-between"
@@ -199,15 +205,17 @@ const Credits = () => {
               <Gift size={16} style={{ color: '#6366f1' }} />
             </div>
             <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>我的邀请码</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>邀请好友注册，双方各得 200 积分</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>My referral code</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                Invite friends to register and both sides receive 200 permanent credits
+              </p>
             </div>
           </div>
           <button
             onClick={() => {
               const inviteUrl = `${window.location.origin}/register?ref=${user.inviteCode}`;
               navigator.clipboard.writeText(inviteUrl);
-              toast.success('邀请链接已复制！');
+              toast.success('Referral link copied.');
             }}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold transition-all"
             style={{
@@ -223,15 +231,14 @@ const Credits = () => {
         </div>
       )}
 
-      {/* 积分流水 */}
       <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-        积分记录
+        Credit History
       </h2>
 
       {transactions.length === 0 ? (
         <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
           <Clock size={40} className="mx-auto mb-3 opacity-30" />
-          <p>暂无积分记录</p>
+          <p>No credit history yet</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -265,6 +272,11 @@ const Credits = () => {
                       {tx.note}
                     </p>
                   )}
+                  {tx.walletType && (
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                      {WALLET_LABELS[tx.walletType] || tx.walletType}
+                    </p>
+                  )}
                   <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     {new Date(tx.createdAt).toLocaleString('zh-CN')}
                   </p>
@@ -278,7 +290,7 @@ const Credits = () => {
                   {tx.type === 'earn' ? '+' : '-'}{tx.amount}
                 </span>
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  余额 {tx.balanceAfter}
+                  Balance {tx.totalBalanceAfter ?? tx.balanceAfter}
                 </p>
               </div>
             </div>

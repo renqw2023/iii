@@ -35,7 +35,7 @@ const DashboardHeader = ({ user }) => {
   }
 
   const handleCopyInviteLink = () => {
-    const link = `${window.location.origin}/register?invite=${user.inviteCode}`;
+    const link = `${window.location.origin}/register?ref=${user.inviteCode}`;
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
       toast.success('邀请链接已复制');

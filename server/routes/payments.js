@@ -8,12 +8,10 @@ const creditPlans = require('../config/creditPlans');
 
 const router = express.Router();
 
-// GET /api/payments/plans — 公开，返回套餐列表
 router.get('/plans', (req, res) => {
   res.json({ plans: creditPlans });
 });
 
-// POST /api/payments/create-checkout — 需登录，创建 Stripe Checkout Session
 router.post('/create-checkout', auth, async (req, res) => {
   const { planId } = req.body;
   const plan = creditPlans.find(p => p.id === planId);
@@ -38,7 +36,7 @@ router.post('/create-checkout', auth, async (req, res) => {
         {
           price_data: {
             currency: config.services.stripe.currency,
-            product_data: { name: `${plan.name} — ${plan.credits.toLocaleString()} Credits` },
+            product_data: { name: `${plan.name} - ${plan.credits.toLocaleString()} Credits` },
             unit_amount: Math.round(plan.price * 100),
           },
           quantity: 1,
@@ -60,7 +58,6 @@ router.post('/create-checkout', auth, async (req, res) => {
   }
 });
 
-// POST /api/payments/webhook — Stripe webhook，无 auth，需 raw body
 router.post('/webhook', async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = config.services.stripe.webhookSecret;
@@ -102,7 +99,11 @@ router.post('/webhook', async (req, res) => {
           amount: creditsNum,
           reason: 'purchase',
           note: `${creditPlans.find(p => p.id === planId)?.name || planId} pack`,
+          walletType: 'paid',
           balanceAfter: updatedUser.credits,
+          freeBalanceAfter: updatedUser.freeCredits ?? null,
+          paidBalanceAfter: updatedUser.credits,
+          totalBalanceAfter: (updatedUser.freeCredits ?? 0) + updatedUser.credits,
         });
       }
     } catch (err) {

@@ -31,7 +31,7 @@ const Register = () => {
   const [searchParams] = useSearchParams();
 
   // 支持从 URL ?ref=CODE 自动填充邀请码
-  const [inviteCode, setInviteCode] = useState(searchParams.get('ref') || '');
+  const [inviteCode, setInviteCode] = useState(searchParams.get('ref') || searchParams.get('invite') || '');
 
   useEffect(() => {
     if (isAuthenticated) {

@@ -29,7 +29,7 @@ const CreditsDisplay = () => {
         queryClient.invalidateQueries(['credits-balance']);
       },
       onError: (err) => {
-        toast.error(err.response?.data?.message || '签到失败');
+        toast.error(err.response?.data?.message || 'Check-in failed');
       }
     }
   );
@@ -39,8 +39,8 @@ const CreditsDisplay = () => {
   const freeCredits = data.freeCredits ?? DAILY_FREE;
   const paidCredits = data.credits ?? 0;
   const dailyFree = data.dailyFreeAmount ?? DAILY_FREE;
+  const totalCredits = data.totalCredits ?? (freeCredits + paidCredits);
 
-  // 进度条：freeCredits 已用部分（蓝色）+ 剩余（黄色）
   const freeUsed = dailyFree - freeCredits;
   const freeUsedPct = Math.round((freeUsed / dailyFree) * 100);
   const freeLeftPct = Math.round((freeCredits / dailyFree) * 100);
@@ -52,7 +52,6 @@ const CreditsDisplay = () => {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* 每日签到按钮 */}
         {!data.checkedInToday && (
           <button
             onClick={() => checkinMutation.mutate()}
@@ -63,27 +62,25 @@ const CreditsDisplay = () => {
               color: '#fff',
               opacity: checkinMutation.isLoading ? 0.7 : 1,
             }}
-            title="每日签到领积分"
+            title="Daily check-in"
           >
-            {checkinMutation.isLoading ? '...' : '签到'}
+            {checkinMutation.isLoading ? '...' : 'Check-in'}
           </button>
         )}
         {data.checkedInToday && (
-          <CheckCircle size={14} style={{ color: '#10b981' }} title="今日已签到" />
+          <CheckCircle size={14} style={{ color: '#10b981' }} title="Checked in today" />
         )}
 
-        {/* 积分显示（hover 触发区） */}
         <Link
           to="/credits"
           className="flex items-center gap-1 text-sm font-medium transition-colors"
           style={{ color: 'var(--text-secondary)' }}
-          title="查看积分"
+          title="View credits"
         >
           <Coins size={15} style={{ color: '#f59e0b' }} />
-          <span>{freeCredits + paidCredits}</span>
+          <span>{totalCredits}</span>
         </Link>
 
-        {/* Hover 积分明细卡片 */}
         {hovered && (
           <div
             style={{
@@ -100,9 +97,8 @@ const CreditsDisplay = () => {
               fontSize: 13,
             }}
           >
-            {/* 顶行：Free 标题 + Add Credits 按钮 */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontWeight: 600, color: '#111' }}>Free</span>
+              <span style={{ fontWeight: 600, color: '#111' }}>Credits</span>
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -128,25 +124,22 @@ const CreditsDisplay = () => {
               </button>
             </div>
 
-            {/* Credits 行 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#374151' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ color: '#f59e0b', fontSize: 14 }}>✦</span>
-                Credits
+                <span style={{ color: '#f59e0b', fontSize: 14 }}>+</span>
+                Permanent Credits
               </span>
               <strong style={{ color: '#111' }}>{paidCredits}</strong>
             </div>
 
-            {/* Free Daily Credits 行 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#374151' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ fontSize: 14 }}>↺</span>
+                <span style={{ fontSize: 14 }}>→</span>
                 Free Daily Credits
               </span>
               <strong style={{ color: '#111' }}>{freeCredits}/{dailyFree}</strong>
             </div>
 
-            {/* 进度条 */}
             <div style={{
               height: 6,
               borderRadius: 99,
@@ -154,7 +147,6 @@ const CreditsDisplay = () => {
               overflow: 'hidden',
               marginBottom: 8,
             }}>
-              {/* 已用（蓝色） */}
               {freeUsedPct > 0 && (
                 <div style={{
                   width: `${freeUsedPct}%`,
@@ -164,7 +156,6 @@ const CreditsDisplay = () => {
                   borderRadius: '99px 0 0 99px',
                 }} />
               )}
-              {/* 剩余（黄色） */}
               {freeLeftPct > 0 && (
                 <div style={{
                   width: `${freeLeftPct}%`,
@@ -176,10 +167,9 @@ const CreditsDisplay = () => {
               )}
             </div>
 
-            {/* 提示文字 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#9ca3af', fontSize: 11 }}>
-              <span style={{ fontSize: 9, color: '#fbbf24' }}>⬤</span>
-              Daily credits used first
+              <span style={{ fontSize: 9, color: '#fbbf24' }}>•</span>
+              Resets to {dailyFree} daily and is used first
             </div>
           </div>
         )}

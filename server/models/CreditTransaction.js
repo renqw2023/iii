@@ -18,15 +18,15 @@ const creditTransactionSchema = new mongoose.Schema({
   reason: {
     type: String,
     enum: [
-      'daily_checkin',    // 每日签到
-      'register_bonus',   // 注册奖励
-      'invite_reward',    // 邀请奖励（被邀请人）
-      'invite_bonus',     // 邀请奖励（邀请人）
-      'admin_grant',      // 管理员赠送
-      'admin_deduct',     // 管理员扣除
-      'generate_image',   // 生成图片消耗
-      'img2prompt',       // 图生文消耗
-      'purchase',         // 充值购买
+      'daily_checkin',
+      'register_bonus',
+      'invite_reward',
+      'invite_bonus',
+      'admin_grant',
+      'admin_deduct',
+      'generate_image',
+      'img2prompt',
+      'purchase',
     ],
     required: true
   },
@@ -34,9 +34,26 @@ const creditTransactionSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  walletType: {
+    type: String,
+    enum: ['free', 'paid', 'mixed'],
+    default: null
+  },
   balanceAfter: {
     type: Number,
     required: true
+  },
+  freeBalanceAfter: {
+    type: Number,
+    default: null
+  },
+  paidBalanceAfter: {
+    type: Number,
+    default: null
+  },
+  totalBalanceAfter: {
+    type: Number,
+    default: null
   },
   createdAt: {
     type: Date,

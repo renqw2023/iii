@@ -907,6 +907,16 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
   - `node --check client/src/components/Layout/Sidebar.js`
   - `npm run build` in `client/`
 
+## Result (2026-03-12 Notification Access Dev Log)
+
+- Added a detailed development log for the notification entry and red-dot follow-up:
+  - `docs/2026/20260312_notification_access_and_red_dot_devlog.md`
+- The log records:
+  - translation key mismatch root cause
+  - avatar red-dot behavior
+  - dashboard flyout notification entry
+  - verification scope and remaining MCP limitation
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

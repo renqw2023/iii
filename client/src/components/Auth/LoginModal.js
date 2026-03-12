@@ -63,7 +63,10 @@ const LoginModal = ({ isOpen, onClose }) => {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
-    const result = await loginWithGoogle(credentialResponse.credential);
+    const inviteCode = new URLSearchParams(window.location.search).get('ref')
+      || new URLSearchParams(window.location.search).get('invite')
+      || '';
+    const result = await loginWithGoogle(credentialResponse.credential, inviteCode);
     if (result.success) {
       onClose();
     } else {

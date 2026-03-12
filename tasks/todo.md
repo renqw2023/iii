@@ -843,6 +843,12 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - Standardized referral links on `?ref=` and kept registration compatible with the older `?invite=` parameter.
 - Extended the credits ledger schema with wallet-aware balance fields so the UI can explain free vs permanent credit movements more clearly.
 
+## Result (2026-03-12 Google Referral Credits Follow-up)
+
+- Extended Google first-login so a brand-new Google user can inherit the active referral code and receive the same invite reward path as email registration.
+- Added register-bonus and invite-reward ledger entries for Google-created users so credits history is consistent across sign-up methods.
+- Updated Google login entry points to pass referral context from the current URL, and added a Google sign-up path on the register page for referral traffic.
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

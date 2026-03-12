@@ -229,10 +229,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Google OAuth 登录
-  const loginWithGoogle = async (credential) => {
+  const loginWithGoogle = async (credential, inviteCode = '') => {
     dispatch({ type: 'LOGIN_START' });
     try {
-      const response = await axios.post('/api/auth/google', { credential });
+      const payload = inviteCode ? { credential, inviteCode } : { credential };
+      const response = await axios.post('/api/auth/google', payload);
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });

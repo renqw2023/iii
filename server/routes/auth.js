@@ -590,6 +590,7 @@ router.post('/google', [
     }
 
     const { credential } = req.body;
+    const inviteCode = req.body.inviteCode ? String(req.body.inviteCode).trim().toUpperCase() : '';
     const clientId = config.services.google.clientId;
 
     if (!clientId) {
@@ -617,7 +618,13 @@ router.post('/google', [
     }
 
     // 查找已有用户
+    let inviter = null;
+    if (inviteCode) {
+      inviter = await User.findOne({ inviteCode });
+    }
+
     let user = await User.findOne({ googleId });
+    let isNewGoogleUser = false;
 
     if (!user) {
       // 尝试用邮箱匹配（可能用密码注册过）
@@ -651,12 +658,63 @@ router.post('/google', [
           googleId,
           authProvider: 'google',
           avatar: picture || '',
+          invitedBy: inviter ? inviter._id : null,
           emailVerified: true,
           isActive: true,
           credits: 80,  // 注册欢迎奖励
           freeCredits: 40,  // 首日免费额度
         });
         await user.save();
+        isNewGoogleUser = true;
+
+        await CreditTransaction.create({
+          userId: user._id,
+          type: 'earn',
+          amount: 80,
+          reason: 'register_bonus',
+          note: 'Google sign-up bonus',
+          walletType: 'paid',
+          balanceAfter: user.credits,
+          freeBalanceAfter: user.freeCredits,
+          paidBalanceAfter: user.credits,
+          totalBalanceAfter: user.freeCredits + user.credits,
+        });
+
+        if (inviter && inviter.isActive && String(inviter._id) !== String(user._id)) {
+          const INVITE_BONUS = 200;
+          inviter.credits = (inviter.credits || 0) + INVITE_BONUS;
+          await inviter.save();
+          await User.findByIdAndUpdate(inviter._id, { $inc: { inviteUsedCount: 1 } });
+
+          await CreditTransaction.create({
+            userId: inviter._id,
+            type: 'earn',
+            amount: INVITE_BONUS,
+            reason: 'invite_bonus',
+            note: `Invited Google user ${user.username}`,
+            walletType: 'paid',
+            balanceAfter: inviter.credits,
+            freeBalanceAfter: inviter.freeCredits ?? null,
+            paidBalanceAfter: inviter.credits,
+            totalBalanceAfter: (inviter.freeCredits ?? 0) + inviter.credits,
+          });
+
+          user.credits += INVITE_BONUS;
+          await User.findByIdAndUpdate(user._id, { credits: user.credits });
+
+          await CreditTransaction.create({
+            userId: user._id,
+            type: 'earn',
+            amount: INVITE_BONUS,
+            reason: 'invite_reward',
+            note: 'Joined with referral code via Google',
+            walletType: 'paid',
+            balanceAfter: user.credits,
+            freeBalanceAfter: user.freeCredits,
+            paidBalanceAfter: user.credits,
+            totalBalanceAfter: user.freeCredits + user.credits,
+          });
+        }
 
         console.log(`Google 新用户注册: ${email}`);
       }

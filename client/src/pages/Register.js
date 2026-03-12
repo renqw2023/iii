@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { GoogleLogin } from '@react-oauth/google';
 import { Eye, EyeOff, Mail, Lock, User, Sparkles, Check, X, Loader2, Gift } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,7 +27,7 @@ const Register = () => {
   });
   const [debounceTimers, setDebounceTimers] = useState({});
 
-  const { register, loading, isAuthenticated } = useAuth();
+  const { register, loginWithGoogle, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -320,6 +321,13 @@ const Register = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const result = await loginWithGoogle(credentialResponse.credential, inviteCode);
+    if (result.success) {
+      navigate('/', { replace: true });
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -349,6 +357,27 @@ const Register = () => {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="card p-8"
         >
+          <div className="flex flex-col items-center mb-6">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {}}
+              theme="outline"
+              size="large"
+              text="signup_with"
+              locale="zh-CN"
+              width="280"
+            />
+            <p className="mt-3 text-xs text-slate-500 text-center">
+              Google 首次注册也会继承当前邀请码奖励
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs text-slate-400">或使用邮箱注册</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-slate-700 mb-2">

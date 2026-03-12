@@ -895,6 +895,18 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
   - `node --check client/src/components/Layout/Sidebar.js`
   - `npm run build` in `client/`
 
+## Result (2026-03-12 Notification Entry And Translation Follow-up)
+
+- Fixed the bell dropdown text so it no longer falls back to raw i18n keys like `notifications.markAllRead` or `notifications.viewAll`.
+- Updated `client/src/components/UI/NotificationDropdown.js` to use the correct `notifications.actions.*` and `notifications.empty.*` translation paths with readable fallbacks.
+- Added unread red-dot indicators to the sidebar avatar button and inside the avatar dropdown.
+- Reworked the avatar dropdown in `client/src/components/Layout/Sidebar.js` so `Dashboard` is now a secondary menu entry with a right-arrow flyout.
+- Added a dedicated `Notifications` entry inside that dashboard flyout so notifications remain reachable on non-home surfaces where the top-right bell is not visible.
+- Verification completed with:
+  - `node --check client/src/components/UI/NotificationDropdown.js`
+  - `node --check client/src/components/Layout/Sidebar.js`
+  - `npm run build` in `client/`
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

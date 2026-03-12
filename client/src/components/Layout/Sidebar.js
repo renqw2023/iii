@@ -14,11 +14,12 @@ import { useTranslation } from 'react-i18next';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
   LayoutDashboard, Settings, LogOut, Languages, BookOpenText, Headphones,
-  Mail, Copy, MessageCircle, ExternalLink,
+  Mail, Copy, MessageCircle, ExternalLink, Bell,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSidebar } from '../../contexts/SidebarContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { getUserAvatar } from '../../utils/avatarUtils';
 import { creditsAPI } from '../../services/creditsApi';
 import DefaultPanel from '../Sidebar/DefaultPanel';
@@ -164,16 +165,19 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
   const location = useLocation();
 
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [dashboardMenuOpen, setDashboardMenuOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [contactMenuOpen, setContactMenuOpen] = useState(false);
   const [copiedContact, setCopiedContact] = useState('');
   const dropdownRef = useRef(null);
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     if (!avatarOpen) return;
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setAvatarOpen(false);
+        setDashboardMenuOpen(false);
         setLanguageMenuOpen(false);
         setContactMenuOpen(false);
       }
@@ -334,12 +338,13 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => {
-                  setAvatarOpen((open) => {
-                    const nextOpen = !open;
-                    if (!nextOpen) {
-                      setLanguageMenuOpen(false);
-                      setContactMenuOpen(false);
-                    }
+                      setAvatarOpen((open) => {
+                        const nextOpen = !open;
+                        if (!nextOpen) {
+                          setDashboardMenuOpen(false);
+                          setLanguageMenuOpen(false);
+                          setContactMenuOpen(false);
+                        }
                     return nextOpen;
                   });
                 }}
@@ -365,6 +370,20 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     {(user.username || 'U')[0].toUpperCase()}
                   </span>
                 </div>
+                {unreadCount > 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: '#ef4444',
+                      boxShadow: '0 0 0 2px #fff',
+                    }}
+                  />
+                )}
               </button>
 
               {/* Dropdown — exact MeiGen values */}
@@ -405,8 +424,94 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                   <div style={{ height: 1, backgroundColor: '#e5e7eb', margin: '4px -8px' }} />
 
                   {/* Menu items — MeiGen: gap-3 rounded-lg px-3 py-1.5 text-[13px] */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContactMenuOpen(false);
+                        setLanguageMenuOpen(false);
+                        setDashboardMenuOpen((open) => !open);
+                      }}
+                      className="flex items-center w-full transition-colors duration-100"
+                      style={{ gap: 12, padding: '6px 12px', fontSize: 13, color: '#1B1B1B',
+                               borderRadius: 10, background: dashboardMenuOpen ? 'rgba(0,0,0,0.05)' : 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = dashboardMenuOpen ? 'rgba(0,0,0,0.05)' : 'transparent'; }}
+                      aria-haspopup="menu"
+                      aria-expanded={dashboardMenuOpen}
+                    >
+                      <LayoutDashboard size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                      <span style={{ flex: 1 }}>Dashboard</span>
+                      {unreadCount > 0 && (
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: '#ef4444',
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                      <ChevronRight size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                    </button>
+
+                    {dashboardMenuOpen && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: 'calc(100% + 8px)',
+                          top: -8,
+                          width: 204,
+                          borderRadius: 16,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e5e7eb',
+                          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -4px rgba(0,0,0,0.10)',
+                          padding: 8,
+                          zIndex: 210,
+                        }}
+                        role="menu"
+                        aria-label="Dashboard menu"
+                      >
+                        {[
+                          { icon: LayoutDashboard, label: 'Overview', to: '/dashboard', showDot: false },
+                          { icon: Bell, label: 'Notifications', to: '/notifications', showDot: unreadCount > 0 },
+                        ].map(({ icon: Icon, label, to, showDot }) => (
+                          <Link
+                            key={to}
+                            to={to}
+                            onClick={() => {
+                              setDashboardMenuOpen(false);
+                              setLanguageMenuOpen(false);
+                              setContactMenuOpen(false);
+                              setAvatarOpen(false);
+                            }}
+                            className="flex items-center no-underline transition-colors duration-100"
+                            style={{ gap: 12, padding: '8px 12px', fontSize: 13, color: '#1B1B1B',
+                                     borderRadius: 10, display: 'flex', textDecoration: 'none' }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                          >
+                            <Icon size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
+                            <span style={{ flex: 1 }}>{label}</span>
+                            {showDot && (
+                              <span
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  backgroundColor: '#ef4444',
+                                  flexShrink: 0,
+                                }}
+                              />
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   {[
-                    { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
                     { icon: Settings,        label: 'Settings',  to: '/settings' },
                     { icon: Clock,           label: 'History',   to: '/history' },
                     { icon: Heart,           label: 'Favorites', to: '/favorites' },
@@ -415,6 +520,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     <Link
                       key={to} to={to}
                       onClick={() => {
+                        setDashboardMenuOpen(false);
                         setLanguageMenuOpen(false);
                         setContactMenuOpen(false);
                         setAvatarOpen(false);
@@ -434,6 +540,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     <button
                       type="button"
                       onClick={() => {
+                        setDashboardMenuOpen(false);
                         setLanguageMenuOpen(false);
                         setContactMenuOpen((open) => !open);
                       }}
@@ -514,10 +621,11 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                                   display: 'flex',
                                   alignItems: 'center',
                                 }}
-                                onClick={() => {
-                                  setContactMenuOpen(false);
-                                  setAvatarOpen(false);
-                                }}
+                        onClick={() => {
+                          setDashboardMenuOpen(false);
+                          setContactMenuOpen(false);
+                          setAvatarOpen(false);
+                        }}
                               >
                                 <ExternalLink size={17} />
                               </a>
@@ -532,6 +640,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     <button
                       type="button"
                       onClick={() => {
+                        setDashboardMenuOpen(false);
                         setContactMenuOpen(false);
                         setLanguageMenuOpen((open) => !open);
                       }}
@@ -603,6 +712,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                   {/* Sign out */}
                   <button
                     onClick={() => {
+                      setDashboardMenuOpen(false);
                       setLanguageMenuOpen(false);
                       setContactMenuOpen(false);
                       setAvatarOpen(false);

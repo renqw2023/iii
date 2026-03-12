@@ -92,3 +92,9 @@
 - When the product goal is referral quality instead of raw sign-up count, do not pay inviter rewards at registration time.
 - Bind the referral unlock to a real server-verified activation event such as the first successful generation, and keep a persisted one-time flag to prevent duplicate grants.
 - Update front-end copy at the same time as the backend rule, otherwise users will trust outdated reward wording and report false bugs.
+
+## 2026-03-12 Notification Surface Consistency Note
+
+- If a feature is only reachable from the homepage header, verify whether internal app surfaces still expose a usable path to the same destination.
+- When wiring i18n into compact dropdowns, verify the exact key shape (`notifications.actions.markAllRead` vs `notifications.markAllRead`) or the UI will leak raw translation keys to users.
+- For account menus with important but low-frequency destinations like notifications, adding a red-dot summary signal in the avatar surface is often more reliable than depending on a top-nav bell alone.

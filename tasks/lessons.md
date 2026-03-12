@@ -80,3 +80,9 @@
 - If a modal search UI only shows an `X` as a clear-input control, empty-state users effectively lose the close affordance; keep a dedicated close action visible or let the backdrop close reliably.
 - When wiring search results, verify the frontend is reading the actual response shape (`posts` vs `srefs`, etc.) before debugging the backend search quality.
 - For user-entered search strings, always escape regex metacharacters before building `RegExp` objects, otherwise random symbols like `?` or `(` can silently break the search flow.
+
+## 2026-03-12 Auth Side-Effects Consistency Note
+
+- When adding or extending a new authentication entry path such as Google sign-up, do not stop after the core account creation and credits logic.
+- Audit all side effects from the original sign-up flow at the same time: welcome email, referral reward email, station notifications, analytics, and ledger records.
+- If two sign-up methods are meant to behave the same after account creation, move the shared reward/notification behavior into helpers instead of duplicating it route-by-route.

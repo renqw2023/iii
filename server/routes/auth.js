@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
+const Notification = require('../models/Notification');
 const { auth } = require('../middleware/auth');
 const config = require('../config');
 const emailService = require('../services/emailService');
@@ -21,6 +22,91 @@ const generateToken = (userId) => {
       algorithm: config.jwt.algorithm
     }
   );
+};
+
+const REGISTER_BONUS = 40;
+const INVITE_BONUS = 200;
+const DEFAULT_FREE_CREDITS = 40;
+
+const createPaidEarnTransaction = async (user, amount, reason, note) => {
+  await CreditTransaction.create({
+    userId: user._id,
+    type: 'earn',
+    amount,
+    reason,
+    note,
+    walletType: 'paid',
+    balanceAfter: user.credits,
+    freeBalanceAfter: user.freeCredits ?? null,
+    paidBalanceAfter: user.credits,
+    totalBalanceAfter: (user.freeCredits ?? 0) + user.credits,
+  });
+};
+
+const sendWelcomeEmailSafe = async (user) => {
+  if (!config.email.enabled || !user?.email) {
+    return;
+  }
+
+  try {
+    await emailService.sendWelcomeEmail(user.email, user.username);
+  } catch (error) {
+    console.error('发送欢迎邮件失败:', error);
+  }
+};
+
+const notifyInviterReward = async (inviter, newUser) => {
+  if (!inviter || !newUser) {
+    return;
+  }
+
+  Notification.createNotification({
+    recipient: inviter._id,
+    sender: newUser._id,
+    type: 'system',
+    additionalData: {
+      message: `${newUser.username} completed sign-up with your invite code. ${INVITE_BONUS} permanent credits have been added to your wallet.`,
+      kind: 'invite_bonus',
+      credits: INVITE_BONUS,
+      invitedUserId: newUser._id,
+      invitedUsername: newUser.username,
+    },
+  }).catch(err => console.error('创建邀请奖励通知失败:', err));
+
+  if (!config.email.enabled || inviter.emailNotifications === false || !inviter.email) {
+    return;
+  }
+
+  try {
+    await emailService.sendInviteRewardEmail(inviter.email, inviter.username, newUser.username, INVITE_BONUS);
+  } catch (error) {
+    console.error('发送邀请奖励邮件失败:', error);
+  }
+};
+
+const applyReferralRewards = async (newUser, inviter, inviterNote, inviteeNote) => {
+  if (!newUser?.invitedBy) {
+    return;
+  }
+
+  const activeInviter = inviter && inviter.isActive
+    ? inviter
+    : await User.findById(newUser.invitedBy);
+
+  if (!activeInviter || !activeInviter.isActive || String(activeInviter._id) === String(newUser._id)) {
+    return;
+  }
+
+  activeInviter.credits = (activeInviter.credits || 0) + INVITE_BONUS;
+  await activeInviter.save();
+  await User.findByIdAndUpdate(activeInviter._id, { $inc: { inviteUsedCount: 1 } });
+  await createPaidEarnTransaction(activeInviter, INVITE_BONUS, 'invite_bonus', inviterNote);
+
+  newUser.credits = (newUser.credits || 0) + INVITE_BONUS;
+  await User.findByIdAndUpdate(newUser._id, { credits: newUser.credits });
+  await createPaidEarnTransaction(newUser, INVITE_BONUS, 'invite_reward', inviteeNote);
+
+  await notifyInviterReward(activeInviter, newUser);
 };
 
 // 注册 - 第一步：发送验证码
@@ -167,50 +253,17 @@ router.post('/verify-email', [
     user.clearEmailVerificationCode();
 
     // 注册奖励积分
-    const REGISTER_BONUS = 40;
-    const INVITE_BONUS = 200;
     user.credits = (user.credits || 0) + REGISTER_BONUS;
-    user.freeCredits = 40;  // 首日免费额度
+    user.freeCredits = DEFAULT_FREE_CREDITS;
     await user.save();
 
     // 记录注册奖励流水
-    await CreditTransaction.create({
-      userId: user._id,
-      type: 'earn',
-      amount: REGISTER_BONUS,
-      reason: 'register_bonus',
-      note: '新用户注册奖励',
-      balanceAfter: user.credits,
-    });
+    await createPaidEarnTransaction(user, REGISTER_BONUS, 'register_bonus', '新用户注册奖励');
 
     // 处理邀请人奖励
     if (user.invitedBy) {
       try {
-        const inviter = await User.findById(user.invitedBy);
-        if (inviter && inviter.isActive) {
-          inviter.credits = (inviter.credits || 0) + INVITE_BONUS;
-          await inviter.save();
-          await User.findByIdAndUpdate(user.invitedBy, { $inc: { inviteUsedCount: 1 } });
-          await CreditTransaction.create({
-            userId: inviter._id,
-            type: 'earn',
-            amount: INVITE_BONUS,
-            reason: 'invite_bonus',
-            note: `邀请用户 ${user.username} 注册`,
-            balanceAfter: inviter.credits,
-          });
-          // 同时给被邀请人也发奖励
-          user.credits += INVITE_BONUS;
-          await User.findByIdAndUpdate(user._id, { credits: user.credits });
-          await CreditTransaction.create({
-            userId: user._id,
-            type: 'earn',
-            amount: INVITE_BONUS,
-            reason: 'invite_reward',
-            note: `使用邀请码注册奖励`,
-            balanceAfter: user.credits,
-          });
-        }
+        await applyReferralRewards(user, null, `邀请用户 ${user.username} 注册`, '使用邀请码注册奖励');
       } catch (inviteErr) {
         console.error('邀请奖励处理失败:', inviteErr);
         // 不影响主流程
@@ -220,14 +273,7 @@ router.post('/verify-email', [
     console.log('用户邮箱验证成功:', user.email);
 
     // 发送欢迎邮件
-    if (config.email.enabled) {
-      try {
-        await emailService.sendWelcomeEmail(user.email, user.username);
-      } catch (emailError) {
-        console.error('发送欢迎邮件失败:', emailError);
-        // 不影响验证流程
-      }
-    }
+    await sendWelcomeEmailSafe(user);
 
     // 生成token
     const token = generateToken(user._id);
@@ -661,60 +707,24 @@ router.post('/google', [
           invitedBy: inviter ? inviter._id : null,
           emailVerified: true,
           isActive: true,
-          credits: 40,  // 注册欢迎奖励
-          freeCredits: 40,  // 首日免费额度
+          credits: REGISTER_BONUS,
+          freeCredits: DEFAULT_FREE_CREDITS,
         });
         await user.save();
         isNewGoogleUser = true;
 
-        await CreditTransaction.create({
-          userId: user._id,
-          type: 'earn',
-          amount: 40,
-          reason: 'register_bonus',
-          note: 'Google sign-up bonus',
-          walletType: 'paid',
-          balanceAfter: user.credits,
-          freeBalanceAfter: user.freeCredits,
-          paidBalanceAfter: user.credits,
-          totalBalanceAfter: user.freeCredits + user.credits,
-        });
+        await createPaidEarnTransaction(user, REGISTER_BONUS, 'register_bonus', 'Google sign-up bonus');
 
         if (inviter && inviter.isActive && String(inviter._id) !== String(user._id)) {
-          const INVITE_BONUS = 200;
-          inviter.credits = (inviter.credits || 0) + INVITE_BONUS;
-          await inviter.save();
-          await User.findByIdAndUpdate(inviter._id, { $inc: { inviteUsedCount: 1 } });
-
-          await CreditTransaction.create({
-            userId: inviter._id,
-            type: 'earn',
-            amount: INVITE_BONUS,
-            reason: 'invite_bonus',
-            note: `Invited Google user ${user.username}`,
-            walletType: 'paid',
-            balanceAfter: inviter.credits,
-            freeBalanceAfter: inviter.freeCredits ?? null,
-            paidBalanceAfter: inviter.credits,
-            totalBalanceAfter: (inviter.freeCredits ?? 0) + inviter.credits,
-          });
-
-          user.credits += INVITE_BONUS;
-          await User.findByIdAndUpdate(user._id, { credits: user.credits });
-
-          await CreditTransaction.create({
-            userId: user._id,
-            type: 'earn',
-            amount: INVITE_BONUS,
-            reason: 'invite_reward',
-            note: 'Joined with referral code via Google',
-            walletType: 'paid',
-            balanceAfter: user.credits,
-            freeBalanceAfter: user.freeCredits,
-            paidBalanceAfter: user.credits,
-            totalBalanceAfter: user.freeCredits + user.credits,
-          });
+          await applyReferralRewards(
+            user,
+            inviter,
+            `Invited Google user ${user.username}`,
+            'Joined with referral code via Google'
+          );
         }
+
+        await sendWelcomeEmailSafe(user);
 
         console.log(`Google 新用户注册: ${email}`);
       }

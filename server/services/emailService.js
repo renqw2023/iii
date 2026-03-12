@@ -191,6 +191,28 @@ class EmailService {
     return this._send(email, 'Welcome to III.PICS', wrap('Welcome to III.PICS', body));
   }
 
+  async sendInviteRewardEmail(email, username, invitedUsername, credits) {
+    if (!this.transporter) throw new Error('Email service not enabled');
+
+    const body = `
+      ${badge('🎉', 'Referral Reward')}
+      ${heading(`${credits} credits just landed in your wallet.`)}
+      ${subtext(`Hi ${username}, ${invitedUsername} completed sign-up with your referral code, so your reward is now available in III.PICS.`)}
+
+      <div style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border:1px solid #ddd6fe;border-radius:14px;padding:22px 24px;margin:20px 0;">
+        <p style="margin:0 0 8px;font-size:12px;color:#8b5cf6;font-weight:600;letter-spacing:2px;text-transform:uppercase;">Reward Summary</p>
+        <p style="margin:0 0 10px;font-size:28px;font-weight:800;color:#4c1d95;">+${credits} permanent credits</p>
+        <p style="margin:0;font-size:14px;color:#5b21b6;">Referral successful: <strong>${invitedUsername}</strong></p>
+      </div>
+
+      ${ctaButton(`${config.server.clientUrl}/credits`, 'View Credits History')}
+      ${divider}
+      <p style="margin:0;font-size:13px;color:#a1a1aa;text-align:center;">You can track referral rewards anytime from your credits page and notification center.</p>
+    `;
+
+    return this._send(email, 'Your III.PICS referral reward is here', wrap('Referral Reward', body));
+  }
+
   // ── 3. Password Reset ──────────────────────────────────────────────────────
   async sendPasswordResetEmail(email, username, resetToken) {
     if (!this.transporter) throw new Error('Email service not enabled');

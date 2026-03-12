@@ -849,6 +849,19 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
 - Added register-bonus and invite-reward ledger entries for Google-created users so credits history is consistent across sign-up methods.
 - Updated Google login entry points to pass referral context from the current URL, and added a Google sign-up path on the register page for referral traffic.
 
+## Result (2026-03-12 Google Welcome Email And Referral Notifications)
+
+- Added a shared auth-side reward helper flow so email verification sign-up and first-time Google sign-up now apply referral rewards through the same logic.
+- First-time Google registration now triggers the welcome email instead of silently completing account creation.
+- Successful inviters now receive:
+  - a `system` notification in the existing notifications center
+  - a referral reward email using the current III.PICS email template system
+- Added a dedicated referral reward email template in `server/services/emailService.js`.
+- Verification completed with `node --check` on:
+  - `server/routes/auth.js`
+  - `server/services/emailService.js`
+- Browser MCP verification could not be run because the current session does not expose the required browser MCP server.
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

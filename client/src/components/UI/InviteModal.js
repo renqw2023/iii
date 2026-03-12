@@ -52,21 +52,21 @@ const InviteModal = ({ open, onClose }) => {
       color: '#eab308',
       bg: 'rgba(234,179,8,0.1)',
       title: 'You get +200 credits',
-      desc: 'Every time a friend signs up with your link',
+      desc: 'Unlocked after your friend completes their first generation',
     },
     {
       icon: Crown,
       color: '#a855f7',
       bg: 'rgba(168,85,247,0.1)',
-      title: 'Friend gets +200 credits',
-      desc: 'Bonus credits added instantly on registration',
+      title: 'Friend gets +50 credits',
+      desc: 'Bonus credits are added after their first successful generation',
     },
     {
       icon: Gift,
       color: '#ec4899',
       bg: 'rgba(236,72,153,0.1)',
-      title: 'No limit on referrals',
-      desc: 'Keep sharing and keep earning credits',
+      title: 'First generation required',
+      desc: 'Rewards unlock only when the invited user actually uses III.PICS',
     },
   ];
 
@@ -157,7 +157,7 @@ const InviteModal = ({ open, onClose }) => {
                 Share &amp; Earn Credits
               </h2>
               <p style={{ fontSize: 14, color: '#6b7280', marginTop: 4, marginBottom: 0 }}>
-                Invite friends to III.PICS and both of you earn bonus credits
+                Invite friends to III.PICS. They unlock +50 after first generation, and you get +200.
               </p>
             </div>
           </div>

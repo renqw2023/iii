@@ -878,6 +878,23 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
   - `npm run build` in `client/`
 - Browser MCP verification could not be run because the current session does not expose the required browser MCP server.
 
+## Result (2026-03-12 Referral Copy Alignment Follow-up)
+
+- Fixed the invite modal copy in `client/src/components/UI/InviteModal.js` so it no longer says:
+  - friend gets `+200`
+  - rewards are added instantly on registration
+- Updated the modal to explain the live rule:
+  - inviter gets `200`
+  - invitee gets `50`
+  - unlock happens after the first successful generation
+- Restored the sidebar invite entry in `client/src/components/Layout/Sidebar.js` to the requested short marketing copy:
+  - `Share MeiGen`
+  - `Invite friends, get 200 credits`
+- Verification completed with:
+  - `node --check client/src/components/UI/InviteModal.js`
+  - `node --check client/src/components/Layout/Sidebar.js`
+  - `npm run build` in `client/`
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

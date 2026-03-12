@@ -319,8 +319,8 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Share III.PICS</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Invite friends, +200 credits each</p>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Share MeiGen</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Invite friends, get 200 credits</p>
               </div>
               <Gift size={16} style={{ color: '#f472b6', flexShrink: 0 }} />
             </div>

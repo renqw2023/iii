@@ -862,6 +862,22 @@ Phase A/B/C/D/E 全部实现完毕，ESLint 零错误，移动端 Dock 上线。
   - `server/services/emailService.js`
 - Browser MCP verification could not be run because the current session does not expose the required browser MCP server.
 
+## Result (2026-03-12 Referral Rewards After First Generation)
+
+- Moved referral rewards out of registration and into the first successful `POST /api/generate/image` flow.
+- Updated reward amounts to:
+  - inviter: `200` permanent credits
+  - invitee: `50` permanent credits
+- Added server-side user markers:
+  - `firstGenerationAt`
+  - `referralRewardGrantedAt`
+- Added `server/utils/referralUtils.js` to centralize reward granting, inviter notification, and inviter reward email sending.
+- Updated registration and credits-page copy so the UI now explains that referral rewards unlock after the invitee's first successful generation.
+- Verification completed with:
+  - `node --check` on updated server and client files
+  - `npm run build` in `client/`
+- Browser MCP verification could not be run because the current session does not expose the required browser MCP server.
+
 ## 2026-03-11 Search Modal close + real-search fix
 
 - Goal: make the sidebar-triggered search modal closable even when the input is empty, and fix the current search chain so short/random user input can still produce real results when matching data exists.

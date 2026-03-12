@@ -6,6 +6,12 @@ const { auth } = require('../middleware/auth');
 const User = require('../models/User');
 const { refreshFreeCreditsIfNeeded } = require('./credits');
 const { deductCredits, recordDeductTransactions } = require('../utils/creditsUtils');
+const {
+  INVITER_BONUS,
+  INVITEE_BONUS,
+  grantReferralRewardsAfterFirstGeneration,
+  markFirstGeneration,
+} = require('../utils/referralUtils');
 
 const MODELS = [
   // ── Google Gemini 3 / Imagen ── (排在最前，优先展示)
@@ -350,11 +356,24 @@ router.post('/image', auth, async (req, res) => {
     const note = `${model.name} — ${prompt.slice(0, 50)}`;
     await recordDeductTransactions(user._id, 'generate_image', note, freeDeducted, paidDeducted, user.freeCredits, user.credits);
 
+    const now = new Date();
+    await markFirstGeneration(user._id, now);
+    const referralReward = await grantReferralRewardsAfterFirstGeneration(user._id, now);
+
+    const updatedCreditsLeft = referralReward?.invitee?.credits ?? user.credits;
+    const updatedFreeCreditsLeft = referralReward?.invitee?.freeCredits ?? user.freeCredits;
+
     res.json({
       imageUrl,
-      creditsLeft: user.credits,
-      freeCreditsLeft: user.freeCredits,
+      creditsLeft: updatedCreditsLeft,
+      freeCreditsLeft: updatedFreeCreditsLeft,
       modelName: model.name,
+      referralRewardUnlocked: Boolean(referralReward),
+      inviteeBonusGranted: referralReward?.inviteeBonus ?? 0,
+      inviterBonusGranted: referralReward?.inviterBonus ?? 0,
+      referralRewardMessage: referralReward
+        ? `Referral rewards unlocked: you received ${INVITEE_BONUS} credits and your inviter received ${INVITER_BONUS} credits.`
+        : null,
     });
   } catch (error) {
     console.error('generate/image 错误:', error);

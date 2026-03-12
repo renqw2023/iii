@@ -86,3 +86,9 @@
 - When adding or extending a new authentication entry path such as Google sign-up, do not stop after the core account creation and credits logic.
 - Audit all side effects from the original sign-up flow at the same time: welcome email, referral reward email, station notifications, analytics, and ledger records.
 - If two sign-up methods are meant to behave the same after account creation, move the shared reward/notification behavior into helpers instead of duplicating it route-by-route.
+
+## 2026-03-12 Referral Anti-Abuse Trigger Note
+
+- When the product goal is referral quality instead of raw sign-up count, do not pay inviter rewards at registration time.
+- Bind the referral unlock to a real server-verified activation event such as the first successful generation, and keep a persisted one-time flag to prevent duplicate grants.
+- Update front-end copy at the same time as the backend rule, otherwise users will trust outdated reward wording and report false bugs.

@@ -67,6 +67,14 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  firstGenerationAt: {
+    type: Date,
+    default: null
+  },
+  referralRewardGrantedAt: {
+    type: Date,
+    default: null
+  },
   avatar: {
     type: String,
     default: ''

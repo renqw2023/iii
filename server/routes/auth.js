@@ -4,7 +4,6 @@ const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
-const Notification = require('../models/Notification');
 const { auth } = require('../middleware/auth');
 const config = require('../config');
 const emailService = require('../services/emailService');
@@ -25,7 +24,6 @@ const generateToken = (userId) => {
 };
 
 const REGISTER_BONUS = 40;
-const INVITE_BONUS = 200;
 const DEFAULT_FREE_CREDITS = 40;
 
 const createPaidEarnTransaction = async (user, amount, reason, note) => {
@@ -53,60 +51,6 @@ const sendWelcomeEmailSafe = async (user) => {
   } catch (error) {
     console.error('发送欢迎邮件失败:', error);
   }
-};
-
-const notifyInviterReward = async (inviter, newUser) => {
-  if (!inviter || !newUser) {
-    return;
-  }
-
-  Notification.createNotification({
-    recipient: inviter._id,
-    sender: newUser._id,
-    type: 'system',
-    additionalData: {
-      message: `${newUser.username} completed sign-up with your invite code. ${INVITE_BONUS} permanent credits have been added to your wallet.`,
-      kind: 'invite_bonus',
-      credits: INVITE_BONUS,
-      invitedUserId: newUser._id,
-      invitedUsername: newUser.username,
-    },
-  }).catch(err => console.error('创建邀请奖励通知失败:', err));
-
-  if (!config.email.enabled || inviter.emailNotifications === false || !inviter.email) {
-    return;
-  }
-
-  try {
-    await emailService.sendInviteRewardEmail(inviter.email, inviter.username, newUser.username, INVITE_BONUS);
-  } catch (error) {
-    console.error('发送邀请奖励邮件失败:', error);
-  }
-};
-
-const applyReferralRewards = async (newUser, inviter, inviterNote, inviteeNote) => {
-  if (!newUser?.invitedBy) {
-    return;
-  }
-
-  const activeInviter = inviter && inviter.isActive
-    ? inviter
-    : await User.findById(newUser.invitedBy);
-
-  if (!activeInviter || !activeInviter.isActive || String(activeInviter._id) === String(newUser._id)) {
-    return;
-  }
-
-  activeInviter.credits = (activeInviter.credits || 0) + INVITE_BONUS;
-  await activeInviter.save();
-  await User.findByIdAndUpdate(activeInviter._id, { $inc: { inviteUsedCount: 1 } });
-  await createPaidEarnTransaction(activeInviter, INVITE_BONUS, 'invite_bonus', inviterNote);
-
-  newUser.credits = (newUser.credits || 0) + INVITE_BONUS;
-  await User.findByIdAndUpdate(newUser._id, { credits: newUser.credits });
-  await createPaidEarnTransaction(newUser, INVITE_BONUS, 'invite_reward', inviteeNote);
-
-  await notifyInviterReward(activeInviter, newUser);
 };
 
 // 注册 - 第一步：发送验证码
@@ -259,16 +203,6 @@ router.post('/verify-email', [
 
     // 记录注册奖励流水
     await createPaidEarnTransaction(user, REGISTER_BONUS, 'register_bonus', '新用户注册奖励');
-
-    // 处理邀请人奖励
-    if (user.invitedBy) {
-      try {
-        await applyReferralRewards(user, null, `邀请用户 ${user.username} 注册`, '使用邀请码注册奖励');
-      } catch (inviteErr) {
-        console.error('邀请奖励处理失败:', inviteErr);
-        // 不影响主流程
-      }
-    }
 
     console.log('用户邮箱验证成功:', user.email);
 
@@ -714,15 +648,6 @@ router.post('/google', [
         isNewGoogleUser = true;
 
         await createPaidEarnTransaction(user, REGISTER_BONUS, 'register_bonus', 'Google sign-up bonus');
-
-        if (inviter && inviter.isActive && String(inviter._id) !== String(user._id)) {
-          await applyReferralRewards(
-            user,
-            inviter,
-            `Invited Google user ${user.username}`,
-            'Joined with referral code via Google'
-          );
-        }
 
         await sendWelcomeEmailSafe(user);
 

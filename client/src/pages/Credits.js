@@ -207,7 +207,7 @@ const Credits = () => {
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>My referral code</p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                Invite friends to register and both sides receive 200 permanent credits
+                Invite friends to sign up. They get 50 permanent credits after first generation, and you get 200.
               </p>
             </div>
           </div>

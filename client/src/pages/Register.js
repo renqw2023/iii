@@ -368,7 +368,7 @@ const Register = () => {
               width="280"
             />
             <p className="mt-3 text-xs text-slate-500 text-center">
-              Google 首次注册也会继承当前邀请码奖励
+              Google 首次注册会继承当前邀请码，首次成功生成后解锁邀请奖励
             </p>
           </div>
 
@@ -554,7 +554,7 @@ const Register = () => {
             {/* 邀请码（可选） */}
             <div>
               <label htmlFor="inviteCode" className="block text-sm font-medium text-slate-700 mb-2">
-                邀请码 <span className="text-slate-400 font-normal">（选填，双方各得 200 积分）</span>
+                邀请码 <span className="text-slate-400 font-normal">（选填，对方首次生成后你得 200，他得 50）</span>
               </label>
               <div className="relative">
                 <Gift className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />

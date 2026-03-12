@@ -197,12 +197,12 @@ class EmailService {
     const body = `
       ${badge('🎉', 'Referral Reward')}
       ${heading(`${credits} credits just landed in your wallet.`)}
-      ${subtext(`Hi ${username}, ${invitedUsername} completed sign-up with your referral code, so your reward is now available in III.PICS.`)}
+      ${subtext(`Hi ${username}, ${invitedUsername} completed their first generation with your referral code, so your reward is now available in III.PICS.`)}
 
       <div style="background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%);border:1px solid #ddd6fe;border-radius:14px;padding:22px 24px;margin:20px 0;">
         <p style="margin:0 0 8px;font-size:12px;color:#8b5cf6;font-weight:600;letter-spacing:2px;text-transform:uppercase;">Reward Summary</p>
         <p style="margin:0 0 10px;font-size:28px;font-weight:800;color:#4c1d95;">+${credits} permanent credits</p>
-        <p style="margin:0;font-size:14px;color:#5b21b6;">Referral successful: <strong>${invitedUsername}</strong></p>
+        <p style="margin:0;font-size:14px;color:#5b21b6;">Qualified referral: <strong>${invitedUsername}</strong></p>
       </div>
 
       ${ctaButton(`${config.server.clientUrl}/credits`, 'View Credits History')}

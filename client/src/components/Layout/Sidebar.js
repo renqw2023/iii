@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
   LayoutDashboard, Settings, LogOut, Languages, BookOpenText, Headphones,
-  Mail, Copy, MessageCircle, ExternalLink, Bell,
+  Mail, Copy, MessageCircle, ExternalLink, Bell, Wand2,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -293,9 +293,14 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
             {!collapsed && <span>Search</span>}
           </div>
 
-          <Link to="/history" title={collapsed ? 'History' : undefined} className={navItemClass(isActive('/history'))}>
+          <Link to="/browse-history" title={collapsed ? 'Browse History' : undefined} className={navItemClass(isActive('/browse-history'))}>
             <Clock size={18} className="flex-shrink-0" />
-            {!collapsed && <span>History</span>}
+            {!collapsed && <span>Browse History</span>}
+          </Link>
+
+          <Link to="/generate-history" title={collapsed ? 'Generation History' : undefined} className={navItemClass(isActive('/generate-history'))}>
+            <Wand2 size={18} className="flex-shrink-0" />
+            {!collapsed && <span>Generation History</span>}
           </Link>
 
           <div title={collapsed ? 'Favorites' : undefined} className={navItemClass(isActive('/favorites'))} onClick={handleFavorites}>
@@ -512,10 +517,11 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                   </div>
 
                   {[
-                    { icon: Settings,        label: 'Settings',  to: '/settings' },
-                    { icon: Clock,           label: 'History',   to: '/history' },
-                    { icon: Heart,           label: 'Favorites', to: '/favorites' },
-                    { icon: BookOpenText,    label: 'Docs',      to: '/docs' },
+                    { icon: Settings,        label: 'Settings',           to: '/settings' },
+                    { icon: Wand2,           label: 'Generation History', to: '/generate-history' },
+                    { icon: Clock,           label: 'Browse History',     to: '/browse-history' },
+                    { icon: Heart,           label: 'Favorites',          to: '/favorites' },
+                    { icon: BookOpenText,    label: 'Docs',               to: '/docs' },
                   ].map(({ icon: Icon, label, to }) => (
                     <Link
                       key={to} to={to}

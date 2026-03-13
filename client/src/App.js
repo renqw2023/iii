@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { GenerationProvider } from './contexts/GenerationContext';
 import ErrorBoundary from './components/Error/ErrorBoundary';
 import LoginModal from './components/Auth/LoginModal';
 import SearchModal from './components/Search/SearchModal';
@@ -35,6 +36,7 @@ import DocsCenter from './pages/DocsCenter';
 import Notifications from './pages/Notifications';
 import Credits from './pages/Credits';
 import History from './pages/History';
+import GenerateHistory from './pages/GenerateHistory';
 import MagicLinkVerify from './pages/MagicLinkVerify';
 import Img2Prompt from './pages/Img2Prompt';
 import ErrorDemo from './pages/ErrorDemo';
@@ -89,6 +91,7 @@ function App() {
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <ThemeProvider>
             <SidebarProvider>
+            <GenerationProvider>
             <AuthProvider>
               <NotificationProvider>
                 <Router future={{
@@ -122,7 +125,9 @@ function App() {
                         </Route>
                         <Route path="post/:id" element={<PostDetail />} />
                         <Route path="user/:id" element={<Profile />} />
-                        <Route path="history" element={<History />} />
+                        <Route path="browse-history" element={<History />} />
+                        <Route path="history" element={<Navigate to="/browse-history" replace />} />
+                        <Route path="generate-history" element={<GenerateHistory />} />
                         <Route path="health" element={<Health />} />
                         <Route path="error-demo" element={<ErrorDemo />} />
                         <Route path="img2prompt" element={<Img2Prompt />} />
@@ -203,6 +208,7 @@ function App() {
                 </Router>
               </NotificationProvider>
             </AuthProvider>
+            </GenerationProvider>
             </SidebarProvider>
           </ThemeProvider>
           </GoogleOAuthProvider>

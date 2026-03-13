@@ -55,7 +55,7 @@ const History = () => {
         ) : null
       }
     >
-      <SectionCard icon={<Clock size={20} />} title="Filter by content type" description="Use these filters to narrow the return path instead of scanning the full archive.">
+      <SectionCard icon={<Clock size={20} />} title="Browse History" description="Use these filters to narrow the return path instead of scanning the full archive.">
         <div className="flex flex-wrap gap-2">
           {['all', 'sref', 'gallery', 'seedance'].map((type) => (
             <button

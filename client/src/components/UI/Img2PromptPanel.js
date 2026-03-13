@@ -14,12 +14,13 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   X, Copy, Check, Loader2, Image as ImageIcon, Plus,
   ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  Zap, ExternalLink, Wand2, Download, Link,
+  Zap, ExternalLink, Wand2, Download, Link, AlertCircle, RefreshCw, CheckCircle2,
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateAPI } from '../../services/generateApi';
+import { useGeneration } from '../../contexts/GenerationContext';
 
 const MUTED   = 'rgba(0,0,0,0.04)';
 const MUTED_H = 'rgba(0,0,0,0.07)';
@@ -39,6 +40,238 @@ const FAQ_LINKS = [
   { label: 'How many credits do I need?',   href: '/credits' },
 ];
 
+const STATUS_MESSAGES = {
+  loadingTitle: 'Generating your image',
+  loadingBody: 'We are preparing the result. Peak hours may take a bit longer.',
+  successTitle: 'Generation complete',
+  successBody: 'Your image is ready to download, copy, or keep refining.',
+  errorTitle: 'Generation failed',
+  errorBody: 'Service is busy right now. Try again or switch to another model.',
+};
+
+const GenerationStatusCard = ({
+  status,
+  progress = 0,
+  result,
+  errorMessage,
+  referralRewardMessage,
+  onRetry,
+  onDownload,
+  onCopyUrl,
+  cardRef,
+}) => {
+  if (status === 'idle') return null;
+
+  if (status === 'loading') {
+    return (
+      <div
+        ref={cardRef}
+        style={{
+          flexShrink: 0,
+          borderRadius: 20,
+          padding: 18,
+          border: '1px solid rgba(0,0,0,0.08)',
+          background: 'linear-gradient(180deg, rgba(249,247,241,0.96) 0%, rgba(255,255,255,0.96) 100%)',
+          boxShadow: '0 20px 48px rgba(15,23,42,0.08)',
+          animation: 'fadeIn 0.3s ease-out',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background: `conic-gradient(#111827 ${Math.max(progress, 3) * 3.6}deg, rgba(17,24,39,0.08) 0deg)`,
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: '50%',
+                backgroundColor: '#fff',
+                display: 'grid',
+                placeItems: 'center',
+                boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.06)',
+              }}
+            >
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{progress}%</span>
+            </div>
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#111827' }}>{STATUS_MESSAGES.loadingTitle}</p>
+            <p style={{ margin: '6px 0 0 0', fontSize: 12, lineHeight: 1.6, color: '#6b7280' }}>
+              {STATUS_MESSAGES.loadingBody}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'error') {
+    return (
+      <div
+        ref={cardRef}
+        style={{
+          flexShrink: 0,
+          borderRadius: 20,
+          padding: 18,
+          border: '1px solid rgba(239,68,68,0.14)',
+          background: 'linear-gradient(180deg, rgba(255,249,249,0.98) 0%, rgba(255,255,255,0.96) 100%)',
+          boxShadow: '0 20px 48px rgba(239,68,68,0.08)',
+          animation: 'fadeIn 0.3s ease-out',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: 'rgba(239,68,68,0.12)',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#ef4444',
+              flexShrink: 0,
+            }}
+          >
+            <AlertCircle size={20} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#111827' }}>{STATUS_MESSAGES.errorTitle}</p>
+            <p style={{ margin: '6px 0 0 0', fontSize: 12, lineHeight: 1.6, color: '#6b7280' }}>
+              {errorMessage || STATUS_MESSAGES.errorBody}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onRetry}
+          style={{
+            marginTop: 14,
+            height: 36,
+            borderRadius: 10,
+            border: 'none',
+            backgroundColor: '#111827',
+            color: '#fff',
+            padding: '0 14px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          <RefreshCw size={13} />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={cardRef}
+      style={{
+        flexShrink: 0,
+        borderRadius: 16,
+        overflow: 'hidden',
+        border: '1px solid rgba(0,0,0,0.08)',
+        backgroundColor: '#fff',
+        animation: 'fadeIn 0.3s ease-out',
+      }}
+    >
+      {result?.imageUrl && (
+        <img src={result.imageUrl} alt="Generated" style={{ width: '100%', display: 'block' }} />
+      )}
+      <div style={{ padding: 12, backgroundColor: MUTED }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 10,
+              backgroundColor: 'rgba(34,197,94,0.12)',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#16a34a',
+              flexShrink: 0,
+            }}
+          >
+            <CheckCircle2 size={15} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#111827' }}>{STATUS_MESSAGES.successTitle}</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: 11, color: '#6b7280' }}>{STATUS_MESSAGES.successBody}</p>
+          </div>
+        </div>
+        {referralRewardMessage && (
+          <div
+            style={{
+              marginBottom: 10,
+              padding: '9px 10px',
+              borderRadius: 10,
+              backgroundColor: 'rgba(99,102,241,0.08)',
+              color: '#4f46e5',
+              fontSize: 11,
+              lineHeight: 1.5,
+            }}
+          >
+            {referralRewardMessage}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={onDownload}
+            style={{
+              flex: 1,
+              height: 34,
+              borderRadius: 8,
+              border: '1px solid rgba(0,0,0,0.10)',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 5,
+              fontSize: 12,
+              color: '#374151',
+              fontWeight: 500,
+            }}
+          >
+            <Download size={12} /> Download
+          </button>
+          <button
+            onClick={onCopyUrl}
+            style={{
+              flex: 1,
+              height: 34,
+              borderRadius: 8,
+              border: '1px solid rgba(0,0,0,0.10)',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 5,
+              fontSize: 12,
+              color: '#374151',
+              fontWeight: 500,
+            }}
+          >
+            <Link size={12} /> Copy URL
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ── SparklesIcon (MeiGen 原版双星 SVG) ── */
 const SparklesIcon = ({ size = 13 }) => (
   <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
@@ -50,13 +283,13 @@ const SparklesIcon = ({ size = 13 }) => (
 /* ═══════════════════════════════════════════════
    Tab 1 — Reverse Prompt（图生文 → 文生图）
 ═══════════════════════════════════════════════ */
-const ReverseTab = ({ onClose }) => {
+const ReverseTab = ({ onClose, onStartGeneration }) => {
   const { isAuthenticated, updateUser, openLoginModal } = useAuth();
   const { user } = useAuth();
+  const { addGeneration, updateGeneration } = useGeneration();
   const reverseFileInputRef = useRef(null);  // Card 1 — 反推用图
   const refFileInputRef     = useRef(null);  // Card 2 — 参考图
   const modelDropdownRef    = useRef(null);
-  const resultRef           = useRef(null);
 
   // ── 反推图片状态（Card 1）──
   const [reverseFile,    setReverseFile]    = useState(null);
@@ -79,11 +312,9 @@ const ReverseTab = ({ onClose }) => {
   const [selectedRevModel,  setSelectedRevModel]  = useState(REVERSE_MODELS[0].id);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
 
-  // ── 生图状态 ──
+  // ── 生图模型 ──
   const [genModels,        setGenModels]        = useState([]);
   const [selectedGenModel, setSelectedGenModel] = useState(null);
-  const [isGenerating,     setIsGenerating]     = useState(false);
-  const [genResult,        setGenResult]        = useState(null);
 
   // 拉取生图模型列表
   useEffect(() => {
@@ -96,6 +327,7 @@ const ReverseTab = ({ onClose }) => {
       })
       .catch(() => {});
   }, []);
+
 
   // 点击外部关闭下拉
   useEffect(() => {
@@ -223,51 +455,50 @@ const ReverseTab = ({ onClose }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── 文生图 ──
-  const handleGenerateImage = async () => {
+  // ── 文生图 → 跳转到 /generate-history ──
+  const handleGenerateImage = () => {
     if (!isAuthenticated) { openLoginModal(); return; }
     const promptText = (result || prompt).trim();
     if (!promptText) { toast.error('Please analyze an image or type a prompt first'); return; }
     if (!selectedGenModel) { toast.error('No generation model available'); return; }
-    setIsGenerating(true);
-    setGenResult(null);
-    try {
-      const data = await generateAPI.generateImage({
-        prompt: promptText,
-        modelId: selectedGenModel,
-        aspectRatio: RATIOS[ratioIdx],
-        ...(refImageB64 ? { referenceImageData: refImageB64, referenceImageMime: refMimeType } : {}),
-      });
-      setGenResult(data);
+
+    const jobId = Date.now().toString();
+    const genModel = genModels.find(m => m.id === selectedGenModel);
+    addGeneration({
+      id: jobId,
+      status: 'loading',
+      progress: 8,
+      prompt: promptText,
+      modelId: selectedGenModel,
+      modelName: genModel?.name,
+      aspectRatio: RATIOS[ratioIdx],
+      result: null,
+      errorMessage: '',
+      startedAt: new Date(),
+    });
+
+    onStartGeneration?.();
+
+    generateAPI.generateImage({
+      prompt: promptText,
+      modelId: selectedGenModel,
+      aspectRatio: RATIOS[ratioIdx],
+      ...(refImageB64 ? { referenceImageData: refImageB64, referenceImageMime: refMimeType } : {}),
+    }).then(data => {
+      updateGeneration(jobId, { status: 'success', progress: 100, result: data });
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-      const genModel = genModels.find(m => m.id === selectedGenModel);
       toast.success(`Image generated! ${genModel?.creditCost ?? '?'} credits used`);
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Generation failed, please try again');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleDownload = () => {
-    if (!genResult?.imageUrl) return;
-    const a = document.createElement('a');
-    a.href = genResult.imageUrl;
-    a.download = `generated_${Date.now()}.png`;
-    a.click();
-  };
-
-  const handleCopyUrl = async () => {
-    if (!genResult?.imageUrl) return;
-    await navigator.clipboard.writeText(`${window.location.origin}${genResult.imageUrl}`);
-    toast.success('URL copied');
+    }).catch(err => {
+      const message = err.response?.data?.message || 'Generation failed, please try again';
+      updateGeneration(jobId, { status: 'error', errorMessage: message });
+      toast.error(message);
+    });
   };
 
   const credits = user?.credits ?? 0;
   const freeCredits = user?.freeCredits ?? 0;
   const canAnalyze = !isLoading && !!reverseFile;
-  const canGenerateImage = !isGenerating && !!(result || prompt).trim() && !!selectedGenModel;
+  const canGenerateImage = !!(result || prompt).trim() && !!selectedGenModel;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', paddingRight: 2 }}>
@@ -543,10 +774,7 @@ const ReverseTab = ({ onClose }) => {
         onMouseEnter={e => { if (canGenerateImage) e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        {isGenerating ? (
-          <><Loader2 size={14} className="animate-spin" />Generating…</>
-        ) : (
-          <>
+        <>
             <Wand2 size={15} />
             <span>Generate Image</span>
             {selectedGenModel && genModels.length > 0 && (
@@ -556,7 +784,6 @@ const ReverseTab = ({ onClose }) => {
               </div>
             )}
           </>
-        )}
       </button>
 
       {/* Balance hint */}
@@ -571,30 +798,6 @@ const ReverseTab = ({ onClose }) => {
           Credits: <strong style={{ color: '#6b7280' }}>{credits}</strong>
         </p>
       )}
-
-      {/* ── Generated image result ── */}
-      {genResult && (
-        <div
-          ref={resultRef}
-          style={{ flexShrink: 0, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', animation: 'fadeIn 0.3s ease-out' }}
-        >
-          <img src={genResult.imageUrl} alt="Generated" style={{ width: '100%', display: 'block' }} />
-          <div style={{ display: 'flex', gap: 6, padding: 8, backgroundColor: MUTED }}>
-            <button onClick={handleDownload}
-              style={{ flex: 1, height: 32, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#374151', fontWeight: 500, transition: 'background-color 150ms' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_H; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}>
-              <Download size={12} /> Download
-            </button>
-            <button onClick={handleCopyUrl}
-              style={{ flex: 1, height: 32, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#374151', fontWeight: 500, transition: 'background-color 150ms' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_H; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}>
-              <Link size={12} /> Copy URL
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -604,17 +807,26 @@ const ReverseTab = ({ onClose }) => {
 ═══════════════════════════════════════════════ */
 const ASPECT_RATIOS = ['1:1', '4:3', '3:4', '16:9'];
 
-const GenerateTab = () => {
+const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
-
+  const { addGeneration, updateGeneration } = useGeneration();
   const [models, setModels]               = useState([]);
   const [selectedModel, setSelectedModel] = useState(null);
   const [prompt, setPrompt]               = useState('');
   const [aspectRatio, setAspectRatio]     = useState('1:1');
-  const [isLoading, setIsLoading]         = useState(false);
-  const [result, setResult]               = useState(null);
   const [isDragging, setIsDragging]       = useState(false);
   const [modelsLoaded, setModelsLoaded]   = useState(false);
+
+  // Consume prefillJob when it arrives
+  useEffect(() => {
+    if (prefillJob) {
+      if (prefillJob.prompt) setPrompt(prefillJob.prompt);
+      if (prefillJob.modelId) setSelectedModel(prefillJob.modelId);
+      if (prefillJob.aspectRatio) setAspectRatio(prefillJob.aspectRatio);
+      onPrefillConsumed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillJob]);
 
   useEffect(() => {
     if (modelsLoaded) return;
@@ -622,7 +834,6 @@ const GenerateTab = () => {
       .then(list => {
         setModels(list);
         if (list.length > 0) {
-          // 优先选 Gemini 3 Pro，其次选第一个非 comingSoon 的模型
           const preferred = list.find(m => m.id === 'gemini3-pro' && !m.comingSoon)
             ?? list.find(m => !m.comingSoon)
             ?? list[0];
@@ -656,40 +867,52 @@ const GenerateTab = () => {
     }
   }, []);
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (!isAuthenticated) { openLoginModal(); return; }
     if (!prompt.trim()) { toast.error('Please enter a prompt'); return; }
     if (!selectedModel) { toast.error('No model available'); return; }
-    setIsLoading(true); setResult(null);
-    try {
-      const data = await generateAPI.generateImage({ prompt, modelId: selectedModel, aspectRatio });
-      setResult(data);
-      updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-      toast.success(`Image generated! ${currentModel?.creditCost} credits used`);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Generation failed, please try again');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleDownload = () => {
-    if (!result?.imageUrl) return;
-    const a = document.createElement('a');
-    a.href = result.imageUrl;
-    a.download = `generated_${Date.now()}.png`;
-    a.click();
-  };
+    const jobId = Date.now().toString();
+    const savedPrompt = prompt;
+    const savedModel = selectedModel;
+    const savedRatio = aspectRatio;
+    const savedModelName = currentModel?.name;
+    const savedCreditCost = currentModel?.creditCost;
 
-  const handleCopyUrl = async () => {
-    if (!result?.imageUrl) return;
-    await navigator.clipboard.writeText(`${window.location.origin}${result.imageUrl}`);
-    toast.success('URL copied');
+    // Add to context so GenerateHistory renders loading card immediately
+    addGeneration({
+      id: jobId,
+      status: 'loading',
+      progress: 8,
+      prompt: savedPrompt,
+      modelId: savedModel,
+      modelName: savedModelName,
+      aspectRatio: savedRatio,
+      result: null,
+      errorMessage: '',
+      startedAt: new Date(),
+    });
+
+    // Navigate to /generate-history immediately
+    onStartGeneration?.();
+
+    // API call runs in background — context update propagates to history page
+    generateAPI.generateImage({ prompt: savedPrompt, modelId: savedModel, aspectRatio: savedRatio })
+      .then(data => {
+        updateGeneration(jobId, { status: 'success', progress: 100, result: data });
+        updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
+        toast.success(`Image generated! ${savedCreditCost} credits used`);
+      })
+      .catch(err => {
+        const message = err.response?.data?.message || 'Generation failed, please try again';
+        updateGeneration(jobId, { status: 'error', errorMessage: message });
+        toast.error(message);
+      });
   };
 
   const credits = user?.credits ?? 0;
   const freeCredits = user?.freeCredits ?? 0;
-  const canGenerate = !isLoading && !!prompt.trim() && !!selectedModel;
+  const canGenerate = !!prompt.trim() && !!selectedModel;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', paddingRight: 2 }}>
@@ -787,10 +1010,7 @@ const GenerateTab = () => {
         onMouseEnter={e => { if (canGenerate) e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        {isLoading ? (
-          <><Loader2 size={14} className="animate-spin" />Generating…</>
-        ) : (
-          <>
+        <>
             <Wand2 size={15} />
             <span>Generate Image</span>
             {currentModel && (
@@ -800,7 +1020,6 @@ const GenerateTab = () => {
               </div>
             )}
           </>
-        )}
       </button>
 
       {/* Auth / balance */}
@@ -818,26 +1037,6 @@ const GenerateTab = () => {
         </p>
       )}
 
-      {/* Result */}
-      {result && (
-        <div style={{ flexShrink: 0, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', animation: 'fadeIn 0.3s ease-out' }}>
-          <img src={result.imageUrl} alt="Generated" style={{ width: '100%', display: 'block' }} />
-          <div style={{ display: 'flex', gap: 6, padding: 8, backgroundColor: MUTED }}>
-            <button onClick={handleDownload}
-              style={{ flex: 1, height: 34, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#374151', fontWeight: 500, transition: 'background-color 150ms' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_H; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}>
-              <Download size={13} /> Download
-            </button>
-            <button onClick={handleCopyUrl}
-              style={{ flex: 1, height: 34, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', backgroundColor: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#374151', fontWeight: 500, transition: 'background-color 150ms' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED_H; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fff'; }}>
-              <Link size={13} /> Copy URL
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -845,12 +1044,19 @@ const GenerateTab = () => {
 /* ═══════════════════════════════════════════════
    Main Panel
 ═══════════════════════════════════════════════ */
-const Img2PromptPanel = ({ open, onClose }) => {
+const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const [tab, setTab] = useState('reverse'); // 'reverse' | 'generate'
 
   useEffect(() => {
     if (!open) setTab('reverse');
   }, [open]);
+
+  // When prefillJob is set and panel opens, switch to generate tab
+  useEffect(() => {
+    if (open && prefillJob) {
+      setTab('generate');
+    }
+  }, [open, prefillJob]);
 
   const TAB_STYLE = (active) => ({
     flex: 1, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer',
@@ -903,7 +1109,7 @@ const Img2PromptPanel = ({ open, onClose }) => {
         </div>
 
         {/* Tab content */}
-        {tab === 'reverse' ? <ReverseTab onClose={onClose} /> : <GenerateTab />}
+        {tab === 'reverse' ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} /> : <GenerateTab onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />}
 
       </div>
 

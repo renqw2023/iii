@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { auth } = require('../middleware/auth');
 const User = require('../models/User');
+const Generation = require('../models/Generation');
 const { refreshFreeCreditsIfNeeded } = require('./credits');
 const { deductCredits, recordDeductTransactions } = require('../utils/creditsUtils');
 const {
@@ -363,6 +364,22 @@ router.post('/image', auth, async (req, res) => {
     const updatedCreditsLeft = referralReward?.invitee?.credits ?? user.credits;
     const updatedFreeCreditsLeft = referralReward?.invitee?.freeCredits ?? user.freeCredits;
 
+    // 保存生成记录（失败不影响返回）
+    try {
+      await Generation.create({
+        user: req.userId,
+        prompt: prompt.slice(0, 500),
+        modelId,
+        modelName: model.name,
+        imageUrl,
+        aspectRatio,
+        creditCost: model.creditCost,
+        status: 'success',
+      });
+    } catch (e) {
+      console.error('Generation save error:', e);
+    }
+
     res.json({
       imageUrl,
       creditsLeft: updatedCreditsLeft,
@@ -378,6 +395,39 @@ router.post('/image', auth, async (req, res) => {
   } catch (error) {
     console.error('generate/image 错误:', error);
     res.status(500).json({ message: '生成失败，请稍后重试' });
+  }
+});
+
+/**
+ * DELETE /api/generate/history/:id
+ * 删除单条生成记录（只能删自己的）
+ */
+router.delete('/history/:id', auth, async (req, res) => {
+  try {
+    const doc = await Generation.findOneAndDelete({ _id: req.params.id, user: req.userId });
+    if (!doc) return res.status(404).json({ message: '记录不存在' });
+    res.json({ message: 'deleted' });
+  } catch (e) {
+    res.status(500).json({ message: '删除失败' });
+  }
+});
+
+/**
+ * GET /api/generate/history
+ * 返回当前用户的生成历史
+ */
+router.get('/history', auth, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const offset = parseInt(req.query.offset) || 0;
+    const [records, total] = await Promise.all([
+      Generation.find({ user: req.userId })
+        .sort({ createdAt: -1 }).skip(offset).limit(limit).lean(),
+      Generation.countDocuments({ user: req.userId }),
+    ]);
+    res.json({ records, total });
+  } catch (e) {
+    res.status(500).json({ message: '获取历史失败' });
   }
 });
 

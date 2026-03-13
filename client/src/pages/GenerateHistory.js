@@ -167,7 +167,7 @@ const GenerateHistory = () => {
   const isEmpty = !isLoading && activeGenerations.length === 0 && records.length === 0;
 
   return (
-    <div style={{ minHeight: '100vh', padding: 0 }}>
+    <div style={{ minHeight: '100vh', padding: 0, background: 'var(--page-bg)' }}>
       {/* Floating white card */}
       <div style={{
         margin: 16,

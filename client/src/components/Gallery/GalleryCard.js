@@ -8,17 +8,11 @@ import { useInView } from 'react-intersection-observer';
 import { galleryAPI } from '../../services/galleryApi';
 import toast from 'react-hot-toast';
 
-const MODEL_COLORS = {
-    nanobanana: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'NanoBanana Pro' },
-    midjourney: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Midjourney' },
-    gptimage: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'GPT Image' },
-    other: { bg: 'bg-gray-500/20', text: 'text-gray-400', label: 'Other' },
-};
 
 const ROW_HEIGHT = 8; // must match grid-auto-rows in gallery.css
 const ROW_GAP = 8;    // card bottom spacing accounted into span
 
-const GalleryCard = ({ prompt, onLike, onFavorite }) => {
+const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = useState(false);

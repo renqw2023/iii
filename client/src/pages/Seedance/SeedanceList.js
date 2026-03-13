@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { useSearchParams, useLocation, Outlet } from 'react-router-dom';
+import { useSearchParams, Outlet } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { Loader2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';

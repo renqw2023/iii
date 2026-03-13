@@ -36,7 +36,7 @@ import DocsCenter from './pages/DocsCenter';
 import Notifications from './pages/Notifications';
 import Credits from './pages/Credits';
 import History from './pages/History';
-import GenerateHistory from './pages/GenerateHistory';
+import GenerateHistory from './pages/GenerateHistory'; // eslint-disable-line no-unused-vars
 import MagicLinkVerify from './pages/MagicLinkVerify';
 import Img2Prompt from './pages/Img2Prompt';
 import ErrorDemo from './pages/ErrorDemo';

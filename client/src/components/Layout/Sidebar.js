@@ -191,20 +191,12 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
     () => creditsAPI.getBalance().then(r => r.data.data),
     { enabled: isAuthenticated, staleTime: 60_000 }
   );
-  // 总可用积分 = 每日免费额度 + 永久积分
-  const credits = (creditsData?.freeCredits ?? 0) + (creditsData?.credits ?? 0);
-
   const isActive = (path, exact = false) =>
     exact ? location.pathname === path : location.pathname.startsWith(path);
 
   const handleFavorites = () => {
     if (!isAuthenticated) openLoginModal(); else navigate('/favorites');
   };
-
-  // filter 页（有专属 Panel）不显示邀请卡，避免空间拥挤
-  const isFilterPage = ['/explore', '/gallery', '/seedance'].some(p =>
-    location.pathname.startsWith(p)
-  );
 
   const Panel = SidebarPanel || DefaultPanel;
   const languageOptions = [

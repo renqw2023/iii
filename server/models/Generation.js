@@ -10,6 +10,8 @@ const schema = new mongoose.Schema({
   creditCost:       { type: Number, default: 0 },
   resolution:       { type: String, enum: ['2K', '4K'], default: '2K' },
   originalImageUrl: { type: String },
+  videoUrl:         { type: String },
+  mediaType:        { type: String, enum: ['image', 'video'], default: 'image' },
   status:           { type: String, enum: ['success', 'error'], default: 'success' },
   errorMsg:         { type: String },
 }, { timestamps: true });

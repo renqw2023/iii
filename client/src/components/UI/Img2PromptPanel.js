@@ -47,7 +47,7 @@ const SparklesIcon = ({ size = 13 }) => (
 /* ═══════════════════════════════════════════════
    Tab 1 — Reverse Prompt（图生文 → 文生图）
 ═══════════════════════════════════════════════ */
-const ReverseTab = ({ onClose: _onClose, onStartGeneration }) => {
+const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const { isAuthenticated, updateUser, openLoginModal } = useAuth();
   const { user } = useAuth();
   const { addGeneration, updateGeneration } = useGeneration();
@@ -92,6 +92,15 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration }) => {
       .catch(() => {});
   }, []);
 
+
+  // 消费 prefillJob：把 prompt 填入 Prompt Description，保持在 Reverse 标签
+  useEffect(() => {
+    if (prefillJob?.prompt) {
+      setPrompt(prefillJob.prompt);
+      onPrefillConsumed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillJob]);
 
   // 点击外部关闭下拉
   useEffect(() => {
@@ -578,51 +587,33 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration }) => {
 };
 
 /* ═══════════════════════════════════════════════
-   Tab 2 — Generate Image（文生图）
+   Tab 2 — Generate Video（文生视频）
 ═══════════════════════════════════════════════ */
-const ASPECT_RATIOS = ['1:1', '4:3', '3:4', '16:9'];
+const VIDEO_DURATIONS   = [5, 10];
+const VIDEO_RESOLUTIONS = ['720p', '1080p'];
+const VIDEO_RATIOS      = ['16:9', '9:16', '1:1'];
+const VIDEO_CREDIT_COST = 30;
 
-const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
+const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
-  const { addGeneration, updateGeneration } = useGeneration();
-  const [models, setModels]               = useState([]);
-  const [selectedModel, setSelectedModel] = useState(null);
-  const [prompt, setPrompt]               = useState('');
-  const [aspectRatio, setAspectRatio]     = useState('1:1');
-  const [resolution, setResolution]       = useState('2K');
-  const [isDragging, setIsDragging]       = useState(false);
-  const [modelsLoaded, setModelsLoaded]   = useState(false);
+  const [prompt, setPrompt]         = useState('');
+  const [duration, setDuration]     = useState(5);
+  const [resolution, setResolution] = useState('720p');
+  const [ratio, setRatio]           = useState('16:9');
+  const [loading, setLoading]       = useState(false);
+  const [videoUrl, setVideoUrl]     = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Consume prefillJob when it arrives
   useEffect(() => {
     if (prefillJob) {
       if (prefillJob.prompt) setPrompt(prefillJob.prompt);
-      if (prefillJob.modelId) setSelectedModel(prefillJob.modelId);
-      if (prefillJob.aspectRatio) setAspectRatio(prefillJob.aspectRatio);
       onPrefillConsumed?.();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillJob]);
 
-  useEffect(() => {
-    if (modelsLoaded) return;
-    generateAPI.getModels()
-      .then(list => {
-        setModels(list);
-        if (list.length > 0) {
-          const preferred = list.find(m => m.id === 'gemini3-pro' && !m.comingSoon)
-            ?? list.find(m => !m.comingSoon)
-            ?? list[0];
-          setSelectedModel(preferred.id);
-        }
-        setModelsLoaded(true);
-      })
-      .catch(() => {});
-  }, [modelsLoaded]);
-
-  const currentModel = models.find(m => m.id === selectedModel);
-
-  /* 拖拽：优先读 prompt 字段（Gallery卡片），无则忽略 */
+  /* 拖拽：优先读 prompt 字段（Gallery卡片） */
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -630,104 +621,45 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
     if (jsonData) {
       try {
         const parsed = JSON.parse(jsonData);
-        if (parsed.prompt) {
-          setPrompt(parsed.prompt);
-          toast.success('Prompt filled from gallery card');
-          return;
-        }
-        if (parsed.image) {
-          toast('Drop to Reverse Prompt tab to analyze this image', { icon: '💡' });
-          return;
-        }
+        if (parsed.prompt) { setPrompt(parsed.prompt); toast.success('Prompt filled from gallery card'); }
       } catch (_) { /* ignore */ }
     }
   }, []);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!isAuthenticated) { openLoginModal(); return; }
     if (!prompt.trim()) { toast.error('Please enter a prompt'); return; }
-    if (!selectedModel) { toast.error('No model available'); return; }
 
-    const jobId = Date.now().toString();
-    const savedPrompt = prompt;
-    const savedModel = selectedModel;
-    const savedRatio = aspectRatio;
-    const savedModelName = currentModel?.name;
-    const savedCreditCost = currentModel?.creditCost;
-
-    // Add to context so GenerateHistory renders loading card immediately
-    addGeneration({
-      id: jobId,
-      status: 'loading',
-      progress: 8,
-      prompt: savedPrompt,
-      modelId: savedModel,
-      modelName: savedModelName,
-      aspectRatio: savedRatio,
-      result: null,
-      errorMessage: '',
-      startedAt: new Date(),
-    });
-
-    // Navigate to /generate-history immediately
-    onStartGeneration?.();
-
-    // API call runs in background — context update propagates to history page
-    generateAPI.generateImage({ prompt: savedPrompt, modelId: savedModel, aspectRatio: savedRatio, resolution })
-      .then(data => {
-        updateGeneration(jobId, { status: 'success', progress: 100, result: data });
-        updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-        const totalCost = (savedCreditCost ?? 0) + (resolution === '4K' ? 5 : 0);
-        toast.success(`Image generated! ${totalCost} credits used`);
-      })
-      .catch(err => {
-        const message = err.response?.data?.message || 'Generation failed, please try again';
-        updateGeneration(jobId, { status: 'error', errorMessage: message });
-        if (err.response?.status === 403) {
-          toast.error('4K requires a paid plan — purchase credits first');
-        } else {
-          toast.error(message);
-        }
-      });
+    setLoading(true);
+    setVideoUrl(null);
+    try {
+      const data = await generateAPI.generateVideo({ prompt: prompt.trim(), duration, resolution, aspectRatio: ratio });
+      setVideoUrl(data.videoUrl);
+      updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
+      toast.success(`Video generated! ${VIDEO_CREDIT_COST} credits used`);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Video generation failed';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const credits = user?.credits ?? 0;
   const freeCredits = user?.freeCredits ?? 0;
-  const canGenerate = !!prompt.trim() && !!selectedModel;
+  const canGenerate = !!prompt.trim() && !loading;
+
+  const SEL_BTN = (active) => ({
+    flex: 1, height: 30, borderRadius: 8,
+    border: `1.5px solid ${active ? '#6366f1' : 'rgba(0,0,0,0.10)'}`,
+    backgroundColor: active ? 'rgba(99,102,241,0.08)' : 'transparent',
+    color: active ? '#6366f1' : '#6b7280',
+    fontSize: 12, fontWeight: active ? 600 : 400,
+    cursor: 'pointer', transition: 'all 150ms',
+  });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', paddingRight: 2 }}>
-
-      {/* Model selector */}
-      <div style={{ flexShrink: 0 }}>
-        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Model</p>
-        {models.length === 0 ? (
-          <p style={{ fontSize: 12, color: '#f87171', margin: 0 }}>No models configured. Add GEMINI_API_KEY or OPENAI_API_KEY to server.</p>
-        ) : (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {models.map(m => (
-              <button key={m.id} onClick={() => setSelectedModel(m.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '5px 11px', borderRadius: 99,
-                  border: `1.5px solid ${selectedModel === m.id ? '#6366f1' : 'rgba(0,0,0,0.1)'}`,
-                  backgroundColor: selectedModel === m.id ? 'rgba(99,102,241,0.08)' : 'transparent',
-                  color: selectedModel === m.id ? '#6366f1' : '#374151',
-                  fontSize: 12, fontWeight: selectedModel === m.id ? 600 : 400,
-                  cursor: 'pointer', transition: 'all 150ms',
-                }}>
-                <span>{m.name}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 6, padding: '1px 5px', fontSize: 11, color: '#6b7280' }}>
-                  <Zap size={9} style={{ color: '#f59e0b' }} />{m.creditCost}
-                </span>
-                {m.badge && (
-                  <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 4px' }}>{m.badge}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Prompt box with drag support */}
       <div
@@ -747,55 +679,38 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Describe what you want to create… or drag a Gallery card here"
-          style={{ width: '100%', minHeight: 100, border: 'none', outline: 'none', backgroundColor: 'transparent', resize: 'none', fontSize: 13, lineHeight: 1.6, color: '#374151', fontFamily: 'inherit' }}
+          placeholder="Describe the video you want to create… or drag a Gallery card here"
+          style={{ width: '100%', minHeight: 90, border: 'none', outline: 'none', backgroundColor: 'transparent', resize: 'none', fontSize: 13, lineHeight: 1.6, color: '#374151', fontFamily: 'inherit' }}
         />
       </div>
 
-      {/* Aspect ratio */}
+      {/* Duration */}
       <div style={{ flexShrink: 0 }}>
-        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aspect Ratio</p>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</p>
         <div style={{ display: 'flex', gap: 6 }}>
-          {ASPECT_RATIOS.map(r => (
-            <button key={r} onClick={() => setAspectRatio(r)}
-              style={{
-                flex: 1, height: 30, borderRadius: 8,
-                border: `1.5px solid ${aspectRatio === r ? '#6366f1' : 'rgba(0,0,0,0.10)'}`,
-                backgroundColor: aspectRatio === r ? 'rgba(99,102,241,0.08)' : 'transparent',
-                color: aspectRatio === r ? '#6366f1' : '#6b7280',
-                fontSize: 12, fontWeight: aspectRatio === r ? 600 : 400,
-                cursor: 'pointer', transition: 'all 150ms',
-              }}>
-              {r}
-            </button>
+          {VIDEO_DURATIONS.map(d => (
+            <button key={d} onClick={() => setDuration(d)} style={SEL_BTN(duration === d)}>{d}s</button>
           ))}
         </div>
       </div>
 
-      {/* Resolution selector */}
+      {/* Resolution */}
       <div style={{ flexShrink: 0 }}>
         <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolution</p>
         <div style={{ display: 'flex', gap: 6 }}>
-          {RESOLUTIONS.map(res => {
-            const locked = res === '4K' && !user?.hasPurchasedBefore;
-            const active = resolution === res;
-            return (
-              <button key={res}
-                onClick={() => locked ? toast('4K requires a paid plan — purchase credits first', { icon: '🔒' }) : setResolution(res)}
-                title={locked ? 'Requires paid plan' : undefined}
-                style={{
-                  flex: 1, height: 30, borderRadius: 8,
-                  border: `1.5px solid ${active ? '#6366f1' : 'rgba(0,0,0,0.10)'}`,
-                  backgroundColor: active ? 'rgba(99,102,241,0.08)' : 'transparent',
-                  color: locked ? '#c4b5fd' : active ? '#6366f1' : '#6b7280',
-                  fontSize: 12, fontWeight: active ? 600 : 400,
-                  cursor: locked ? 'not-allowed' : 'pointer', transition: 'all 150ms',
-                  opacity: locked ? 0.65 : 1,
-                }}>
-                {res}{locked ? ' 🔒' : res === '4K' ? ' +5' : ''}
-              </button>
-            );
-          })}
+          {VIDEO_RESOLUTIONS.map(r => (
+            <button key={r} onClick={() => setResolution(r)} style={SEL_BTN(resolution === r)}>{r}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Aspect Ratio */}
+      <div style={{ flexShrink: 0 }}>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aspect Ratio</p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {VIDEO_RATIOS.map(r => (
+            <button key={r} onClick={() => setRatio(r)} style={SEL_BTN(ratio === r)}>{r}</button>
+          ))}
         </div>
       </div>
 
@@ -818,16 +733,18 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         onMouseEnter={e => { if (canGenerate) e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        <>
+        {loading ? (
+          <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /><span>Generating…</span></>
+        ) : (
+          <>
             <Wand2 size={15} />
-            <span>Generate Image</span>
-            {currentModel && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
-                <Zap size={10} style={{ color: '#FFDBA4' }} />
-                <span style={{ fontSize: 12 }}>{currentModel.creditCost}</span>
-              </div>
-            )}
+            <span>Generate Video</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
+              <Zap size={10} style={{ color: '#FFDBA4' }} />
+              <span style={{ fontSize: 12 }}>{VIDEO_CREDIT_COST}</span>
+            </div>
           </>
+        )}
       </button>
 
       {/* Auth / balance */}
@@ -835,7 +752,7 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', margin: 0, flexShrink: 0 }}>
           <button onClick={openLoginModal} style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: 12 }}>
             Sign in
-          </button>{' '}to generate images
+          </button>{' '}to generate videos
         </p>
       ) : (
         <p style={{ textAlign: 'center', fontSize: 11, color: '#9ca3af', margin: 0, flexShrink: 0 }}>
@@ -843,6 +760,27 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
           {' '}·{' '}
           Credits: <strong style={{ color: '#6b7280' }}>{credits}</strong>
         </p>
+      )}
+
+      {/* Loading state */}
+      {loading && (
+        <div style={{ borderRadius: 14, backgroundColor: MUTED, padding: 16, textAlign: 'center', flexShrink: 0 }}>
+          <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: '#6366f1', margin: '0 auto 8px' }} />
+          <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>Generating video… this may take 30–60 seconds</p>
+        </div>
+      )}
+
+      {/* Video player */}
+      {videoUrl && !loading && (
+        <div style={{ borderRadius: 14, overflow: 'hidden', backgroundColor: '#000', flexShrink: 0 }}>
+          <video
+            src={videoUrl}
+            autoPlay
+            loop
+            controls
+            style={{ width: '100%', display: 'block', maxHeight: 240, objectFit: 'contain' }}
+          />
+        </div>
       )}
 
     </div>
@@ -859,12 +797,7 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
     if (!open) setTab('reverse');
   }, [open]);
 
-  // When prefillJob is set and panel opens, switch to generate tab
-  useEffect(() => {
-    if (open && prefillJob) {
-      setTab('generate');
-    }
-  }, [open, prefillJob]);
+  // prefillJob → stay on reverse tab, let ReverseTab consume it
 
   const TAB_STYLE = (active) => ({
     flex: 1, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer',
@@ -897,7 +830,7 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, paddingLeft: 4, paddingRight: 2 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: 0 }}>Image Generation</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: 0 }}>AI Generation</h2>
           <button onClick={onClose}
             style={{ width: 28, height: 28, borderRadius: 8, border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', transition: 'background-color 150ms' }}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = MUTED; e.currentTarget.style.color = '#6b7280'; }}
@@ -909,15 +842,15 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
         {/* Tab switcher */}
         <div style={{ display: 'flex', gap: 4, padding: '4px', backgroundColor: MUTED, borderRadius: 10, flexShrink: 0 }}>
           <button style={TAB_STYLE(tab === 'reverse')} onClick={() => setTab('reverse')}>
-            Reverse Prompt
+            Generate Image
           </button>
           <button style={TAB_STYLE(tab === 'generate')} onClick={() => setTab('generate')}>
-            Generate Image
+            Generate Video
           </button>
         </div>
 
         {/* Tab content */}
-        {tab === 'reverse' ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} /> : <GenerateTab onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />}
+        {tab === 'reverse' ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} /> : <VideoTab />}
 
       </div>
 
@@ -925,6 +858,10 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
       `}</style>
     </div>

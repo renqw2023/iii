@@ -24,8 +24,10 @@
  */
 const config = require('../config');
 
-const POLL_INTERVAL_MS = 3000;
-const TIMEOUT_MS       = 120000;
+const POLL_INTERVAL_MS  = 3000;
+const TIMEOUT_MS        = 180000;  // 3 min total — video generation can take ~60-90s
+const POLL_FETCH_TIMEOUT = 30000;  // 30s per poll request (was 15s — too short cross-region)
+const CREATE_FETCH_TIMEOUT = 60000; // 60s for create task
 
 // ── Credit cost lookup ────────────────────────────────────────────────────────
 // Key: `${resolution}-${duration}`
@@ -102,7 +104,7 @@ async function generateVideo({ prompt, modelKey = 'seedance-1-5-pro', duration =
     method: 'POST',
     headers,
     body:   JSON.stringify(body),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(CREATE_FETCH_TIMEOUT),
   });
 
   if (!createRes.ok) {
@@ -121,10 +123,17 @@ async function generateVideo({ prompt, modelKey = 'seedance-1-5-pro', duration =
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
 
-    const pollRes = await fetch(`${baseUrl}/contents/generations/tasks/${taskId}`, {
-      headers,
-      signal: AbortSignal.timeout(15000),
-    });
+    let pollRes;
+    try {
+      pollRes = await fetch(`${baseUrl}/contents/generations/tasks/${taskId}`, {
+        headers,
+        signal: AbortSignal.timeout(POLL_FETCH_TIMEOUT),
+      });
+    } catch (fetchErr) {
+      // Network hiccup or timeout on this single poll — log and retry, task still running
+      console.warn(`[videoService] poll fetch error (will retry): ${fetchErr.message}`);
+      continue;
+    }
 
     if (!pollRes.ok) {
       const errBody = await pollRes.json().catch(() => ({}));

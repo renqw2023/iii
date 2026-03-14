@@ -71,6 +71,8 @@ export const gallery = {
             unfavorited: 'Unfavorited',
             loginRequired: 'Please login first',
             linkCopied: 'Link copied!',
+            useIdea: 'Use Idea',
+            viewOnX: 'View on X',
         },
     },
     'zh-CN': {
@@ -144,6 +146,8 @@ export const gallery = {
             unfavorited: '已取消收藏',
             loginRequired: '请先登录',
             linkCopied: '链接已复制！',
+            useIdea: '使用创意',
+            viewOnX: '在 X 查看',
         },
     },
     'ja-JP': {
@@ -217,6 +221,8 @@ export const gallery = {
             unfavorited: 'お気に入り解除',
             loginRequired: 'ログインしてください',
             linkCopied: 'リンクをコピーしました！',
+            useIdea: 'アイデアを使用',
+            viewOnX: 'Xで見る',
         },
     },
 };

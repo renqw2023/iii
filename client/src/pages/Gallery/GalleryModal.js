@@ -190,7 +190,7 @@ const GalleryModal = () => {
                                 )}
                                 {prompt?.sourceAuthor && (
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                                        @{prompt.sourceAuthor}
+                                        {prompt.sourceAuthor.startsWith('@') ? prompt.sourceAuthor : `@${prompt.sourceAuthor}`}
                                     </span>
                                 )}
                             </div>
@@ -258,7 +258,15 @@ const GalleryModal = () => {
                                             <ExternalLink size={13} />
                                             <span>Source:</span>
                                             <a href={prompt.sourceUrl} target="_blank" rel="noopener noreferrer">
-                                                {prompt.sourcePlatform || 'External'}
+                                                {(() => {
+                                                    try {
+                                                        const host = new URL(prompt.sourceUrl).hostname.replace('www.', '');
+                                                        if (host === 'x.com' || host === 'twitter.com') return 'X';
+                                                        return host;
+                                                    } catch {
+                                                        return 'View Source';
+                                                    }
+                                                })()}
                                             </a>
                                         </div>
                                     )}

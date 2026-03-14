@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Bookmark } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,6 +18,7 @@ const FavoriteButton = ({
   initialFavorited = false,
   className = '',
   size = 16,
+  iconType = 'heart',
 }) => {
   const { isAuthenticated, openLoginModal } = useAuth();
   const [favorited, setFavorited] = useState(initialFavorited);
@@ -80,15 +81,27 @@ const FavoriteButton = ({
       aria-label={favorited ? '取消收藏' : '收藏'}
       title={favorited ? '取消收藏' : '收藏'}
     >
-      <Heart
-        size={size}
-        fill={favorited ? 'currentColor' : 'none'}
-        style={{
-          color: favorited ? '#ef4444' : 'currentColor',
-          transition: 'all 0.2s ease',
-          transform: loading ? 'scale(0.85)' : 'scale(1)',
-        }}
-      />
+      {iconType === 'bookmark' ? (
+        <Bookmark
+          size={size}
+          fill={favorited ? 'currentColor' : 'none'}
+          style={{
+            color: favorited ? '#818cf8' : 'currentColor',
+            transition: 'all 0.2s ease',
+            transform: loading ? 'scale(0.85)' : 'scale(1)',
+          }}
+        />
+      ) : (
+        <Heart
+          size={size}
+          fill={favorited ? 'currentColor' : 'none'}
+          style={{
+            color: favorited ? '#ef4444' : 'currentColor',
+            transition: 'all 0.2s ease',
+            transform: loading ? 'scale(0.85)' : 'scale(1)',
+          }}
+        />
+      )}
     </button>
   );
 };

@@ -36,17 +36,24 @@
   transform: scale(1.03);
 }
 
-/* 底部渐变 hover overlay */
+/* Spotlight glow — mouse-tracking radial highlight above image */
+.liblib-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  border-radius: 12px;
+  transition: background 0.05s;
+}
+
+/* 全卡覆盖渐变 hover overlay */
 .liblib-card-overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.35) 60%, transparent 100%);
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.25) 55%, transparent 100%);
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  padding: 0.55rem 0.65rem;
+  z-index: 2;
   opacity: 0;
   transition: opacity 0.22s ease;
   pointer-events: none;
@@ -57,15 +64,58 @@
   pointer-events: auto;
 }
 
-/* 左侧：作者名 */
-.liblib-overlay-author {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.88);
-  font-weight: 500;
+/* Bottom action bar — slides up on hover */
+.liblib-card-action-bar {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0.55rem 0.6rem;
+  transform: translateY(6px);
+  transition: transform 0.3s ease;
+}
+
+.liblib-card:hover .liblib-card-action-bar {
+  transform: translateY(0);
+}
+
+/* 左列：sref code + CTA */
+.liblib-action-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.liblib-sref-code {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.75);
+  font-family: monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 110px;
+  max-width: 120px;
+}
+
+/* White CTA button */
+.liblib-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.55rem;
+  background: rgba(255,255,255,0.92);
+  color: #111;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.67rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  width: fit-content;
+}
+
+.liblib-cta-btn:hover {
+  background: rgba(255,255,255,0.78);
 }
 
 /* 右侧：stats + 操作 */
@@ -102,6 +152,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
 }
 
 .liblib-action-btn:hover {

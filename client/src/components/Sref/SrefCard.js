@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Eye, Check } from 'lucide-react';
+import { Copy, Heart, Eye, Check, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FavoriteButton from '../UI/FavoriteButton';
 import '../Post/LiblibStyleCard.css';
@@ -14,6 +14,7 @@ const SrefCard = ({ sref }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const cardRef = useRef(null);
+  const glowRef = useRef(null);
   const [gridSpan, setGridSpan] = useState(38);
   const naturalSize = useRef(null);
 
@@ -69,15 +70,16 @@ const SrefCard = ({ sref }) => {
 
   const handleMouseMove = useCallback((e) => {
     const el = cardRef.current;
-    if (!el) return;
+    if (!el || !glowRef.current) return;
     const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    el.style.background = `radial-gradient(circle 160px at ${x}px ${y}px, rgba(99,102,241,0.15), transparent 70%), var(--bg-card)`;
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    glowRef.current.style.background =
+      `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.10) 0%, transparent 60%)`;
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    if (cardRef.current) cardRef.current.style.background = 'var(--bg-card)';
+    if (glowRef.current) glowRef.current.style.background = 'none';
   }, []);
 
   return (
@@ -96,6 +98,9 @@ const SrefCard = ({ sref }) => {
       onClick={() => navigate(`/explore/${sref._id}`, { state: { fromList: true } })}
     >
       <div className="liblib-card-image" style={{ cursor: 'pointer' }}>
+        {/* Spotlight glow */}
+        <div ref={glowRef} className="liblib-spotlight" />
+
         {sref.previewImage ? (
           <img
             src={sref.previewImage}
@@ -110,29 +115,43 @@ const SrefCard = ({ sref }) => {
           </div>
         )}
 
-
         {/* Hover overlay */}
         {imageLoaded && (
           <div className="liblib-card-overlay">
-            <div className="liblib-overlay-right">
-              <span className="liblib-overlay-stats">
-                <Heart size={11} /> {sref.likesCount || 0}
-                <Eye size={11} style={{ marginLeft: '0.3rem' }} /> {sref.views || 0}
-              </span>
-              <div className="liblib-overlay-actions">
-                <FavoriteButton
-                  targetType="sref"
-                  targetId={sref._id}
-                  className="liblib-action-btn"
-                  size={13}
-                />
-                <button
-                  onClick={handleCopy}
-                  className="liblib-action-btn"
-                  title="Copy --sref code"
-                >
-                  {copied ? <Check size={13} /> : <Copy size={13} />}
+            <div className="liblib-card-action-bar">
+              {/* 左列：sref code + CTA */}
+              <div className="liblib-action-left">
+                <span className="liblib-sref-code">--sref {sref.srefCode}</span>
+                <button className="liblib-cta-btn" onClick={handleCopy}>
+                  {copied
+                    ? <><Check size={11} style={{ marginRight: '0.3rem' }} /> Copied!</>
+                    : <><Copy size={11} style={{ marginRight: '0.3rem' }} /> Copy Code</>
+                  }
                 </button>
+              </div>
+              {/* 右列：stats + Favorite */}
+              <div className="liblib-overlay-right">
+                <span className="liblib-overlay-stats">
+                  <Heart size={11} /> {sref.likesCount || 0}
+                  <Eye size={11} style={{ marginLeft: '0.3rem' }} /> {sref.views || 0}
+                </span>
+                <div className="liblib-overlay-actions">
+                  <FavoriteButton
+                    targetType="sref"
+                    targetId={sref._id}
+                    className="liblib-action-btn"
+                    size={13}
+                  />
+                  {sref.sourceUrl && (
+                    <button
+                      className="liblib-action-btn"
+                      title="View on X"
+                      onClick={e => { e.stopPropagation(); window.open(sref.sourceUrl, '_blank', 'noopener,noreferrer'); }}
+                    >
+                      <ExternalLink size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

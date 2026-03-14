@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Eye } from 'lucide-react';
+import { Wand2, Share2, Heart, Eye, Bookmark } from 'lucide-react';
+import { useGeneration } from '../../contexts/GenerationContext';
 import FavoriteButton from '../UI/FavoriteButton';
 import { useTranslation } from 'react-i18next';
 import { useInView } from 'react-intersection-observer';
-import { galleryAPI } from '../../services/galleryApi';
 import toast from 'react-hot-toast';
 
 
@@ -14,9 +14,11 @@ const ROW_GAP = 8;    // card bottom spacing accounted into span
 
 const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
     const navigate = useNavigate();
+    const { setPrefill } = useGeneration();
     const { t } = useTranslation();
     const [imageLoaded, setImageLoaded] = useState(false);
     const cardRef = useRef(null);
+    const glowRef = useRef(null);
     // Initial span reserves ~300px height; corrected on image load via natural dimensions
     const [gridSpan, setGridSpan] = useState(38);
     // Store natural dimensions so ResizeObserver can recalculate on column width change
@@ -60,20 +62,24 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
         }
     };
 
-    const handleCopy = async (e) => {
+    const handleUseIdea = (e) => {
         e.stopPropagation();
-        try {
-            await navigator.clipboard.writeText(prompt.prompt);
-            galleryAPI.recordCopy(prompt._id);
-            toast.success(t('gallery.actions.copySuccess'));
-        } catch {
-            toast.error(t('gallery.actions.copyFailed'));
-        }
+        setPrefill({ prompt: prompt.prompt });
     };
 
     const handleLike = (e) => {
         e.stopPropagation();
         onLike?.(prompt._id);
+    };
+
+    const handleShare = (e) => {
+        e.stopPropagation();
+        const url = `${window.location.origin}/gallery/${prompt._id}`;
+        navigator.clipboard.writeText(url).then(() => {
+            toast.success('Link copied!');
+        }).catch(() => {
+            toast.error('Copy failed');
+        });
     };
 
     const handleDragStart = useCallback((e) => {
@@ -85,15 +91,16 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
 
     const handleMouseMove = useCallback((e) => {
         const el = cardRef.current;
-        if (!el) return;
+        if (!el || !glowRef.current) return;
         const rect = el.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        el.style.background = `radial-gradient(circle 160px at ${x}px ${y}px, rgba(99,102,241,0.15), transparent 70%), var(--bg-card)`;
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        glowRef.current.style.background =
+            `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.10) 0%, transparent 60%)`;
     }, []);
 
     const handleMouseLeave = useCallback(() => {
-        if (cardRef.current) cardRef.current.style.background = 'var(--bg-card)';
+        if (glowRef.current) glowRef.current.style.background = 'none';
     }, []);
 
     return (
@@ -112,6 +119,9 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
         >
             {/* 预览图区域 — 自然比例，无固定 aspect-ratio */}
             <div className="gallery-card-image">
+                {/* Spotlight glow — follows mouse, above image, no pointer events */}
+                <div ref={glowRef} className="gallery-spotlight" />
+
                 {inView && prompt.previewImage ? (
                     <img
                         src={prompt.previewImage}
@@ -132,43 +142,49 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
                     </div>
                 )}
 
-                {/* 底部渐变遮罩 hover overlay */}
+                {/* 全卡渐变遮罩 + 底部 action-bar */}
                 {imageLoaded && (
                     <div className="gallery-card-overlay">
-                        {/* 左侧：作者 */}
-                        {prompt.sourceAuthor && (
-                            <span className="gallery-card-author-overlay">
-                                @{prompt.sourceAuthor}
-                            </span>
-                        )}
-
-                        {/* 右侧：stats + 操作按钮 */}
-                        <div className="gallery-overlay-right">
-                            <span className="gallery-card-stats-overlay">
-                                <Heart size={11} /> {prompt.likesCount || 0}
-                                <Eye size={11} style={{ marginLeft: '0.4rem' }} /> {prompt.views || 0}
-                            </span>
+                        <div className="gallery-card-action-bar">
+                            {/* 左列：作者 + stats + CTA */}
+                            <div className="gallery-action-left">
+                                {prompt.sourceAuthor && (
+                                    <span className="gallery-card-author-overlay">
+                                        {prompt.sourceAuthor.startsWith('@') ? prompt.sourceAuthor : `@${prompt.sourceAuthor}`}
+                                    </span>
+                                )}
+                                <span className="gallery-card-stats-overlay">
+                                    <Heart size={11} /> {prompt.likesCount || 0}
+                                    <Eye size={11} style={{ marginLeft: '0.35rem' }} /> {prompt.views || 0}
+                                </span>
+                                <button className="gallery-cta-btn" onClick={handleUseIdea}>
+                                    <Wand2 size={11} style={{ marginRight: '0.3rem' }} />
+                                    {t('gallery.actions.useIdea')}
+                                </button>
+                            </div>
+                            {/* 右列：Like + Favorite */}
                             <div className="gallery-overlay-actions">
                                 <button
-                                    onClick={handleCopy}
-                                    className="gallery-action-btn"
-                                    title={t('gallery.actions.copy')}
-                                >
-                                    <Copy size={14} />
-                                </button>
-                                <button
                                     onClick={handleLike}
-                                    className={`gallery-action-btn ${prompt.isLiked ? 'text-red-400' : ''}`}
-                                    title={t('gallery.actions.like')}
+                                    className={`gallery-action-btn ${prompt.isLiked ? 'liked' : ''}`}
+                                    title={t('gallery.actions.like', 'Like')}
                                 >
-                                    <Heart size={14} fill={prompt.isLiked ? 'currentColor' : 'none'} />
+                                    <Heart size={13} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                                 </button>
                                 <FavoriteButton
                                     targetType="gallery"
                                     targetId={prompt._id}
                                     className="gallery-action-btn"
-                                    size={14}
+                                    size={13}
+                                    iconType="bookmark"
                                 />
+                                <button
+                                    className="gallery-action-btn"
+                                    title="Share"
+                                    onClick={handleShare}
+                                >
+                                    <Share2 size={13} />
+                                </button>
                             </div>
                         </div>
                     </div>

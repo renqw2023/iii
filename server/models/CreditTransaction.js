@@ -25,6 +25,7 @@ const creditTransactionSchema = new mongoose.Schema({
       'admin_grant',
       'admin_deduct',
       'generate_image',
+      'generate_video',
       'img2prompt',
       'purchase',
     ],

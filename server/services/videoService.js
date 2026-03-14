@@ -25,7 +25,7 @@
 const config = require('../config');
 
 const POLL_INTERVAL_MS  = 3000;
-const TIMEOUT_MS        = 180000;  // 3 min total — video generation can take ~60-90s
+const TIMEOUT_MS        = 360000;  // 6 min total — Seedance can take 2-3 min under load
 const POLL_FETCH_TIMEOUT = 30000;  // 30s per poll request (was 15s — too short cross-region)
 const CREATE_FETCH_TIMEOUT = 60000; // 60s for create task
 
@@ -158,7 +158,7 @@ async function generateVideo({ prompt, modelKey = 'seedance-1-5-pro', duration =
     // queued / running → keep polling
   }
 
-  throw new Error('Seedance video generation timed out after 120 seconds');
+  throw new Error('Seedance video generation timed out after 6 minutes');
 }
 
 module.exports = { generateVideo, getCreditCost, MODELS, CREDIT_COST_MAP };

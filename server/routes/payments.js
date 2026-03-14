@@ -88,7 +88,7 @@ router.post('/webhook', async (req, res) => {
     try {
       const updatedUser = await User.findByIdAndUpdate(
         userId,
-        { $inc: { credits: creditsNum } },
+        { $inc: { credits: creditsNum }, $set: { hasPurchasedBefore: true } },
         { new: true }
       );
 

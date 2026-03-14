@@ -292,6 +292,9 @@ class Config {
         webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
         currency: 'usd',
       },
+      replicate: {
+        apiKey: process.env.REPLICATE_API_KEY || '',
+      },
     };
   }
 

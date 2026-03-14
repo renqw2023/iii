@@ -247,15 +247,21 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration }) => {
       prompt: promptText,
       modelId: selectedGenModel,
       aspectRatio: RATIOS[ratioIdx],
+      resolution,
       ...(refImageB64 ? { referenceImageData: refImageB64, referenceImageMime: refMimeType } : {}),
     }).then(data => {
       updateGeneration(jobId, { status: 'success', progress: 100, result: data });
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-      toast.success(`Image generated! ${genModel?.creditCost ?? '?'} credits used`);
+      const creditCost = (genModel?.creditCost ?? 0) + (resolution === '4K' ? 5 : 0);
+      toast.success(`Image generated! ${creditCost} credits used`);
     }).catch(err => {
-      const message = err.response?.data?.message || 'Generation failed, please try again';
-      updateGeneration(jobId, { status: 'error', errorMessage: message });
-      toast.error(message);
+      const msg = err.response?.data?.message || 'Generation failed, please try again';
+      updateGeneration(jobId, { status: 'error', errorMessage: msg });
+      if (err.response?.status === 403) {
+        toast.error('4K requires a paid plan — purchase credits first');
+      } else {
+        toast.error(msg);
+      }
     });
   };
 
@@ -416,12 +422,17 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration }) => {
           </button>
         </div>
         <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-          {RESOLUTIONS.map(res => (
-            <button key={res} onClick={() => setResolution(res)}
-              style={{ height: 30, padding: '0 10px', borderRadius: 8, border: `1px solid ${resolution === res ? 'rgba(0,0,0,0.20)' : 'rgba(0,0,0,0.10)'}`, backgroundColor: resolution === res ? '#fff' : 'transparent', fontSize: 12, fontWeight: resolution === res ? 500 : 400, color: resolution === res ? '#374151' : '#9ca3af', cursor: 'pointer', transition: 'all 150ms' }}>
-              {res}
-            </button>
-          ))}
+          {RESOLUTIONS.map(res => {
+            const locked = res === '4K' && !user?.hasPurchasedBefore;
+            return (
+              <button key={res}
+                onClick={() => locked ? toast('4K requires a paid plan — purchase credits first', { icon: '🔒' }) : setResolution(res)}
+                title={locked ? 'Requires paid plan' : undefined}
+                style={{ height: 30, padding: '0 10px', borderRadius: 8, border: `1px solid ${resolution === res ? 'rgba(0,0,0,0.20)' : 'rgba(0,0,0,0.10)'}`, backgroundColor: resolution === res ? '#fff' : 'transparent', fontSize: 12, fontWeight: resolution === res ? 500 : 400, color: locked ? '#c4b5fd' : resolution === res ? '#374151' : '#9ca3af', cursor: locked ? 'not-allowed' : 'pointer', transition: 'all 150ms', opacity: locked ? 0.65 : 1 }}>
+                {res}{locked ? ' 🔒' : ''}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -578,6 +589,7 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const [selectedModel, setSelectedModel] = useState(null);
   const [prompt, setPrompt]               = useState('');
   const [aspectRatio, setAspectRatio]     = useState('1:1');
+  const [resolution, setResolution]       = useState('2K');
   const [isDragging, setIsDragging]       = useState(false);
   const [modelsLoaded, setModelsLoaded]   = useState(false);
 
@@ -661,16 +673,21 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
     onStartGeneration?.();
 
     // API call runs in background — context update propagates to history page
-    generateAPI.generateImage({ prompt: savedPrompt, modelId: savedModel, aspectRatio: savedRatio })
+    generateAPI.generateImage({ prompt: savedPrompt, modelId: savedModel, aspectRatio: savedRatio, resolution })
       .then(data => {
         updateGeneration(jobId, { status: 'success', progress: 100, result: data });
         updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-        toast.success(`Image generated! ${savedCreditCost} credits used`);
+        const totalCost = (savedCreditCost ?? 0) + (resolution === '4K' ? 5 : 0);
+        toast.success(`Image generated! ${totalCost} credits used`);
       })
       .catch(err => {
         const message = err.response?.data?.message || 'Generation failed, please try again';
         updateGeneration(jobId, { status: 'error', errorMessage: message });
-        toast.error(message);
+        if (err.response?.status === 403) {
+          toast.error('4K requires a paid plan — purchase credits first');
+        } else {
+          toast.error(message);
+        }
       });
   };
 
@@ -752,6 +769,33 @@ const GenerateTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
               {r}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Resolution selector */}
+      <div style={{ flexShrink: 0 }}>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolution</p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {RESOLUTIONS.map(res => {
+            const locked = res === '4K' && !user?.hasPurchasedBefore;
+            const active = resolution === res;
+            return (
+              <button key={res}
+                onClick={() => locked ? toast('4K requires a paid plan — purchase credits first', { icon: '🔒' }) : setResolution(res)}
+                title={locked ? 'Requires paid plan' : undefined}
+                style={{
+                  flex: 1, height: 30, borderRadius: 8,
+                  border: `1.5px solid ${active ? '#6366f1' : 'rgba(0,0,0,0.10)'}`,
+                  backgroundColor: active ? 'rgba(99,102,241,0.08)' : 'transparent',
+                  color: locked ? '#c4b5fd' : active ? '#6366f1' : '#6b7280',
+                  fontSize: 12, fontWeight: active ? 600 : 400,
+                  cursor: locked ? 'not-allowed' : 'pointer', transition: 'all 150ms',
+                  opacity: locked ? 0.65 : 1,
+                }}>
+                {res}{locked ? ' 🔒' : res === '4K' ? ' +5' : ''}
+              </button>
+            );
+          })}
         </div>
       </div>
 

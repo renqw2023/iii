@@ -6,10 +6,12 @@ const schema = new mongoose.Schema({
   modelId:     { type: String, required: true },
   modelName:   { type: String },
   imageUrl:    { type: String },
-  aspectRatio: { type: String, default: '1:1' },
-  creditCost:  { type: Number, default: 0 },
-  status:      { type: String, enum: ['success', 'error'], default: 'success' },
-  errorMsg:    { type: String },
+  aspectRatio:      { type: String, default: '1:1' },
+  creditCost:       { type: Number, default: 0 },
+  resolution:       { type: String, enum: ['2K', '4K'], default: '2K' },
+  originalImageUrl: { type: String },
+  status:           { type: String, enum: ['success', 'error'], default: 'success' },
+  errorMsg:         { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Generation', schema);

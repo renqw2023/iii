@@ -126,6 +126,7 @@ router.get('/models', (req, res) => {
 router.post('/image', auth, async (req, res) => {
   try {
     const { prompt, modelId, aspectRatio = '1:1', referenceImageData, referenceImageMime } = req.body;
+    let resolution = req.body.resolution === '4K' ? '4K' : '2K';
 
     if (!prompt || !prompt.trim()) {
       return res.status(400).json({ message: '请输入生成描述' });
@@ -148,12 +149,18 @@ router.post('/image', auth, async (req, res) => {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: '用户不存在' });
 
+    // 4K 鉴权：需要付费过至少一次
+    if (resolution === '4K' && !user.hasPurchasedBefore) {
+      return res.status(403).json({ message: '4K 画质需要付费套餐，请先购买积分' });
+    }
+
     // 刷新每日免费额度
     await refreshFreeCreditsIfNeeded(user);
 
+    const totalCreditCost = model.creditCost + (resolution === '4K' ? 5 : 0);
     const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
-    if (totalAvail < model.creditCost) {
-      return res.status(402).json({ message: `积分不足，需要 ${model.creditCost} 积分（当前 ${totalAvail}）` });
+    if (totalAvail < totalCreditCost) {
+      return res.status(402).json({ message: `积分不足，需要 ${totalCreditCost} 积分（当前 ${totalAvail}）` });
     }
 
     // 确保保存目录存在
@@ -345,12 +352,28 @@ router.post('/image', auth, async (req, res) => {
       return res.status(400).json({ message: '不支持的模型 ID' });
     }
 
+    // 4K upscaling（在积分扣除前完成，避免扣费但 upscale 失败）
+    let finalImageUrl = imageUrl;
+    let originalImageUrl;
+    if (resolution === '4K') {
+      try {
+        const { upscaleImage } = require('../services/upscaleService');
+        originalImageUrl = imageUrl;
+        // 直接传本地文件路径，upscaleService 会读取文件作为 Blob 上传
+        finalImageUrl = await upscaleImage(filePath, 2);
+      } catch (upscaleErr) {
+        console.error('Upscale failed, falling back to original:', upscaleErr.message);
+        // upscale 失败时回退到原图，不阻断流程
+        resolution = '2K';
+      }
+    }
+
     // 扣除积分（先 freeCredits，再 credits）
-    const { ok, freeDeducted, paidDeducted } = await deductCredits(user, model.creditCost);
+    const { ok, freeDeducted, paidDeducted } = await deductCredits(user, totalCreditCost);
     if (!ok) {
       // 极端情况：生图成功但积分不足（并发场景），删除文件
       fs.unlinkSync(filePath);
-      return res.status(402).json({ message: `积分不足，需要 ${model.creditCost} 积分` });
+      return res.status(402).json({ message: `积分不足，需要 ${totalCreditCost} 积分` });
     }
 
     // 记录交易流水
@@ -371,9 +394,11 @@ router.post('/image', auth, async (req, res) => {
         prompt: prompt.slice(0, 500),
         modelId,
         modelName: model.name,
-        imageUrl,
+        imageUrl: finalImageUrl,
+        originalImageUrl,
         aspectRatio,
-        creditCost: model.creditCost,
+        creditCost: totalCreditCost,
+        resolution,
         status: 'success',
       });
     } catch (e) {
@@ -381,7 +406,8 @@ router.post('/image', auth, async (req, res) => {
     }
 
     res.json({
-      imageUrl,
+      imageUrl: finalImageUrl,
+      resolution,
       creditsLeft: updatedCreditsLeft,
       freeCreditsLeft: updatedFreeCreditsLeft,
       modelName: model.name,

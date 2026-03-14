@@ -67,6 +67,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  hasPurchasedBefore: {
+    type: Boolean,
+    default: false,
+  },
   firstGenerationAt: {
     type: Date,
     default: null

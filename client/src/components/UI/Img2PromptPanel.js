@@ -590,13 +590,31 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
    Tab 2 — Generate Video（文生视频）
 ═══════════════════════════════════════════════ */
 const VIDEO_DURATIONS   = [5, 10];
-const VIDEO_RESOLUTIONS = ['720p', '1080p'];
+const VIDEO_RESOLUTIONS = ['480p', '720p', '1080p'];
 const VIDEO_RATIOS      = ['16:9', '9:16', '1:1'];
-const VIDEO_CREDIT_COST = 30;
+
+// Credit cost table (30% margin over API cost; base: 1080p/s = 15 credits)
+// Source: https://www.volcengine.com/docs/82379/1544106
+const VIDEO_CREDIT_MAP = {
+  '480p-5':   16,
+  '480p-10':  31,
+  '720p-5':   34,
+  '720p-10':  67,
+  '1080p-5':  75,
+  '1080p-10': 150,
+};
+const getVideoCost = (res, dur) => VIDEO_CREDIT_MAP[`${res}-${dur}`] ?? 75;
+
+// Models available in UI
+const VIDEO_MODELS = [
+  { key: 'seedance-1-5-pro', name: 'Seedance 1.5 Pro', badge: null,   comingSoon: false },
+  { key: 'seedance-2-0-pro', name: 'Seedance 2.0 Pro', badge: 'Soon', comingSoon: true  },
+];
 
 const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
   const [prompt, setPrompt]         = useState('');
+  const [modelKey, setModelKey]     = useState('seedance-1-5-pro');
   const [duration, setDuration]     = useState(5);
   const [resolution, setResolution] = useState('720p');
   const [ratio, setRatio]           = useState('16:9');
@@ -633,10 +651,10 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
     setLoading(true);
     setVideoUrl(null);
     try {
-      const data = await generateAPI.generateVideo({ prompt: prompt.trim(), duration, resolution, aspectRatio: ratio });
+      const data = await generateAPI.generateVideo({ prompt: prompt.trim(), modelKey, duration, resolution, ratio });
       setVideoUrl(data.videoUrl);
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-      toast.success(`Video generated! ${VIDEO_CREDIT_COST} credits used`);
+      toast.success(`Video generated! ${data.creditCost ?? getVideoCost(resolution, duration)} credits used`);
     } catch (err) {
       const msg = err.response?.data?.message || err.message || 'Video generation failed';
       toast.error(msg);
@@ -645,21 +663,47 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
     }
   };
 
-  const credits = user?.credits ?? 0;
-  const freeCredits = user?.freeCredits ?? 0;
-  const canGenerate = !!prompt.trim() && !loading;
+  const credits      = user?.credits ?? 0;
+  const freeCredits  = user?.freeCredits ?? 0;
+  const currentCost  = getVideoCost(resolution, duration);
+  const canGenerate  = !!prompt.trim() && !loading;
 
-  const SEL_BTN = (active) => ({
+  const SEL_BTN = (active, disabled = false) => ({
     flex: 1, height: 30, borderRadius: 8,
     border: `1.5px solid ${active ? '#6366f1' : 'rgba(0,0,0,0.10)'}`,
     backgroundColor: active ? 'rgba(99,102,241,0.08)' : 'transparent',
-    color: active ? '#6366f1' : '#6b7280',
+    color: disabled ? '#d1d5db' : active ? '#6366f1' : '#6b7280',
     fontSize: 12, fontWeight: active ? 600 : 400,
-    cursor: 'pointer', transition: 'all 150ms',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 150ms',
+    opacity: disabled ? 0.5 : 1,
   });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', paddingRight: 2 }}>
+
+      {/* Model selector */}
+      <div style={{ flexShrink: 0 }}>
+        <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Model</p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {VIDEO_MODELS.map(m => (
+            <button
+              key={m.key}
+              onClick={() => !m.comingSoon && setModelKey(m.key)}
+              title={m.comingSoon ? 'Coming Soon' : undefined}
+              style={{
+                ...SEL_BTN(modelKey === m.key && !m.comingSoon, m.comingSoon),
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              }}
+            >
+              <span>{m.name}</span>
+              {m.badge && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 4px' }}>{m.badge}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Prompt box with drag support */}
       <div
@@ -680,7 +724,7 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Describe the video you want to create… or drag a Gallery card here"
-          style={{ width: '100%', minHeight: 90, border: 'none', outline: 'none', backgroundColor: 'transparent', resize: 'none', fontSize: 13, lineHeight: 1.6, color: '#374151', fontFamily: 'inherit' }}
+          style={{ width: '100%', minHeight: 80, border: 'none', outline: 'none', backgroundColor: 'transparent', resize: 'none', fontSize: 13, lineHeight: 1.6, color: '#374151', fontFamily: 'inherit' }}
         />
       </div>
 
@@ -689,7 +733,9 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
         <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</p>
         <div style={{ display: 'flex', gap: 6 }}>
           {VIDEO_DURATIONS.map(d => (
-            <button key={d} onClick={() => setDuration(d)} style={SEL_BTN(duration === d)}>{d}s</button>
+            <button key={d} onClick={() => setDuration(d)} style={SEL_BTN(duration === d)}>
+              {d}s
+            </button>
           ))}
         </div>
       </div>
@@ -699,7 +745,12 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
         <p style={{ fontSize: 11, color: '#9ca3af', margin: '0 0 6px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Resolution</p>
         <div style={{ display: 'flex', gap: 6 }}>
           {VIDEO_RESOLUTIONS.map(r => (
-            <button key={r} onClick={() => setResolution(r)} style={SEL_BTN(resolution === r)}>{r}</button>
+            <button key={r} onClick={() => setResolution(r)} style={SEL_BTN(resolution === r)}>
+              {r}
+              <span style={{ fontSize: 10, color: resolution === r ? '#8b92d9' : '#d1d5db', marginLeft: 2 }}>
+                {getVideoCost(r, duration)}
+              </span>
+            </button>
           ))}
         </div>
       </div>
@@ -741,7 +792,7 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
             <span>Generate Video</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
               <Zap size={10} style={{ color: '#FFDBA4' }} />
-              <span style={{ fontSize: 12 }}>{VIDEO_CREDIT_COST}</span>
+              <span style={{ fontSize: 12 }}>{currentCost}</span>
             </div>
           </>
         )}

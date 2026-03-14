@@ -435,61 +435,86 @@ router.post('/image', auth, async (req, res) => {
 
 /**
  * POST /api/generate/video
- * Body: { prompt, duration: 5|10, resolution: "720p"|"1080p", aspectRatio: "16:9"|"9:16"|"1:1" }
- * 需要登录，消耗 30 积分
+ * Body: { prompt, modelKey, duration: 5|10, resolution: "480p"|"720p"|"1080p", ratio: "16:9"|"9:16"|"1:1" }
+ * 需要登录，积分按规格动态扣除（见 videoService.CREDIT_COST_MAP）
  */
 router.post('/video', auth, async (req, res) => {
   try {
-    const { prompt, duration = 5, resolution = '720p', aspectRatio = '16:9' } = req.body;
+    const { generateVideo, getCreditCost, MODELS } = require('../services/videoService');
+    const config = require('../config');
+
+    if (!config.services.seedance.apiKey) {
+      return res.status(503).json({ message: 'Video generation is not configured. Add SEEDANCE_API_KEY to server.' });
+    }
+
+    const {
+      prompt,
+      modelKey  = config.services.seedance.modelKey || 'seedance-1-5-pro',
+      duration  = 5,
+      resolution = '720p',
+      ratio      = '16:9',
+    } = req.body;
 
     if (!prompt || !prompt.trim()) {
       return res.status(400).json({ message: '请输入视频描述' });
     }
 
-    const { generateVideo } = require('../services/videoService');
-    const config = require('../config');
-    if (!config.services.seedance.apiKey) {
-      return res.status(503).json({ message: 'Video generation is not configured. Add SEEDANCE_API_KEY to server.' });
-    }
+    // Validate model
+    const model = MODELS[modelKey];
+    if (!model) return res.status(400).json({ message: `无效的模型 ID: ${modelKey}` });
+    if (model.comingSoon) return res.status(503).json({ message: `${model.name} 即将上线，敬请期待` });
+
+    // Validate & sanitise params
+    const validDuration    = [5, 10].includes(Number(duration)) ? Number(duration) : 5;
+    const validResolution  = ['480p', '720p', '1080p'].includes(resolution) ? resolution : '720p';
+    const validRatio       = ['16:9', '9:16', '1:1'].includes(ratio) ? ratio : '16:9';
+
+    // Compute credit cost dynamically
+    const creditCost = getCreditCost(validResolution, validDuration);
 
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: '用户不存在' });
 
     await refreshFreeCreditsIfNeeded(user);
 
-    const VIDEO_CREDIT_COST = 30;
     const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
-    if (totalAvail < VIDEO_CREDIT_COST) {
-      return res.status(402).json({ message: `积分不足，需要 ${VIDEO_CREDIT_COST} 积分（当前 ${totalAvail}）` });
+    if (totalAvail < creditCost) {
+      return res.status(402).json({ message: `积分不足，需要 ${creditCost} 积分（当前 ${totalAvail}）` });
     }
 
     // ── Call Seedance API ──
     const { videoUrl, taskId } = await generateVideo({
       prompt: prompt.trim(),
-      duration: [5, 10].includes(Number(duration)) ? Number(duration) : 5,
-      resolution: ['720p', '1080p'].includes(resolution) ? resolution : '720p',
-      aspectRatio: ['16:9', '9:16', '1:1'].includes(aspectRatio) ? aspectRatio : '16:9',
+      modelKey,
+      duration:   validDuration,
+      resolution: validResolution,
+      ratio:      validRatio,
     });
 
     // ── Deduct credits ──
-    const { ok, freeDeducted, paidDeducted } = await deductCredits(user, VIDEO_CREDIT_COST);
+    const { ok, freeDeducted, paidDeducted } = await deductCredits(user, creditCost);
     if (!ok) {
-      return res.status(402).json({ message: `积分不足，需要 ${VIDEO_CREDIT_COST} 积分` });
+      return res.status(402).json({ message: `积分不足，需要 ${creditCost} 积分` });
     }
 
-    await recordDeductTransactions(user._id, 'generate_video', `Video — ${prompt.slice(0, 50)}`, freeDeducted, paidDeducted, user.freeCredits, user.credits);
+    await recordDeductTransactions(
+      user._id, 'generate_video',
+      `${model.name} ${validResolution} ${validDuration}s — ${prompt.slice(0, 40)}`,
+      freeDeducted, paidDeducted, user.freeCredits, user.credits
+    );
 
     // ── Save to Generation ──
     try {
       await Generation.create({
         user: req.userId,
-        prompt: prompt.slice(0, 500),
-        modelId: 'seedance',
-        modelName: 'Seedance 2.0',
+        prompt:     prompt.slice(0, 500),
+        modelId:    modelKey,
+        modelName:  model.name,
         videoUrl,
-        mediaType: 'video',
-        aspectRatio,
-        creditCost: VIDEO_CREDIT_COST,
+        mediaType:  'video',
+        aspectRatio: validRatio,
+        resolution:  validResolution,
+        creditCost,
         status: 'success',
       });
     } catch (e) {
@@ -499,15 +524,14 @@ router.post('/video', auth, async (req, res) => {
     res.json({
       videoUrl,
       taskId,
-      creditsLeft: user.credits,
+      creditCost,
+      creditsLeft:     user.credits,
       freeCreditsLeft: user.freeCredits,
     });
   } catch (error) {
     console.error('generate/video 错误:', error);
-    const msg = error.message?.includes('not configured')
-      ? error.message
-      : '视频生成失败，请稍后重试';
-    res.status(500).json({ message: msg });
+    const isKnown = error.message?.includes('not configured') || error.message?.includes('即将上线');
+    res.status(isKnown ? 503 : 500).json({ message: isKnown ? error.message : '视频生成失败，请稍后重试' });
   }
 });
 

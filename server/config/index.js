@@ -298,7 +298,8 @@ class Config {
       seedance: {
         apiKey:  process.env.SEEDANCE_API_KEY  || '',
         baseUrl: process.env.SEEDANCE_API_BASE || 'https://ark.cn-beijing.volces.com/api/v3',
-        modelId: process.env.SEEDANCE_MODEL_ID || 'seedance-1-0-t2v-250125',
+        // default model key (maps to apiModelId inside videoService.js)
+        modelKey: process.env.SEEDANCE_MODEL_KEY || 'seedance-1-5-pro',
       },
     };
   }

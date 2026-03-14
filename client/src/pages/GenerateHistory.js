@@ -111,9 +111,21 @@ const GenerateHistory = () => {
     }
   }, [activeGenerations, fetchHistory, updateGeneration]);
 
-  const handleDownload = (job) => {
-    const url = job.result?.imageUrl || job.imageUrl;
+  const handleDownload = async (job) => {
+    const isVideo = job.mediaType === 'video';
+    const url = isVideo
+      ? (job.result?.videoUrl || job.videoUrl)
+      : (job.result?.imageUrl || job.imageUrl);
     if (!url) return;
+
+    if (isVideo) {
+      // External CDN URL — open in new tab (CORS prevents direct blob download)
+      window.open(url, '_blank', 'noopener');
+      toast.success('Video opened in new tab — right-click to save');
+      return;
+    }
+
+    // Local image — direct download
     const a = document.createElement('a');
     a.href = url;
     a.download = `generated_${Date.now()}.png`;
@@ -121,9 +133,14 @@ const GenerateHistory = () => {
   };
 
   const handleCopyUrl = async (job) => {
-    const url = job.result?.imageUrl || job.imageUrl;
+    const isVideo = job.mediaType === 'video';
+    const url = isVideo
+      ? (job.result?.videoUrl || job.videoUrl)
+      : (job.result?.imageUrl || job.imageUrl);
     if (!url) return;
-    await navigator.clipboard.writeText(`${window.location.origin}${url}`);
+    // External CDN URLs are already absolute; local image paths need origin prefix
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+    await navigator.clipboard.writeText(fullUrl);
     toast.success('URL copied');
   };
 

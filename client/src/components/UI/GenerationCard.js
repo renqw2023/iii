@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AlertCircle, ArrowDownToLine, RefreshCw, RotateCcw, Share2, Trash2, X } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { AlertCircle, ArrowDownToLine, RefreshCw, RotateCcw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
 const ASPECT_RATIO_MAP = {
   '1:1': [1, 1],
@@ -17,6 +17,8 @@ const ICON_BTN = {
 
 const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismiss, onDelete, onUseIdea }) => {
   const [hovered, setHovered] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const videoRef = useRef(null);
   const [w, h] = ASPECT_RATIO_MAP[job.aspectRatio] || [16, 9];
   const paddingPct = `${((h / w) * 100).toFixed(2)}%`;
 
@@ -152,18 +154,31 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
     >
       <div style={innerStyle}>
         {isVideo ? (
-          <video
-            src={videoUrl}
-            autoPlay
-            loop
-            muted
-            playsInline
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              objectFit: 'cover',
-            }}
-          />
+          <>
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              autoPlay
+              loop
+              muted={muted}
+              playsInline
+              style={{
+                position: 'absolute', inset: 0,
+                width: '100%', height: '100%',
+                objectFit: 'cover',
+              }}
+            />
+            {/* VIDEO badge — always visible */}
+            <div style={{
+              position: 'absolute', top: 8, left: 8,
+              backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+              borderRadius: 6, padding: '2px 7px',
+              fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.05em',
+              pointerEvents: 'none',
+            }}>
+              ▶ VIDEO
+            </div>
+          </>
         ) : (
           <img
             src={imageUrl}
@@ -184,18 +199,23 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
           transition: 'opacity 300ms ease',
           pointerEvents: hovered ? 'auto' : 'none',
         }}>
-          {/* Left-top: Regenerate (history only) */}
-          {!isActive && onUseIdea && (
-            <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 6 }}>
+          {/* Left-top: mute toggle (video) or Regenerate (image history) */}
+          <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 6 }}>
+            {isVideo && (
               <button
-                onClick={onUseIdea}
-                title="Regenerate"
+                onClick={(e) => { e.stopPropagation(); setMuted(m => !m); }}
+                title={muted ? 'Unmute' : 'Mute'}
                 style={ICON_BTN}
               >
+                {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+              </button>
+            )}
+            {!isActive && !isVideo && onUseIdea && (
+              <button onClick={onUseIdea} title="Regenerate" style={ICON_BTN}>
                 <RotateCcw size={14} />
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Right-top: Delete (history only) */}
           {!isActive && onDelete && (
@@ -237,8 +257,8 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
               {job.aspectRatio || '1:1'}
             </span>
 
-            {/* Center: Use Idea CTA (history only) */}
-            {!isActive && onUseIdea && (
+            {/* Center: Use Idea CTA (image history only) */}
+            {!isActive && !isVideo && onUseIdea && (
               <button
                 onClick={onUseIdea}
                 style={{

@@ -8,7 +8,7 @@ const schema = new mongoose.Schema({
   imageUrl:    { type: String },
   aspectRatio:      { type: String, default: '1:1' },
   creditCost:       { type: Number, default: 0 },
-  resolution:       { type: String, enum: ['2K', '4K'], default: '2K' },
+  resolution:       { type: String, enum: ['2K', '4K', '480p', '720p', '1080p'], default: '2K' },
   originalImageUrl: { type: String },
   videoUrl:         { type: String },
   mediaType:        { type: String, enum: ['image', 'video'], default: 'image' },

@@ -359,11 +359,20 @@ router.post('/image', auth, async (req, res) => {
       try {
         const { upscaleImage } = require('../services/upscaleService');
         originalImageUrl = imageUrl;
-        // 直接传本地文件路径，upscaleService 会读取文件作为 Blob 上传
-        finalImageUrl = await upscaleImage(filePath, 2);
+
+        // 1. 调用 Replicate 超分，返回临时 CDN URL
+        const replicateUrl = await upscaleImage(filePath, 2);
+
+        // 2. 立即下载到本地磁盘，避免 CDN URL (~1h) 过期
+        const filename4k = `gen_${Date.now()}_${Math.random().toString(36).slice(2, 7)}_4k.png`;
+        const filePath4k = path.join(genDir, filename4k);
+        const cdnRes = await fetch(replicateUrl, { signal: AbortSignal.timeout(60000) });
+        if (!cdnRes.ok) throw new Error(`4K download failed: ${cdnRes.status}`);
+        fs.writeFileSync(filePath4k, Buffer.from(await cdnRes.arrayBuffer()));
+
+        finalImageUrl = `/uploads/generated/${filename4k}`;
       } catch (upscaleErr) {
         console.error('Upscale failed, falling back to original:', upscaleErr.message);
-        // upscale 失败时回退到原图，不阻断流程
         resolution = '2K';
       }
     }

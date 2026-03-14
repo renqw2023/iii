@@ -557,10 +557,12 @@ router.get('/history', auth, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
     const offset = parseInt(req.query.offset) || 0;
+    const query = { user: req.userId };
+    if (req.query.mediaType === 'video') query.mediaType = 'video';
+    else if (req.query.mediaType === 'image') query.$or = [{ mediaType: 'image' }, { mediaType: { $exists: false } }];
     const [records, total] = await Promise.all([
-      Generation.find({ user: req.userId })
-        .sort({ createdAt: -1 }).skip(offset).limit(limit).lean(),
-      Generation.countDocuments({ user: req.userId }),
+      Generation.find(query).sort({ createdAt: -1 }).skip(offset).limit(limit).lean(),
+      Generation.countDocuments(query),
     ]);
     res.json({ records, total });
   } catch (e) {

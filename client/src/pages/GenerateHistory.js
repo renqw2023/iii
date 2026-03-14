@@ -28,6 +28,7 @@ function groupByDate(records) {
 
 /* ── DB record → job shape ── */
 function recordToJob(rec) {
+  const isVideo = rec.mediaType === 'video';
   return {
     id: rec._id,
     status: rec.status === 'error' ? 'error' : 'success',
@@ -35,9 +36,11 @@ function recordToJob(rec) {
     prompt: rec.prompt,
     modelId: rec.modelId,
     modelName: rec.modelName,
-    aspectRatio: rec.aspectRatio || '1:1',
-    result: { imageUrl: rec.imageUrl },
+    aspectRatio: rec.aspectRatio || (isVideo ? '16:9' : '1:1'),
+    mediaType: rec.mediaType || 'image',
+    result: isVideo ? { videoUrl: rec.videoUrl } : { imageUrl: rec.imageUrl },
     imageUrl: rec.imageUrl,
+    videoUrl: rec.videoUrl,
     errorMessage: rec.errorMsg || '',
     startedAt: new Date(rec.createdAt),
   };
@@ -78,6 +81,7 @@ const GenerateHistory = () => {
 
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [mediaFilter, setMediaFilter] = useState('all'); // 'all' | 'image' | 'video'
 
   const fetchHistory = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -147,7 +151,11 @@ const GenerateHistory = () => {
     }
   };
 
-  const groupedRecords = groupByDate(records);
+  const filteredRecords = mediaFilter === 'all' ? records
+    : records.filter(r => (r.mediaType || 'image') === mediaFilter);
+  const filteredActive = mediaFilter === 'all' ? activeGenerations
+    : activeGenerations.filter(g => (g.mediaType || 'image') === mediaFilter);
+  const groupedRecords = groupByDate(filteredRecords);
 
   if (!isAuthenticated) {
     return (
@@ -164,7 +172,7 @@ const GenerateHistory = () => {
     );
   }
 
-  const isEmpty = !isLoading && activeGenerations.length === 0 && records.length === 0;
+  const isEmpty = !isLoading && filteredActive.length === 0 && filteredRecords.length === 0;
 
   return (
     <div style={{ minHeight: '100vh', padding: 0, background: 'var(--page-bg)' }}>
@@ -204,17 +212,41 @@ const GenerateHistory = () => {
             </button>
             <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Generation History</span>
           </div>
+
+          {/* Media type filter */}
+          <div style={{ display: 'flex', gap: 4, padding: '3px', backgroundColor: 'rgba(0,0,0,0.04)', borderRadius: 9 }}>
+            {[
+              { key: 'all',   label: 'All' },
+              { key: 'image', label: 'Images' },
+              { key: 'video', label: 'Videos' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setMediaFilter(key)}
+                style={{
+                  padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                  fontSize: 12, fontWeight: mediaFilter === key ? 600 : 400,
+                  backgroundColor: mediaFilter === key ? '#fff' : 'transparent',
+                  color: mediaFilter === key ? '#111827' : '#9ca3af',
+                  boxShadow: mediaFilter === key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 150ms',
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Scroll content */}
         <div style={{ padding: '16px 16px 80px' }}>
 
           {/* Active generations (from GenerationContext) */}
-          {activeGenerations.length > 0 && (
+          {filteredActive.length > 0 && (
             <section>
               <GroupHeader label="Generating" />
               <CardGrid>
-                {activeGenerations.map(job => (
+                {filteredActive.map(job => (
                   <GenerationCard
                     key={job.id}
                     job={job}
@@ -250,7 +282,7 @@ const GenerateHistory = () => {
           ))}
 
           {/* Loading skeletons */}
-          {isLoading && activeGenerations.length === 0 && (
+          {isLoading && filteredActive.length === 0 && (
             <section>
               <GroupHeader label="Loading…" />
               <CardGrid>

@@ -17,7 +17,7 @@ const ICON_BTN = {
 
 const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismiss, onDelete, onUseIdea }) => {
   const [hovered, setHovered] = useState(false);
-  const [w, h] = ASPECT_RATIO_MAP[job.aspectRatio] || [1, 1];
+  const [w, h] = ASPECT_RATIO_MAP[job.aspectRatio] || [16, 9];
   const paddingPct = `${((h / w) * 100).toFixed(2)}%`;
 
   const cardStyle = {
@@ -141,7 +141,9 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
   }
 
   /* ── Success ── */
-  const imageUrl = job.result?.imageUrl || job.imageUrl;
+  const isVideo   = job.mediaType === 'video';
+  const imageUrl  = job.result?.imageUrl || job.imageUrl;
+  const videoUrl  = job.result?.videoUrl || job.videoUrl;
   return (
     <div
       style={cardStyle}
@@ -149,15 +151,30 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
       onMouseLeave={() => setHovered(false)}
     >
       <div style={innerStyle}>
-        <img
-          src={imageUrl}
-          alt={job.prompt}
-          style={{
-            position: 'absolute', inset: 0,
-            width: '100%', height: '100%',
-            objectFit: 'cover',
-          }}
-        />
+        {isVideo ? (
+          <video
+            src={videoUrl}
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        ) : (
+          <img
+            src={imageUrl}
+            alt={job.prompt}
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover',
+            }}
+          />
+        )}
 
         {/* Gradient overlay */}
         <div style={{

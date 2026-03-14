@@ -611,15 +611,14 @@ const VIDEO_MODELS = [
   { key: 'seedance-2-0-pro', name: 'Seedance 2.0 Pro', badge: 'Soon', comingSoon: true  },
 ];
 
-const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
+const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
+  const { addGeneration, updateGeneration } = useGeneration();
   const [prompt, setPrompt]         = useState('');
   const [modelKey, setModelKey]     = useState('seedance-1-5-pro');
   const [duration, setDuration]     = useState(5);
   const [resolution, setResolution] = useState('720p');
   const [ratio, setRatio]           = useState('16:9');
-  const [loading, setLoading]       = useState(false);
-  const [videoUrl, setVideoUrl]     = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
   // Consume prefillJob when it arrives
@@ -644,29 +643,50 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
     }
   }, []);
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (!isAuthenticated) { openLoginModal(); return; }
     if (!prompt.trim()) { toast.error('Please enter a prompt'); return; }
 
-    setLoading(true);
-    setVideoUrl(null);
-    try {
-      const data = await generateAPI.generateVideo({ prompt: prompt.trim(), modelKey, duration, resolution, ratio });
-      setVideoUrl(data.videoUrl);
-      updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
-      toast.success(`Video generated! ${data.creditCost ?? getVideoCost(resolution, duration)} credits used`);
-    } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Video generation failed';
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
+    const jobId = Date.now().toString();
+    const modelName = VIDEO_MODELS.find(m => m.key === modelKey)?.name;
+    addGeneration({
+      id: jobId,
+      status: 'loading',
+      progress: 8,
+      prompt: prompt.trim(),
+      modelId: modelKey,
+      modelName,
+      aspectRatio: ratio,
+      mediaType: 'video',
+      result: null,
+      errorMessage: '',
+      startedAt: new Date(),
+    });
+
+    onStartGeneration?.();
+
+    generateAPI.generateVideo({ prompt: prompt.trim(), modelKey, duration, resolution, ratio })
+      .then(data => {
+        updateGeneration(jobId, {
+          status: 'success',
+          progress: 100,
+          result: { videoUrl: data.videoUrl },
+          videoUrl: data.videoUrl,
+        });
+        updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
+        toast.success(`Video generated! ${data.creditCost ?? getVideoCost(resolution, duration)} credits used`);
+      })
+      .catch(err => {
+        const msg = err.response?.data?.message || err.message || 'Video generation failed';
+        updateGeneration(jobId, { status: 'error', errorMessage: msg });
+        toast.error(msg);
+      });
   };
 
   const credits      = user?.credits ?? 0;
   const freeCredits  = user?.freeCredits ?? 0;
   const currentCost  = getVideoCost(resolution, duration);
-  const canGenerate  = !!prompt.trim() && !loading;
+  const canGenerate  = !!prompt.trim();
 
   const SEL_BTN = (active, disabled = false) => ({
     flex: 1, height: 30, borderRadius: 8,
@@ -784,18 +804,14 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
         onMouseEnter={e => { if (canGenerate) e.currentTarget.style.transform = 'translateY(-2px)'; }}
         onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
       >
-        {loading ? (
-          <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /><span>Generating…</span></>
-        ) : (
-          <>
-            <Wand2 size={15} />
-            <span>Generate Video</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
-              <Zap size={10} style={{ color: '#FFDBA4' }} />
-              <span style={{ fontSize: 12 }}>{currentCost}</span>
-            </div>
-          </>
-        )}
+        <>
+          <Wand2 size={15} />
+          <span>Generate Video</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
+            <Zap size={10} style={{ color: '#FFDBA4' }} />
+            <span style={{ fontSize: 12 }}>{currentCost}</span>
+          </div>
+        </>
       </button>
 
       {/* Auth / balance */}
@@ -811,27 +827,6 @@ const VideoTab = ({ prefillJob, onPrefillConsumed }) => {
           {' '}·{' '}
           Credits: <strong style={{ color: '#6b7280' }}>{credits}</strong>
         </p>
-      )}
-
-      {/* Loading state */}
-      {loading && (
-        <div style={{ borderRadius: 14, backgroundColor: MUTED, padding: 16, textAlign: 'center', flexShrink: 0 }}>
-          <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: '#6366f1', margin: '0 auto 8px' }} />
-          <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>Generating video… this may take 30–60 seconds</p>
-        </div>
-      )}
-
-      {/* Video player */}
-      {videoUrl && !loading && (
-        <div style={{ borderRadius: 14, overflow: 'hidden', backgroundColor: '#000', flexShrink: 0 }}>
-          <video
-            src={videoUrl}
-            autoPlay
-            loop
-            controls
-            style={{ width: '100%', display: 'block', maxHeight: 240, objectFit: 'contain' }}
-          />
-        </div>
       )}
 
     </div>
@@ -901,7 +896,7 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
         </div>
 
         {/* Tab content */}
-        {tab === 'reverse' ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} /> : <VideoTab />}
+        {tab === 'reverse' ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} /> : <VideoTab onStartGeneration={onStartGeneration} />}
 
       </div>
 

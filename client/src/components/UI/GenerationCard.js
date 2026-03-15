@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { AlertCircle, ArrowDownToLine, RefreshCw, RotateCcw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
+import { AlertCircle, ArrowDownToLine, Maximize2, Play, RefreshCw, RotateCcw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
 const ASPECT_RATIO_MAP = {
   '1:1': [1, 1],
@@ -19,9 +19,35 @@ const ICON_BTN = {
 
 const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismiss, onDelete, onUseIdea }) => {
   const [hovered, setHovered] = useState(false);
+  const [playing, setPlaying] = useState(false);
   // Videos generated with audio start unmuted; plain videos start muted
   const [muted, setMuted] = useState(!job.generateAudio);
   const videoRef = useRef(null);
+
+  const handleMouseEnterCard = () => {
+    setHovered(true);
+    if (job.mediaType === 'video' && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+      setPlaying(true);
+    }
+  };
+
+  const handleMouseLeaveCard = () => {
+    setHovered(false);
+    if (job.mediaType === 'video' && videoRef.current) {
+      videoRef.current.pause();
+      setPlaying(false);
+    }
+  };
+
+  const handleFullscreen = (e) => {
+    e.stopPropagation();
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.requestFullscreen) v.requestFullscreen();
+    else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen();
+    else if (v.mozRequestFullScreen) v.mozRequestFullScreen();
+  };
   const [w, h] = ASPECT_RATIO_MAP[job.aspectRatio] || [16, 9];
   const paddingPct = `${((h / w) * 100).toFixed(2)}%`;
 
@@ -152,8 +178,8 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
   return (
     <div
       style={cardStyle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={handleMouseEnterCard}
+      onMouseLeave={handleMouseLeaveCard}
     >
       <div style={innerStyle}>
         {isVideo ? (
@@ -161,16 +187,32 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
             <video
               ref={videoRef}
               src={videoUrl}
-              autoPlay
               loop
               muted={muted}
               playsInline
+              preload="metadata"
               style={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
                 objectFit: 'cover',
               }}
             />
+            {/* Play button — visible when not playing */}
+            {!playing && (
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                pointerEvents: 'none',
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Play size={18} color="#fff" style={{ marginLeft: 2 }} />
+                </div>
+              </div>
+            )}
             {/* VIDEO badge — always visible */}
             <div style={{
               position: 'absolute', top: 8, left: 8,
@@ -220,31 +262,24 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
             )}
           </div>
 
-          {/* Right-top: Delete (history only) */}
-          {!isActive && onDelete && (
-            <div style={{ position: 'absolute', top: 8, right: 8 }}>
-              <button
-                onClick={onDelete}
-                title="Delete"
-                style={ICON_BTN}
-              >
+          {/* Right-top: Fullscreen (video) + Delete/Dismiss */}
+          <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 5 }}>
+            {isVideo && (
+              <button onClick={handleFullscreen} title="Fullscreen" style={ICON_BTN}>
+                <Maximize2 size={14} />
+              </button>
+            )}
+            {!isActive && onDelete && (
+              <button onClick={onDelete} title="Delete" style={ICON_BTN}>
                 <Trash2 size={14} />
               </button>
-            </div>
-          )}
-
-          {/* Active card dismiss */}
-          {isActive && onDismiss && (
-            <div style={{ position: 'absolute', top: 8, right: 8 }}>
-              <button
-                onClick={onDismiss}
-                title="Dismiss"
-                style={ICON_BTN}
-              >
+            )}
+            {isActive && onDismiss && (
+              <button onClick={onDismiss} title="Dismiss" style={ICON_BTN}>
                 <X size={14} />
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Bottom bar */}
           <div style={{

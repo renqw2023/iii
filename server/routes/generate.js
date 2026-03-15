@@ -434,9 +434,43 @@ router.post('/image', auth, async (req, res) => {
 });
 
 /**
+ * POST /api/generate/video/upload-frame
+ * Uploads a frame image (first/last frame for i2v) and returns its public URL.
+ * Body: multipart/form-data with field "frame" (single image file)
+ */
+const multer = require('multer');
+const { v4: uuidv4 } = require('uuid');
+const frameStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../../uploads/video-frames');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `${uuidv4()}${ext}`);
+  },
+});
+const frameUpload = multer({
+  storage: frameStorage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
+
+router.post('/video/upload-frame', auth, frameUpload.single('frame'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No image file received' });
+  const config = require('../config');
+  const publicUrl = `${config.app.baseUrl}/uploads/video-frames/${req.file.filename}`;
+  res.json({ url: publicUrl });
+});
+
+/**
  * POST /api/generate/video
- * Body: { prompt, modelKey, duration: 5|10, resolution: "480p"|"720p"|"1080p", ratio: "16:9"|"9:16"|"1:1" }
- * 需要登录，积分按规格动态扣除（见 videoService.CREDIT_COST_MAP）
+ * Body: { prompt, modelKey, duration, resolution, ratio, generateAudio, firstFrameUrl, lastFrameUrl }
+ * 需要登录，积分按规格动态扣除
  */
 router.post('/video', auth, async (req, res) => {
   try {
@@ -449,10 +483,13 @@ router.post('/video', auth, async (req, res) => {
 
     const {
       prompt,
-      modelKey  = config.services.seedance.modelKey || 'seedance-1-5-pro',
-      duration  = 5,
-      resolution = '720p',
-      ratio      = '16:9',
+      modelKey      = config.services.seedance.modelKey || 'seedance-1-5-pro',
+      duration      = 5,
+      resolution    = '720p',
+      ratio         = '16:9',
+      generateAudio = false,
+      firstFrameUrl = null,
+      lastFrameUrl  = null,
     } = req.body;
 
     if (!prompt || !prompt.trim()) {
@@ -465,12 +502,14 @@ router.post('/video', auth, async (req, res) => {
     if (model.comingSoon) return res.status(503).json({ message: `${model.name} 即将上线，敬请期待` });
 
     // Validate & sanitise params
-    const validDuration    = [5, 10].includes(Number(duration)) ? Number(duration) : 5;
-    const validResolution  = ['480p', '720p', '1080p'].includes(resolution) ? resolution : '720p';
-    const validRatio       = ['16:9', '9:16', '1:1'].includes(ratio) ? ratio : '16:9';
+    const dur = Number(duration);
+    const validDuration   = (dur >= 4 && dur <= 12) ? dur : 5;
+    const validResolution = ['480p', '720p', '1080p'].includes(resolution) ? resolution : '720p';
+    const validRatios     = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9', 'adaptive'];
+    const validRatio      = validRatios.includes(ratio) ? ratio : '16:9';
 
-    // Compute credit cost dynamically
-    const creditCost = getCreditCost(validResolution, validDuration);
+    // Compute credit cost dynamically (includes audio surcharge if enabled)
+    const creditCost = getCreditCost(validResolution, validDuration, Boolean(generateAudio));
 
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: '用户不存在' });
@@ -484,11 +523,14 @@ router.post('/video', auth, async (req, res) => {
 
     // ── Call Seedance API ──
     const { videoUrl, taskId } = await generateVideo({
-      prompt: prompt.trim(),
+      prompt:        prompt.trim(),
       modelKey,
-      duration:   validDuration,
-      resolution: validResolution,
-      ratio:      validRatio,
+      duration:      validDuration,
+      resolution:    validResolution,
+      ratio:         validRatio,
+      generateAudio: Boolean(generateAudio),
+      firstFrameUrl: firstFrameUrl || null,
+      lastFrameUrl:  lastFrameUrl  || null,
     });
 
     // ── Deduct credits ──
@@ -499,7 +541,7 @@ router.post('/video', auth, async (req, res) => {
 
     await recordDeductTransactions(
       user._id, 'generate_video',
-      `${model.name} ${validResolution} ${validDuration}s — ${prompt.slice(0, 40)}`,
+      `${model.name} ${validResolution} ${validDuration}s${generateAudio ? ' +audio' : ''} — ${prompt.slice(0, 40)}`,
       freeDeducted, paidDeducted, user.freeCredits, user.credits
     );
 

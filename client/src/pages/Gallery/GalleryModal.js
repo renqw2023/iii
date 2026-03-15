@@ -284,11 +284,11 @@ const GalleryModal = () => {
                                 </button>
                                 {prompt.previewImage && (
                                     <button
-                                        className="dmodal-btn-icon"
-                                        title={t('gallery.detail.useAsReference')}
+                                        className="dmodal-btn-primary"
                                         onClick={() => setPrefill({ referenceImageUrl: prompt.previewImage })}
                                     >
-                                        <ImagePlus size={18} />
+                                        <ImagePlus size={16} />
+                                        {t('gallery.detail.useAsReference')}
                                     </button>
                                 )}
                                 <button

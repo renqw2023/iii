@@ -396,11 +396,11 @@ const SrefModal = () => {
                                 </button>
                                 {active?.type === 'image' && (
                                     <button
-                                        className="dmodal-btn-icon"
-                                        title="Use as Reference Image"
+                                        className="dmodal-btn-primary"
                                         onClick={() => setPrefill({ referenceImageUrl: active.url })}
                                     >
-                                        <ImagePlus size={18} />
+                                        <ImagePlus size={16} />
+                                        Use as Reference
                                     </button>
                                 )}
                                 <button

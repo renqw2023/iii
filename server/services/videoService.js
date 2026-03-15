@@ -120,14 +120,17 @@ async function generateVideo({
   // adaptive ratio is only valid for image-to-video modes
   const effectiveRatio = (ratio === 'adaptive' && !firstFrameUrl) ? '16:9' : ratio;
 
+  // generate_audio is only supported in image-to-video modes (firstFrameUrl present).
+  // Text-to-video silently ignores the parameter per Volcengine docs.
+  const isI2V = !!firstFrameUrl;
   const body = {
-    model:          model.apiModelId,
+    model:     model.apiModelId,
     content,
-    ratio:          effectiveRatio,
+    ratio:     effectiveRatio,
     resolution,
-    duration:       Number(duration),
-    generate_audio: Boolean(generateAudio),
-    watermark:      false,
+    duration:  Number(duration),
+    watermark: false,
+    ...(isI2V ? { generate_audio: Boolean(generateAudio) } : {}),
   };
 
   // ── Create task ────────────────────────────────────────────────────────────

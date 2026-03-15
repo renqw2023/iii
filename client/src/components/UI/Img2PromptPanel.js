@@ -772,7 +772,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
             { key: 'first_frame', label: '1st Frame' },
             { key: 'first_last',  label: '1st + Last' },
           ].map(({ key, label }) => (
-            <button key={key} onClick={() => { setMode(key); if (key === 'text') setRatio('16:9'); else setRatio('adaptive'); }}
+            <button key={key} onClick={() => { setMode(key); if (key === 'text') { setRatio('16:9'); setGenerateAudio(false); } else setRatio('adaptive'); }}
               style={{ flex: 1, height: 28, borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11,
                 fontWeight: mode === key ? 600 : 400,
                 backgroundColor: mode === key ? '#fff' : 'transparent',
@@ -853,8 +853,8 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         </div>
       </div>
 
-      {/* Generate Audio toggle */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '2px 0' }}>
+      {/* Generate Audio toggle — only available for i2v modes (API limitation) */}
+      <div style={{ display: mode === 'text' ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '2px 0' }}>
         <div>
           <p style={{ ...LABEL, margin: 0 }}>Generate Audio</p>
           <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>+30% credits</p>

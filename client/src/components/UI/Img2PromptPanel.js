@@ -60,13 +60,11 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
   const [reversePreview, setReversePreview] = useState(null);
   const [isDragging1,    setIsDragging1]    = useState(false);
 
-  // ── 参考图状态（Card 2）──
-  const [refImageFile,  setRefImageFile]  = useState(null);
-  const [refImageB64,   setRefImageB64]   = useState(null);
-  const [refMimeType,   setRefMimeType]   = useState(null);
-  const [refPreview,    setRefPreview]    = useState(null);
-  const [refImageUrl,   setRefImageUrl]   = useState(null); // URL 直传模式（来自图片详情页）
-  const [isDragging2,   setIsDragging2]   = useState(false);
+  // ── 参考图状态（Card 2）── 支持多图（最多 4 张）
+  // 每项: { preview: string, b64: string|null, mime: string|null, url: string|null }
+  const [refImages,   setRefImages]   = useState([]);
+  const [isDragging2, setIsDragging2] = useState(false);
+  const MAX_REF = 4;
 
   const [isLoading,         setIsLoading]         = useState(false);
   const [result,            setResult]            = useState('');
@@ -101,11 +99,7 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
       setPrompt(prefillJob.prompt);
     }
     if (prefillJob.referenceImageUrl) {
-      setRefImageUrl(prefillJob.referenceImageUrl);
-      setRefPreview(prefillJob.referenceImageUrl);
-      setRefImageFile(null);
-      setRefImageB64(null);
-      setRefMimeType(null);
+      setRefImages([{ preview: prefillJob.referenceImageUrl, b64: null, mime: null, url: prefillJob.referenceImageUrl }]);
     }
     onPrefillConsumed?.();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -131,17 +125,14 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
     reader.readAsDataURL(f);
   };
 
-  // Card 2 — 参考图处理（读取为 base64 供生图 API 使用）
-  const handleRefFile = (f) => {
+  // Card 2 — 添加参考图（支持多图，最多 MAX_REF 张）
+  const addRefFile = (f) => {
     if (!f?.type?.startsWith('image/')) { toast.error('Please select an image file'); return; }
-    setRefImageFile(f);
-    setRefMimeType(f.type);
+    if (refImages.length >= MAX_REF) { toast.error(`Maximum ${MAX_REF} reference images`); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target.result;
-      setRefPreview(dataUrl);
-      // 去掉 data:image/xxx;base64, 前缀，只保留 base64 数据
-      setRefImageB64(dataUrl.split(',')[1]);
+      setRefImages(prev => [...prev, { preview: dataUrl, b64: dataUrl.split(',')[1], mime: f.type, url: null }]);
     };
     reader.readAsDataURL(f);
   };
@@ -197,15 +188,35 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, openLoginModal, runGenerate]);
 
-  // Card 2 onDrop — 只处理 File，存为参考图；忽略 JSON
+  // Card 2 onDrop — 两种来源都支持：
+  //   ① Gallery/Sref 卡片拖入（application/json，含 image URL）
+  //   ② 本地文件从 OS 拖入（FileList）
   const handleCard2Drop = useCallback((e) => {
     e.preventDefault();
     setIsDragging2(false);
-    // 只处理文件，不处理 JSON（JSON 是 Gallery 卡片，不适合作参考图）
-    const dropped = e.dataTransfer.files[0];
-    if (dropped) handleRefFile(dropped);
+
+    // ① 优先处理 Gallery 卡片拖拽（JSON 含 image URL）
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData) {
+      try {
+        const parsed = JSON.parse(jsonData);
+        if (parsed.image) {
+          const url = parsed.image;
+          setRefImages(prev => {
+            if (prev.length >= MAX_REF) { toast.error(`Maximum ${MAX_REF} reference images`); return prev; }
+            if (prev.some(r => r.url === url || r.preview === url)) return prev; // 去重
+            return [...prev, { preview: url, b64: null, mime: null, url }];
+          });
+        }
+      } catch (_) { /* ignore */ }
+      return;
+    }
+
+    // ② 本地文件拖入
+    const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+    files.forEach(f => addRefFile(f));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refImages.length]);
 
   // Card 3 onDrop — 只处理 JSON 中的 prompt 字段，填入文本框；不处理 File
   const handleCard3Drop = useCallback((e) => {
@@ -266,9 +277,9 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
       modelId: selectedGenModel,
       aspectRatio: RATIOS[ratioIdx],
       resolution,
-      ...(refImageB64
-        ? { referenceImageData: refImageB64, referenceImageMime: refMimeType }
-        : refImageUrl ? { referenceImageUrl: refImageUrl } : {}),
+      ...(refImages[0]?.b64
+        ? { referenceImageData: refImages[0].b64, referenceImageMime: refImages[0].mime }
+        : refImages[0]?.url ? { referenceImageUrl: refImages[0].url } : {}),
     }).then(data => {
       updateGeneration(jobId, { status: 'success', progress: 100, result: data });
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
@@ -332,63 +343,110 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
             </>
           ) : (
             <>
-              <div style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.08)', right: 4, bottom: -2, zIndex: 0, transform: 'rotate(-12deg)' }} />
-              <div style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.05)', right: -2, bottom: -4, zIndex: 1 }} />
+              {/* Back card — landscape placeholder */}
+              <div style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, backgroundColor: '#e8eaf6', right: 4, bottom: -2, zIndex: 0, transform: 'rotate(-12deg)', overflow: 'hidden', display: 'flex', alignItems: 'flex-end' }}>
+                <svg viewBox="0 0 32 32" width="32" height="32" style={{ position: 'absolute', bottom: 0 }}>
+                  <rect width="32" height="32" fill="#c5cae9" />
+                  <circle cx="22" cy="10" r="4" fill="#9fa8da" />
+                  <polygon points="0,22 12,10 20,18 26,13 32,20 32,32 0,32" fill="#7986cb" />
+                </svg>
+              </div>
+              {/* Front card — portrait placeholder */}
+              <div style={{ position: 'absolute', width: 32, height: 32, borderRadius: 6, backgroundColor: '#ede7f6', right: -2, bottom: -4, zIndex: 1, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg viewBox="0 0 32 32" width="32" height="32">
+                  <rect width="32" height="32" fill="#e8eaf6" />
+                  <circle cx="16" cy="12" r="5" fill="#b39ddb" />
+                  <path d="M6 28 Q6 20 16 20 Q26 20 26 28" fill="#9575cd" />
+                </svg>
+              </div>
             </>
           )}
         </div>
       </div>
 
-      {/* Card 2 — Upload reference image（独立 file input，独立 drop 区域） */}
-      <input ref={refFileInputRef} type="file" accept="image/jpeg,image/png,image/webp"
+      {/* Card 2 — Upload reference image（支持多图，最多 MAX_REF 张） */}
+      <input ref={refFileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple
              style={{ display: 'none' }}
-             onChange={(e) => e.target.files[0] && handleRefFile(e.target.files[0])} />
-      <div
-        style={{
-          height: 64, borderRadius: 14, padding: '0 12px',
-          border: `1px dashed ${isDragging2 ? 'rgba(99,102,241,0.6)' : 'rgba(0,0,0,0.15)'}`,
-          backgroundColor: isDragging2 ? 'rgba(99,102,241,0.04)' : 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          cursor: 'pointer', transition: 'all 150ms', flexShrink: 0,
-        }}
-        onClick={() => refFileInputRef.current?.click()}
-        onDrop={handleCard2Drop}
-        onDragOver={(e) => { e.preventDefault(); setIsDragging2(true); }}
-        onDragLeave={() => setIsDragging2(false)}
-        onMouseEnter={e => { if (!isDragging2) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.25)'; }}
-        onMouseLeave={e => { if (!isDragging2) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {refPreview ? (
-            <img src={refPreview} alt="ref" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
-          ) : (
+             onChange={(e) => { [...e.target.files].forEach(f => addRefFile(f)); e.target.value = ''; }} />
+
+      {refImages.length === 0 ? (
+        /* ── 空态：dashed 边框 ── */
+        <div
+          style={{
+            height: 64, borderRadius: 14, padding: '0 12px',
+            border: `1px dashed ${isDragging2 ? 'rgba(99,102,241,0.6)' : 'rgba(0,0,0,0.15)'}`,
+            backgroundColor: isDragging2 ? 'rgba(99,102,241,0.04)' : 'transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', transition: 'all 150ms', flexShrink: 0,
+          }}
+          onClick={() => refFileInputRef.current?.click()}
+          onDrop={handleCard2Drop}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging2(true); }}
+          onDragLeave={() => setIsDragging2(false)}
+          onMouseEnter={e => { if (!isDragging2) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.25)'; }}
+          onMouseLeave={e => { if (!isDragging2) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.15)'; }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <ImageIcon size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
-          )}
-          <div>
-            <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>
-              {refImageFile
-                ? refImageFile.name.slice(0, 22) + (refImageFile.name.length > 22 ? '…' : '')
-                : refImageUrl ? 'Reference image' : 'Drag or upload reference image'}
-            </p>
-            <p style={{ fontSize: 11, color: (refImageFile || refImageUrl) ? '#6366f1' : '#9ca3af', margin: 0 }}>
-              {(refImageFile || refImageUrl) ? 'Will be sent with prompt' : 'Optional · sent to generation model'}
-            </p>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>Drop or upload reference</p>
+              <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>optional</p>
+            </div>
           </div>
-        </div>
-        {(refImageFile || refImageUrl) ? (
-          <button onClick={(e) => { e.stopPropagation(); setRefImageFile(null); setRefImageB64(null); setRefMimeType(null); setRefPreview(null); setRefImageUrl(null); }}
-            style={{ width: 28, height: 28, borderRadius: 6, border: 'none', backgroundColor: 'rgba(239,68,68,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', flexShrink: 0 }}>
-            <X size={13} />
-          </button>
-        ) : (
           <button onClick={(e) => { e.stopPropagation(); refFileInputRef.current?.click(); }}
             style={{ width: 36, height: 36, borderRadius: 8, border: 'none', backgroundColor: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 150ms', flexShrink: 0, color: '#6b7280' }}
             onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.09)'; }}
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'; }}>
             <Plus size={16} />
           </button>
-        )}
-      </div>
+        </div>
+      ) : (
+        /* ── 有图态：缩略图横排 + + 按钮 ── */
+        <div
+          style={{
+            minHeight: 64, borderRadius: 14, padding: '10px 12px',
+            border: `1px dashed ${isDragging2 ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.25)'}`,
+            backgroundColor: isDragging2 ? 'rgba(99,102,241,0.04)' : 'rgba(99,102,241,0.03)',
+            transition: 'all 150ms', flexShrink: 0,
+          }}
+          onDrop={handleCard2Drop}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging2(true); }}
+          onDragLeave={() => setIsDragging2(false)}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {refImages.map((img, idx) => (
+              <div key={idx} style={{ position: 'relative', width: 40, height: 40, flexShrink: 0 }}>
+                <img src={img.preview} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', display: 'block' }} />
+                <button
+                  onClick={() => setRefImages(prev => prev.filter((_, i) => i !== idx))}
+                  style={{
+                    position: 'absolute', top: -5, right: -5,
+                    width: 16, height: 16, borderRadius: '50%', border: 'none',
+                    backgroundColor: '#ef4444', color: '#fff', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, lineHeight: 1, padding: 0,
+                  }}
+                >
+                  <X size={9} />
+                </button>
+              </div>
+            ))}
+            {refImages.length < MAX_REF && (
+              <button
+                onClick={() => refFileInputRef.current?.click()}
+                style={{ width: 40, height: 40, borderRadius: 8, border: '1px dashed rgba(99,102,241,0.4)', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', transition: 'all 150ms', flexShrink: 0 }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(99,102,241,0.06)'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)'; e.currentTarget.style.color = '#6366f1'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'; e.currentTarget.style.color = '#9ca3af'; }}
+              >
+                <Plus size={14} />
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize: 11, color: '#6366f1', margin: '6px 0 0', paddingLeft: 2 }}>
+            {refImages.length}/{MAX_REF} · Will be sent with prompt
+          </p>
+        </div>
+      )}
 
       {/* Card 3 — Prompt textarea（只接收 JSON prompt，不处理文件或图片） */}
       <div

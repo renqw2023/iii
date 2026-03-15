@@ -84,18 +84,33 @@ const GenerateHistory = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [mediaFilter, setMediaFilter] = useState('all'); // 'all' | 'image' | 'video'
 
-  const fetchHistory = useCallback(async () => {
+  // Fetch history; if completedJobs provided, remove those that are now confirmed in DB.
+  // This prevents duplication: once a job is saved to DB it moves from active→history section.
+  const fetchHistory = useCallback(async (completedJobs) => {
     if (!isAuthenticated) return;
     setIsLoading(true);
     try {
       const data = await generationHistoryAPI.getHistory({ limit: 50 });
-      setRecords(data.records || []);
+      const newRecords = data.records || [];
+      setRecords(newRecords);
+
+      if (completedJobs?.length) {
+        // Build a set of all URLs now in DB
+        const dbUrls = new Set(
+          newRecords.flatMap(r => [r.videoUrl, r.imageUrl].filter(Boolean))
+        );
+        // Remove active jobs confirmed in DB — they'll display in the date-grouped section
+        completedJobs.forEach(g => {
+          const url = g.result?.videoUrl || g.result?.imageUrl || g.videoUrl || g.imageUrl;
+          if (url && dbUrls.has(url)) removeGeneration(g.id);
+        });
+      }
     } catch {
       // silent — still show active generations
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, removeGeneration]);
 
   useEffect(() => {
     fetchHistory();
@@ -103,12 +118,10 @@ const GenerateHistory = () => {
 
   // Refresh history when an active generation succeeds
   useEffect(() => {
-    const justFinished = activeGenerations.some(g => g.status === 'success' && g._fetched !== true);
-    if (justFinished) {
-      fetchHistory();
-      activeGenerations.filter(g => g.status === 'success' && !g._fetched).forEach(g => {
-        updateGeneration(g.id, { _fetched: true });
-      });
+    const justFinished = activeGenerations.filter(g => g.status === 'success' && g._fetched !== true);
+    if (justFinished.length > 0) {
+      justFinished.forEach(g => updateGeneration(g.id, { _fetched: true }));
+      fetchHistory(justFinished);
     }
   }, [activeGenerations, fetchHistory, updateGeneration]);
 

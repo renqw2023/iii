@@ -47,9 +47,15 @@ app.use((req, res, next) => {
   }
 });
 
-// 解析JSON
-app.use(express.json({ limit: config.server.bodyLimit }));
-app.use(express.urlencoded({ extended: true, limit: config.server.bodyLimit }));
+// 解析JSON（webhook 路由已由上方 rawBody 中间件处理，跳过）
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') return next();
+  express.json({ limit: config.server.bodyLimit })(req, res, next);
+});
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/payments/webhook') return next();
+  express.urlencoded({ extended: true, limit: config.server.bodyLimit })(req, res, next);
+});
 
 // 添加静态文件缓存头
 app.use('/uploads', (req, res, next) => {

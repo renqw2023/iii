@@ -45,7 +45,7 @@ router.post('/create-checkout', auth, async (req, res) => {
       success_url: `${clientUrl}/credits?payment=success`,
       cancel_url: `${clientUrl}/credits?payment=cancelled`,
       metadata: {
-        userId: req.userId,
+        userId: String(req.userId),
         planId: plan.id,
         credits: String(plan.credits),
       },

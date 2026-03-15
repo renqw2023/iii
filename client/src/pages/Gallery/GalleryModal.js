@@ -285,7 +285,7 @@ const GalleryModal = () => {
                                 {prompt.previewImage && (
                                     <button
                                         className="dmodal-btn-primary"
-                                        onClick={() => setPrefill({ referenceImageUrl: prompt.previewImage })}
+                                        onClick={() => { setPrefill({ referenceImageUrl: prompt.previewImage }); handleClose(); }}
                                     >
                                         <ImagePlus size={16} />
                                         {t('gallery.detail.useAsReference')}

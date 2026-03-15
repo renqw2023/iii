@@ -397,7 +397,7 @@ const SrefModal = () => {
                                 {active?.type === 'image' && (
                                     <button
                                         className="dmodal-btn-primary"
-                                        onClick={() => setPrefill({ referenceImageUrl: active.url })}
+                                        onClick={() => { setPrefill({ referenceImageUrl: active.url }); handleClose(); }}
                                     >
                                         <ImagePlus size={16} />
                                         Use as Reference

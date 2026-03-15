@@ -3,13 +3,14 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn } from 'lucide-react';
+import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn, ImagePlus } from 'lucide-react';
 import TranslateButton from '../../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { galleryAPI } from '../../services/galleryApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../../hooks/useBrowsingHistory';
+import { useGeneration } from '../../contexts/GenerationContext';
 
 const MODEL_LABELS = {
     nanobanana: 'NanoBanana Pro',
@@ -23,6 +24,7 @@ const GalleryModal = () => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const { t } = useTranslation();
+    const { setPrefill } = useGeneration();
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [translatedPrompt, setTranslatedPrompt] = useState(null);
 
@@ -280,6 +282,15 @@ const GalleryModal = () => {
                                     <Copy size={16} />
                                     {t('gallery.detail.copyPrompt')}
                                 </button>
+                                {prompt.previewImage && (
+                                    <button
+                                        className="dmodal-btn-icon"
+                                        title={t('gallery.detail.useAsReference')}
+                                        onClick={() => setPrefill({ referenceImageUrl: prompt.previewImage })}
+                                    >
+                                        <ImagePlus size={18} />
+                                    </button>
+                                )}
                                 <button
                                     className={`dmodal-btn-icon ${prompt.isLiked ? 'liked' : ''}`}
                                     onClick={handleLike}

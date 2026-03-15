@@ -215,7 +215,9 @@
       "favorite": "Favorite",
       "report": "Report",
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "copyPrompt": "Copy Prompt",
+      "useAsReference": "Use as Reference"
     },
     "comments": {
       "title": "Comments",

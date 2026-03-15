@@ -65,6 +65,7 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
   const [refImageB64,   setRefImageB64]   = useState(null);
   const [refMimeType,   setRefMimeType]   = useState(null);
   const [refPreview,    setRefPreview]    = useState(null);
+  const [refImageUrl,   setRefImageUrl]   = useState(null); // URL 直传模式（来自图片详情页）
   const [isDragging2,   setIsDragging2]   = useState(false);
 
   const [isLoading,         setIsLoading]         = useState(false);
@@ -93,12 +94,20 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
   }, []);
 
 
-  // 消费 prefillJob：把 prompt 填入 Prompt Description，保持在 Reverse 标签
+  // 消费 prefillJob：prompt 填入文本框；referenceImageUrl 填入参考图
   useEffect(() => {
-    if (prefillJob?.prompt) {
+    if (!prefillJob) return;
+    if (prefillJob.prompt) {
       setPrompt(prefillJob.prompt);
-      onPrefillConsumed?.();
     }
+    if (prefillJob.referenceImageUrl) {
+      setRefImageUrl(prefillJob.referenceImageUrl);
+      setRefPreview(prefillJob.referenceImageUrl);
+      setRefImageFile(null);
+      setRefImageB64(null);
+      setRefMimeType(null);
+    }
+    onPrefillConsumed?.();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillJob]);
 
@@ -257,7 +266,9 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
       modelId: selectedGenModel,
       aspectRatio: RATIOS[ratioIdx],
       resolution,
-      ...(refImageB64 ? { referenceImageData: refImageB64, referenceImageMime: refMimeType } : {}),
+      ...(refImageB64
+        ? { referenceImageData: refImageB64, referenceImageMime: refMimeType }
+        : refImageUrl ? { referenceImageUrl: refImageUrl } : {}),
     }).then(data => {
       updateGeneration(jobId, { status: 'success', progress: 100, result: data });
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
@@ -355,15 +366,17 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
           )}
           <div>
             <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>
-              {refImageFile ? refImageFile.name.slice(0, 22) + (refImageFile.name.length > 22 ? '…' : '') : 'Drag or upload reference image'}
+              {refImageFile
+                ? refImageFile.name.slice(0, 22) + (refImageFile.name.length > 22 ? '…' : '')
+                : refImageUrl ? 'Reference image' : 'Drag or upload reference image'}
             </p>
-            <p style={{ fontSize: 11, color: refImageFile ? '#6366f1' : '#9ca3af', margin: 0 }}>
-              {refImageFile ? 'Will be sent with prompt' : 'Optional · sent to generation model'}
+            <p style={{ fontSize: 11, color: (refImageFile || refImageUrl) ? '#6366f1' : '#9ca3af', margin: 0 }}>
+              {(refImageFile || refImageUrl) ? 'Will be sent with prompt' : 'Optional · sent to generation model'}
             </p>
           </div>
         </div>
-        {refImageFile ? (
-          <button onClick={(e) => { e.stopPropagation(); setRefImageFile(null); setRefImageB64(null); setRefMimeType(null); setRefPreview(null); }}
+        {(refImageFile || refImageUrl) ? (
+          <button onClick={(e) => { e.stopPropagation(); setRefImageFile(null); setRefImageB64(null); setRefMimeType(null); setRefPreview(null); setRefImageUrl(null); }}
             style={{ width: 28, height: 28, borderRadius: 6, border: 'none', backgroundColor: 'rgba(239,68,68,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', flexShrink: 0 }}>
             <X size={13} />
           </button>

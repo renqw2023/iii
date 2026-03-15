@@ -205,7 +205,9 @@
       "favorite": "お気に入り",
       "report": "報告",
       "edit": "編集",
-      "delete": "削除"
+      "delete": "削除",
+      "copyPrompt": "プロンプトをコピー",
+      "useAsReference": "参照画像として使用"
     },
     "comments": {
       "title": "コメント",

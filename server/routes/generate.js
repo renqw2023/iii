@@ -125,7 +125,7 @@ router.get('/models', (req, res) => {
  */
 router.post('/image', auth, async (req, res) => {
   try {
-    const { prompt, modelId, aspectRatio = '1:1', referenceImageData, referenceImageMime } = req.body;
+    const { prompt, modelId, aspectRatio = '1:1', referenceImageData, referenceImageMime, referenceImageUrl } = req.body;
     let resolution = req.body.resolution === '4K' ? '4K' : '2K';
 
     if (!prompt || !prompt.trim()) {
@@ -163,6 +163,20 @@ router.post('/image', auth, async (req, res) => {
       return res.status(402).json({ message: `积分不足，需要 ${totalCreditCost} 积分（当前 ${totalAvail}）` });
     }
 
+    // referenceImageUrl → 服务端 fetch 转 base64（避免浏览器 CORS 限制）
+    let finalRefData = referenceImageData || null;
+    let finalRefMime = referenceImageMime || 'image/jpeg';
+    if (!finalRefData && referenceImageUrl) {
+      try {
+        const imgRes = await fetch(referenceImageUrl, { signal: AbortSignal.timeout(10000) });
+        if (imgRes.ok) {
+          const buf = await imgRes.arrayBuffer();
+          finalRefData = Buffer.from(buf).toString('base64');
+          finalRefMime = imgRes.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+        }
+      } catch (_) { /* 无法获取参考图，继续生成不带参考图 */ }
+    }
+
     // 确保保存目录存在
     const genDir = path.join(__dirname, '../../uploads/generated');
     fs.mkdirSync(genDir, { recursive: true });
@@ -182,7 +196,7 @@ router.post('/image', auth, async (req, res) => {
           body: JSON.stringify({
             contents: [{
               parts: [
-                ...(referenceImageData ? [{ inlineData: { mimeType: referenceImageMime || 'image/jpeg', data: referenceImageData } }] : []),
+                ...(finalRefData ? [{ inlineData: { mimeType: finalRefMime, data: finalRefData } }] : []),
                 { text: prompt },
               ],
             }],

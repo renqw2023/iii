@@ -3,18 +3,20 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react';
 import TranslateButton from '../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
+import { useGeneration } from '../contexts/GenerationContext';
 
 const SrefModal = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const [searchParams] = useSearchParams();
+    const { setPrefill } = useGeneration();
     const [copied, setCopied] = useState(false);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [activeIdx, setActiveIdx] = useState(0);
@@ -392,6 +394,15 @@ const SrefModal = () => {
                                     {copied ? <Check size={16} /> : <Copy size={16} />}
                                     {copied ? 'Copied!' : 'Copy --sref'}
                                 </button>
+                                {active?.type === 'image' && (
+                                    <button
+                                        className="dmodal-btn-icon"
+                                        title="Use as Reference Image"
+                                        onClick={() => setPrefill({ referenceImageUrl: active.url })}
+                                    >
+                                        <ImagePlus size={18} />
+                                    </button>
+                                )}
                                 <button
                                     className={`dmodal-btn-icon ${sref.isLiked ? 'liked' : ''}`}
                                     onClick={handleLike}

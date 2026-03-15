@@ -554,6 +554,7 @@ router.post('/video', auth, async (req, res) => {
         modelName:  model.name,
         videoUrl,
         mediaType:  'video',
+        generateAudio: Boolean(generateAudio),
         aspectRatio: validRatio,
         resolution:  validResolution,
         creditCost,

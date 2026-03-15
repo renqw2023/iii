@@ -38,6 +38,7 @@ function recordToJob(rec) {
     modelName: rec.modelName,
     aspectRatio: rec.aspectRatio || (isVideo ? '16:9' : '1:1'),
     mediaType: rec.mediaType || 'image',
+    generateAudio: rec.generateAudio || false,
     result: isVideo ? { videoUrl: rec.videoUrl } : { imageUrl: rec.imageUrl },
     imageUrl: rec.imageUrl,
     videoUrl: rec.videoUrl,

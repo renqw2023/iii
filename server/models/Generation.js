@@ -11,6 +11,7 @@ const schema = new mongoose.Schema({
   resolution:       { type: String, enum: ['2K', '4K', '480p', '720p', '1080p'], default: '2K' },
   originalImageUrl: { type: String },
   videoUrl:         { type: String },
+  generateAudio:    { type: Boolean, default: false },
   mediaType:        { type: String, enum: ['image', 'video'], default: 'image' },
   status:           { type: String, enum: ['success', 'error'], default: 'success' },
   errorMsg:         { type: String },

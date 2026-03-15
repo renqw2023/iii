@@ -25,7 +25,7 @@ const config = require('../config');
 
 const POLL_INTERVAL_MS   = 3000;
 const TIMEOUT_MS         = 360000;  // 6 min total
-const POLL_FETCH_TIMEOUT  = 30000;  // 30s per poll
+const POLL_FETCH_TIMEOUT  = 60000;  // 60s per poll
 const CREATE_FETCH_TIMEOUT = 60000; // 60s for create task
 
 // ── Credit pricing (per-second, with 30% margin) ──────────────────────────────

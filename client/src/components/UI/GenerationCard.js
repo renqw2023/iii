@@ -19,7 +19,8 @@ const ICON_BTN = {
 
 const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismiss, onDelete, onUseIdea }) => {
   const [hovered, setHovered] = useState(false);
-  const [muted, setMuted] = useState(true);
+  // Videos generated with audio start unmuted; plain videos start muted
+  const [muted, setMuted] = useState(!job.generateAudio);
   const videoRef = useRef(null);
   const [w, h] = ASPECT_RATIO_MAP[job.aspectRatio] || [16, 9];
   const paddingPct = `${((h / w) * 100).toFixed(2)}%`;
@@ -178,7 +179,7 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
               fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.05em',
               pointerEvents: 'none',
             }}>
-              ▶ VIDEO
+              ▶ VIDEO{job.generateAudio ? ' 🔊' : ''}
             </div>
           </>
         ) : (

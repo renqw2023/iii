@@ -709,7 +709,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
       prompt: prompt.trim(), modelId: modelKey,
       modelName: VIDEO_MODELS.find(m => m.key === modelKey)?.name,
       aspectRatio: ratio === 'adaptive' ? '16:9' : ratio,
-      mediaType: 'video', result: null, errorMessage: '', startedAt: new Date(),
+      mediaType: 'video', generateAudio, result: null, errorMessage: '', startedAt: new Date(),
     });
 
     onStartGeneration?.();

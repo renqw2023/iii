@@ -927,7 +927,10 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
     if (!open) setTab('reverse');
   }, [open]);
 
-  // prefillJob → stay on reverse tab, let ReverseTab consume it
+  // prefillJob → tab:'video' → switch to video tab; otherwise stay on reverse tab
+  useEffect(() => {
+    if (prefillJob?.tab === 'video') setTab('generate');
+  }, [prefillJob]);
 
   const TAB_STYLE = (active) => ({
     flex: 1, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer',
@@ -980,7 +983,10 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
         </div>
 
         {/* Tab content */}
-        {tab === 'reverse' ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} /> : <VideoTab onStartGeneration={onStartGeneration} />}
+        {tab === 'reverse'
+          ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />
+          : <VideoTab onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />
+        }
 
       </div>
 

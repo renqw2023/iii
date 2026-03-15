@@ -54,10 +54,10 @@ const GroupHeader = ({ label }) => (
 );
 
 /* ── Card grid ── */
-const CardGrid = ({ children }) => (
+const CardGrid = ({ children, minCardWidth = 220 }) => (
   <div style={{
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+    gridTemplateColumns: `repeat(auto-fill, minmax(${minCardWidth}px, 1fr))`,
     gap: 12,
     marginBottom: 24,
   }}>
@@ -262,7 +262,7 @@ const GenerateHistory = () => {
           {filteredActive.length > 0 && (
             <section>
               <GroupHeader label="Generating" />
-              <CardGrid>
+              <CardGrid minCardWidth={filteredActive.every(j => j.mediaType === 'video') ? 340 : 220}>
                 {filteredActive.map(job => (
                   <GenerationCard
                     key={job.id}
@@ -282,7 +282,7 @@ const GenerateHistory = () => {
           {groupedRecords.map(({ label, items }) => (
             <section key={label}>
               <GroupHeader label={label} />
-              <CardGrid>
+              <CardGrid minCardWidth={items.every(r => r.mediaType === 'video') ? 340 : 220}>
                 {items.map(rec => (
                   <GenerationCard
                     key={rec._id}

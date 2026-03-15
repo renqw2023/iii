@@ -3,17 +3,19 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Bookmark, X, Eye, Share2, Film, ExternalLink, User, Languages, Loader2 } from 'lucide-react';
+import { Copy, Heart, Bookmark, X, Eye, Share2, Film, ExternalLink, User, Languages, Loader2, Wand2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { useGeneration } from '../../contexts/GenerationContext';
 
 const SeedanceModal = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const { t, i18n } = useTranslation();
+    const { setPrefill } = useGeneration();
 
     const [showTranslated, setShowTranslated] = useState(false);
     const [translatedText, setTranslatedText] = useState('');
@@ -245,6 +247,18 @@ const SeedanceModal = () => {
                         {/* Footer */}
                         {prompt && (
                             <div className="dmodal-right-footer">
+                                <button
+                                    className="dmodal-btn-primary"
+                                    onClick={() => {
+                                        setPrefill({ prompt: prompt.prompt, tab: 'video' });
+                                        handleClose();
+                                        toast.success('Prompt filled — check Generate Video');
+                                    }}
+                                    style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+                                >
+                                    <Wand2 size={16} />
+                                    Generate Video
+                                </button>
                                 <button className="dmodal-btn-primary" onClick={handleCopy}
                                     style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}>
                                     <Copy size={16} />

@@ -795,5 +795,80 @@
       "dashboard": "个人中心",
       "health": "系统状态"
     }
+  },
+  "auth": {
+    "toast": {
+      "loginSuccess": "欢迎回来！",
+      "loginFailed": "登录失败，请重试",
+      "invalidCredentials": "邮箱或密码错误，请检查后重试",
+      "accountLocked": "账户已被锁定，请联系管理员",
+      "emailNotVerified": "邮箱尚未验证，请先验证邮箱",
+      "resendVerification": "重新发送验证邮件",
+      "networkError": "网络连接失败，请检查网络后重试",
+      "retry": "重试",
+      "registerSuccess": "注册成功！",
+      "registerSuccessVerify": "注册成功，请查收邮箱验证码",
+      "registerFailed": "注册失败",
+      "logoutSuccess": "已退出登录",
+      "googleLoginSuccess": "Google 登录成功！",
+      "googleLoginFailed": "Google 登录失败",
+      "verifySuccess": "验证成功，欢迎使用！"
+    }
+  },
+  "img2prompt": {
+    "title": "图生文",
+    "subtitle": "上传图片，AI 自动反推 Midjourney / Stable Diffusion Prompt",
+    "credits": "每次消耗 1 积分 · 当前余额 {{credits}} 积分",
+    "upload": {
+      "label": "拖拽图片到此处，或点击上传",
+      "hint": "支持 JPG、PNG、WebP，最大 10MB",
+      "change": "点击更换图片"
+    },
+    "generate": "生成 Prompt",
+    "generating": "正在生成...",
+    "result": "生成结果",
+    "login": "登录",
+    "loginPrompt": "请先<1>{{loginLink}}</1>后使用此功能（每次消耗 1 积分）",
+    "toast": {
+      "imageOnly": "请选择图片文件",
+      "uploadFirst": "请先上传图片",
+      "success": "Prompt 生成成功！消耗 1 积分",
+      "failed": "生成失败，请重试",
+      "copied": "已复制到剪贴板"
+    }
+  },
+  "health": {
+    "title": "系统健康状态",
+    "subtitle": "实时监控系统组件",
+    "overall": {
+      "healthy": "系统正常",
+      "error": "系统异常",
+      "checking": "检查中..."
+    },
+    "lastUpdated": "最后更新：{{time}}",
+    "api": "API 服务",
+    "database": "数据库",
+    "checkTime": "检查时间：{{time}}",
+    "systemInfo": "系统信息",
+    "frontendVersion": "前端版本：",
+    "backendVersion": "后端版本：",
+    "environment": "环境：",
+    "refresh": "刷新状态",
+    "apiError": "API 连接失败：{{message}}"
+  },
+  "createPrompt": {
+    "errors": {
+      "titleLength": "标题长度必须在 1–100 个字符之间",
+      "promptLength": "提示词长度必须在 10–5000 个字符之间",
+      "descriptionLength": "描述不能超过 2000 个字符",
+      "fileUploadFailed": "文件上传失败，请检查文件格式和大小（最多 9 张图片，每张最大 200MB）",
+      "createFailed": "提示词创建失败，请稍后重试或联系客服",
+      "serverError": "服务器暂时无法处理您的请求，请稍后重试",
+      "networkError": "网络连接失败，请检查网络连接后重试",
+      "publishFailed": "发布失败，请稍后重试",
+      "tooManyFiles": "最多只能上传 {{max}} 个文件",
+      "unsupportedType": "文件 {{index}}：不支持的文件类型",
+      "fileTooLarge": "文件 {{index}}：文件大小超过限制"
+    }
   }
 }

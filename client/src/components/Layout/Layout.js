@@ -42,6 +42,7 @@ const Layout = () => {
         style={{
           width: collapsed ? 64 : 264,
           transition: 'width 0.25s ease',
+          zIndex: 40,
         }}
       >
         <Sidebar onCreditsClick={() => setCreditsOpen(true)} onInviteClick={() => setInviteOpen(true)} />

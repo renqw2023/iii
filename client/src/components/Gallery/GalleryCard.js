@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wand2, Share2, Heart, Eye, Bookmark } from 'lucide-react';
+import { Wand2, Share2, Heart, Eye } from 'lucide-react';
 import { useGeneration } from '../../contexts/GenerationContext';
 import FavoriteButton from '../UI/FavoriteButton';
 import { useTranslation } from 'react-i18next';

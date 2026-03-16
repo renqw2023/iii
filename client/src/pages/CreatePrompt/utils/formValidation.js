@@ -120,19 +120,16 @@ export const validateFiles = (files, options = {}) => {
 
   // 验证文件数量
   if (files.length > maxCount) {
-    errors.push(`最多只能上传${maxCount}个文件`);
+    errors.push(`Too many files: max ${maxCount} allowed`);
   }
 
-  // 验证每个文件
   files.forEach((file, index) => {
-    // 验证文件类型
     if (!validateFileType(file, allowedTypes)) {
-      errors.push(`文件${index + 1}：不支持的文件类型`);
+      errors.push(`File ${index + 1}: unsupported file type`);
     }
 
-    // 验证文件大小
     if (!validateFileSize(file, maxSize)) {
-      errors.push(`文件${index + 1}：文件大小超过限制`);
+      errors.push(`File ${index + 1}: file size exceeds the limit`);
     }
   });
 

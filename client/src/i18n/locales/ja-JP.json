@@ -778,5 +778,80 @@
       "dashboard": "ダッシュボード",
       "health": "システム状態"
     }
+  },
+  "auth": {
+    "toast": {
+      "loginSuccess": "おかえりなさい！",
+      "loginFailed": "ログインに失敗しました。もう一度お試しください",
+      "invalidCredentials": "メールアドレスまたはパスワードが間違っています",
+      "accountLocked": "アカウントがロックされています。サポートにお問い合わせください",
+      "emailNotVerified": "メールアドレスが未確認です。先にメール認証を完了してください",
+      "resendVerification": "認証メールを再送する",
+      "networkError": "ネットワーク接続に失敗しました。接続を確認してください",
+      "retry": "再試行",
+      "registerSuccess": "登録が完了しました！",
+      "registerSuccessVerify": "登録が完了しました。メールの認証コードをご確認ください",
+      "registerFailed": "登録に失敗しました",
+      "logoutSuccess": "サインアウトしました",
+      "googleLoginSuccess": "Google でサインインしました！",
+      "googleLoginFailed": "Google サインインに失敗しました",
+      "verifySuccess": "認証が完了しました。ようこそ！"
+    }
+  },
+  "img2prompt": {
+    "title": "画像からプロンプト生成",
+    "subtitle": "画像をアップロードすると、AI が Midjourney / Stable Diffusion プロンプトを逆生成します",
+    "credits": "1 回 1 クレジット · 現在の残高: {{credits}} クレジット",
+    "upload": {
+      "label": "画像をここにドラッグ、またはクリックしてアップロード",
+      "hint": "JPG・PNG・WebP 対応、最大 10MB",
+      "change": "クリックして画像を変更"
+    },
+    "generate": "プロンプトを生成",
+    "generating": "生成中...",
+    "result": "生成結果",
+    "login": "サインイン",
+    "loginPrompt": "この機能を使うには<1>{{loginLink}}</1>してください（1 回 1 クレジット）",
+    "toast": {
+      "imageOnly": "画像ファイルを選択してください",
+      "uploadFirst": "先に画像をアップロードしてください",
+      "success": "プロンプトを生成しました！1 クレジット消費",
+      "failed": "生成に失敗しました。もう一度お試しください",
+      "copied": "クリップボードにコピーしました"
+    }
+  },
+  "health": {
+    "title": "システムヘルス",
+    "subtitle": "システムコンポーネントのリアルタイム監視",
+    "overall": {
+      "healthy": "すべてのシステムが正常稼働中",
+      "error": "システムに問題が発生しています",
+      "checking": "確認中..."
+    },
+    "lastUpdated": "最終更新: {{time}}",
+    "api": "API サービス",
+    "database": "データベース",
+    "checkTime": "確認時刻: {{time}}",
+    "systemInfo": "システム情報",
+    "frontendVersion": "フロントエンドバージョン:",
+    "backendVersion": "バックエンドバージョン:",
+    "environment": "環境:",
+    "refresh": "状態を更新",
+    "apiError": "API 接続エラー: {{message}}"
+  },
+  "createPrompt": {
+    "errors": {
+      "titleLength": "タイトルは 1〜100 文字で入力してください",
+      "promptLength": "プロンプトは 10〜5000 文字で入力してください",
+      "descriptionLength": "説明は 2000 文字以内にしてください",
+      "fileUploadFailed": "ファイルのアップロードに失敗しました（最大 9 枚、各 200MB まで）",
+      "createFailed": "プロンプトの作成に失敗しました。後でもう一度お試しください",
+      "serverError": "サーバーが一時的に利用できません。後でもう一度お試しください",
+      "networkError": "ネットワーク接続に失敗しました。接続を確認してください",
+      "publishFailed": "公開に失敗しました。もう一度お試しください",
+      "tooManyFiles": "アップロードできるファイルは最大 {{max}} 個です",
+      "unsupportedType": "ファイル {{index}}: サポートされていないファイル形式です",
+      "fileTooLarge": "ファイル {{index}}: ファイルサイズが制限を超えています"
+    }
   }
 }

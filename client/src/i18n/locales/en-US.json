@@ -757,5 +757,80 @@
       "dashboard": "Dashboard",
       "health": "System Status"
     }
+  },
+  "auth": {
+    "toast": {
+      "loginSuccess": "Welcome back!",
+      "loginFailed": "Login failed, please try again",
+      "invalidCredentials": "Incorrect email or password, please check and retry",
+      "accountLocked": "Account has been locked, please contact support",
+      "emailNotVerified": "Email not verified, please verify your email first",
+      "resendVerification": "Resend verification email",
+      "networkError": "Network connection failed, please check and retry",
+      "retry": "Retry",
+      "registerSuccess": "Registration successful!",
+      "registerSuccessVerify": "Registration successful, please check your email for the verification code",
+      "registerFailed": "Registration failed",
+      "logoutSuccess": "Signed out",
+      "googleLoginSuccess": "Signed in with Google!",
+      "googleLoginFailed": "Google sign-in failed",
+      "verifySuccess": "Email verified, welcome!"
+    }
+  },
+  "img2prompt": {
+    "title": "Image to Prompt",
+    "subtitle": "Upload an image and AI will reverse-engineer the Midjourney / Stable Diffusion prompt",
+    "credits": "1 credit per generation · Current balance: {{credits}} credits",
+    "upload": {
+      "label": "Drag image here, or click to upload",
+      "hint": "Supports JPG, PNG, WebP, max 10MB",
+      "change": "Click to change image"
+    },
+    "generate": "Generate Prompt",
+    "generating": "Generating...",
+    "result": "Result",
+    "login": "sign in",
+    "loginPrompt": "Please <1>{{loginLink}}</1> to use this feature (1 credit per use)",
+    "toast": {
+      "imageOnly": "Please select an image file",
+      "uploadFirst": "Please upload an image first",
+      "success": "Prompt generated! 1 credit used",
+      "failed": "Generation failed, please try again",
+      "copied": "Copied to clipboard"
+    }
+  },
+  "health": {
+    "title": "System Health",
+    "subtitle": "Real-time monitoring of system components",
+    "overall": {
+      "healthy": "All Systems Operational",
+      "error": "System Degraded",
+      "checking": "Checking..."
+    },
+    "lastUpdated": "Last updated: {{time}}",
+    "api": "API Service",
+    "database": "Database",
+    "checkTime": "Checked at: {{time}}",
+    "systemInfo": "System Info",
+    "frontendVersion": "Frontend Version:",
+    "backendVersion": "Backend Version:",
+    "environment": "Environment:",
+    "refresh": "Refresh Status",
+    "apiError": "API connection failed: {{message}}"
+  },
+  "createPrompt": {
+    "errors": {
+      "titleLength": "Title must be between 1–100 characters",
+      "promptLength": "Prompt must be between 10–5000 characters",
+      "descriptionLength": "Description cannot exceed 2000 characters",
+      "fileUploadFailed": "File upload failed. Please check format and size (max 9 images, 200 MB each).",
+      "createFailed": "Failed to create prompt, please try again or contact support",
+      "serverError": "Server temporarily unavailable, please try again later",
+      "networkError": "Network connection failed, please check and retry",
+      "publishFailed": "Publish failed, please try again",
+      "tooManyFiles": "You can upload at most {{max}} files",
+      "unsupportedType": "File {{index}}: unsupported file type",
+      "fileTooLarge": "File {{index}}: file size exceeds the limit"
+    }
   }
 }

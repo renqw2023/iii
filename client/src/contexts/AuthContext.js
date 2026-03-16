@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect, useCallback, u
 import { enhancedAuthAPI } from '../services/enhancedApi';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import i18n from '../i18n';
 
 const AuthContext = createContext();
 
@@ -104,44 +105,41 @@ export const AuthProvider = ({ children }) => {
         payload: { user, token }
       });
       
-      toast.success('登录成功！欢迎回来！', {
+      toast.success(i18n.t('auth.toast.loginSuccess'), {
         icon: '🎉',
         duration: 3000
       });
       return { success: true };
     } catch (error) {
-      let message = '登录失败';
+      let message = i18n.t('auth.toast.loginFailed');
       let errorType = 'UNKNOWN';
-      
+
       if (error.response?.status === 400) {
-        message = '邮箱或密码错误，请检查后重试';
+        message = i18n.t('auth.toast.invalidCredentials');
         errorType = 'INVALID_CREDENTIALS';
       } else if (error.response?.status === 423) {
-        message = '账户已被锁定，请联系管理员';
+        message = i18n.t('auth.toast.accountLocked');
         errorType = 'ACCOUNT_LOCKED';
       } else if (error.response?.status === 403) {
-        message = '邮箱尚未验证，请先验证邮箱';
+        message = i18n.t('auth.toast.emailNotVerified');
         errorType = 'EMAIL_NOT_VERIFIED';
-        // 返回特殊标识，让组件处理跳转
         dispatch({ type: 'LOGIN_FAILURE', payload: message });
         toast.error(message, {
           duration: 5000,
           action: {
-            label: '重新发送验证邮件',
-            onClick: () => {
-              // 这里可以调用重新发送验证邮件的API
-            }
+            label: i18n.t('auth.toast.resendVerification'),
+            onClick: () => {}
           }
         });
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: errorType,
-          data: error.response?.data 
+          data: error.response?.data
         };
       } else if (error.response?.data?.message) {
         message = error.response.data.message;
       } else if (error.code === 'NETWORK_ERROR') {
-        message = '网络连接失败，请检查网络后重试';
+        message = i18n.t('auth.toast.networkError');
         errorType = 'NETWORK_ERROR';
       }
       
@@ -156,7 +154,7 @@ export const AuthProvider = ({ children }) => {
           icon: '🌐',
           duration: 6000,
           action: {
-            label: '重试',
+            label: i18n.t('auth.toast.retry'),
             onClick: () => login(credentials)
           }
         });
@@ -180,7 +178,7 @@ export const AuthProvider = ({ children }) => {
       // 检查是否需要邮箱验证
       if (response.data.data?.needVerification) {
         dispatch({ type: 'LOGIN_FAILURE', payload: null }); // 清除loading状态
-        toast.success(response.data.message || '注册成功，请查收邮箱验证码');
+        toast.success(response.data.message || i18n.t('auth.toast.registerSuccessVerify'));
         return { 
           success: true, 
           data: response.data.data // 包含needVerification, userId, email等信息
@@ -195,10 +193,10 @@ export const AuthProvider = ({ children }) => {
         payload: { user, token }
       });
       
-      toast.success('注册成功！');
+      toast.success(i18n.t('auth.toast.registerSuccess'));
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || '注册失败';
+      const message = error.response?.data?.message || i18n.t('auth.toast.registerFailed');
       dispatch({
         type: 'LOGIN_FAILURE',
         payload: message
@@ -212,7 +210,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     dispatch({ type: 'LOGOUT' });
-    toast.success('已退出登录');
+    toast.success(i18n.t('auth.toast.logoutSuccess'));
   };
 
   // 更新用户信息
@@ -237,10 +235,10 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
-      toast.success('Google 登录成功！', { icon: '🎉', duration: 3000 });
+      toast.success(i18n.t('auth.toast.googleLoginSuccess'), { icon: '🎉', duration: 3000 });
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Google 登录失败';
+      const message = error.response?.data?.message || i18n.t('auth.toast.googleLoginFailed');
       dispatch({ type: 'LOGIN_FAILURE', payload: message });
       toast.error(message);
       return { success: false, message };
@@ -254,7 +252,7 @@ export const AuthProvider = ({ children }) => {
       type: 'LOGIN_SUCCESS',
       payload: { user, token }
     });
-    toast.success('验证成功，欢迎使用！');
+    toast.success(i18n.t('auth.toast.verifySuccess'));
   };
 
   const value = {

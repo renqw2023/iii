@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 /**
  * 处理表单提交错误
@@ -17,11 +18,11 @@ export const handleSubmitError = (error, _t) => { // t参数暂未使用
         // 将技术错误转换为用户友好的提示
         let userMessage = err.msg;
         if (err.path === 'title') {
-          userMessage = '标题长度必须在1-100个字符之间';
+          userMessage = i18n.t('createPrompt.errors.titleLength');
         } else if (err.path === 'prompt') {
-          userMessage = '提示词长度必须在10-5000个字符之间';
+          userMessage = i18n.t('createPrompt.errors.promptLength');
         } else if (err.path === 'description') {
-          userMessage = '描述不能超过2000个字符';
+          userMessage = i18n.t('createPrompt.errors.descriptionLength');
         }
         toast.error(userMessage);
       });
@@ -37,20 +38,20 @@ export const handleSubmitError = (error, _t) => { // t参数暂未使用
   else if (error.response?.status === 500) {
     const errorMessage = error.response?.data?.message;
     if (errorMessage && errorMessage.includes('文件')) {
-      toast.error('文件上传失败，请检查文件格式和大小（最多9张图片，每张最大200MB）');
+      toast.error(i18n.t('createPrompt.errors.fileUploadFailed'));
     } else if (errorMessage && errorMessage.includes('创建')) {
-      toast.error('提示词创建失败，请稍后重试或联系客服');
+      toast.error(i18n.t('createPrompt.errors.createFailed'));
     } else {
-      toast.error('服务器暂时无法处理您的请求，请稍后重试');
+      toast.error(i18n.t('createPrompt.errors.serverError'));
     }
   }
-  // 网络错误
+  // Network error
   else if (error.code === 'NETWORK_ERROR' || !error.response) {
-    toast.error('网络连接失败，请检查网络连接后重试');
+    toast.error(i18n.t('createPrompt.errors.networkError'));
   }
-  // 其他错误
+  // Other errors
   else {
-    toast.error('发布失败，请稍后重试');
+    toast.error(i18n.t('createPrompt.errors.publishFailed'));
   }
 };
 

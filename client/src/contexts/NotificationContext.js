@@ -37,7 +37,7 @@ export const NotificationProvider = ({ children }) => {
       const response = await enhancedNotificationAPI.getUnreadCount();
       setUnreadCount(response.data.data.unreadCount || 0);
     } catch (error) {
-      console.error('获取未读通知数量失败:', error);
+      console.error('Failed to fetch unread count:', error);
       // 如果是429错误，不要重复请求
       if (error.response?.status === 429) {
         console.warn('Request rate too high, skipping this request');
@@ -56,11 +56,11 @@ export const NotificationProvider = ({ children }) => {
       setNotifications(response.data.data.notifications || []);
       return response.data.data;
     } catch (error) {
-      console.error('获取通知失败:', error);
+      console.error('Failed to fetch notifications:', error);
       setNotifications([]);
       // 如果是429错误，不要重复请求
       if (error.response?.status === 429) {
-        console.warn('请求频率过高，跳过此次请求');
+        console.warn('Request rate too high, skipping this request');
         return;
       }
       throw error;
@@ -84,7 +84,7 @@ export const NotificationProvider = ({ children }) => {
       
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('标记通知已读失败:', error);
+      console.error('Failed to mark notification as read:', error);
       if (error.response?.status !== 429) {
         throw error;
       }
@@ -101,7 +101,7 @@ export const NotificationProvider = ({ children }) => {
       );
       setUnreadCount(0);
     } catch (error) {
-      console.error('标记所有通知已读失败:', error);
+      console.error('Failed to mark all notifications as read:', error);
       if (error.response?.status !== 429) {
         throw error;
       }
@@ -120,7 +120,7 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('删除通知失败:', error);
+      console.error('Failed to delete notification:', error);
       if (error.response?.status !== 429) {
         throw error;
       }
@@ -133,7 +133,7 @@ export const NotificationProvider = ({ children }) => {
       await enhancedNotificationAPI.clearReadNotifications();
       setNotifications(prev => (prev || []).filter(notification => !notification.read));
     } catch (error) {
-      console.error('清除已读通知失败:', error);
+      console.error('Failed to clear read notifications:', error);
       if (error.response?.status !== 429) {
         throw error;
       }
@@ -146,7 +146,7 @@ export const NotificationProvider = ({ children }) => {
       await enhancedNotificationAPI.updateSettings(newSettings);
       setSettings(newSettings);
     } catch (error) {
-      console.error('更新通知设置失败:', error);
+      console.error('Failed to update notification settings:', error);
       if (error.response?.status !== 429) {
         throw error;
       }

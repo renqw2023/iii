@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { Upload, Copy, Check, Loader2, ImageOff, Coins } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast';
 
 const Img2Prompt = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
   const fileInputRef = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -18,7 +20,7 @@ const Img2Prompt = () => {
 
   const handleFile = (f) => {
     if (!f || !f.type.startsWith('image/')) {
-      toast.error('请选择图片文件');
+      toast.error(t('img2prompt.toast.imageOnly'));
       return;
     }
     setFile(f);
@@ -45,7 +47,7 @@ const Img2Prompt = () => {
       return;
     }
     if (!file) {
-      toast.error('请先上传图片');
+      toast.error(t('img2prompt.toast.uploadFirst'));
       return;
     }
 
@@ -62,14 +64,12 @@ const Img2Prompt = () => {
         },
       });
       setResult(res.data.prompt);
-      // 更新本地积分显示
       updateUser({ credits: res.data.creditsLeft });
-      toast.success('Prompt 生成成功！消耗 1 积分');
+      toast.success(t('img2prompt.toast.success'));
     } catch (err) {
-      const msg = err.response?.data?.message || '生成失败，请重试';
+      const msg = err.response?.data?.message || t('img2prompt.toast.failed');
       toast.error(msg);
       if (err.response?.status === 402) {
-        // 积分不足，跳转积分页
         setTimeout(() => navigate('/credits'), 1500);
       }
     } finally {
@@ -81,7 +81,7 @@ const Img2Prompt = () => {
     if (!result) return;
     await navigator.clipboard.writeText(result);
     setCopied(true);
-    toast.success('已复制到剪贴板');
+    toast.success(t('img2prompt.toast.copied'));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -91,21 +91,21 @@ const Img2Prompt = () => {
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-            图生文
+            {t('img2prompt.title')}
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>
-            上传图片，AI 自动反推 Midjourney / Stable Diffusion Prompt
+            {t('img2prompt.subtitle')}
           </p>
           {isAuthenticated && (
             <p className="text-sm mt-2 flex items-center justify-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
-              <Coins size={14} /> 每次消耗 1 积分 · 当前余额 {user?.credits ?? 0} 积分
+              <Coins size={14} /> {t('img2prompt.credits', { credits: user?.credits ?? 0 })}
             </p>
           )}
         </div>
 
         {/* Upload zone */}
         <div
-          className={`relative rounded-2xl border-2 border-dashed transition-colors cursor-pointer mb-6 overflow-hidden`}
+          className="relative rounded-2xl border-2 border-dashed transition-colors cursor-pointer mb-6 overflow-hidden"
           style={{
             borderColor: isDragging ? 'var(--accent-primary)' : 'var(--border-color)',
             backgroundColor: isDragging ? 'rgba(99,102,241,0.05)' : 'var(--bg-card)',
@@ -137,8 +137,8 @@ const Img2Prompt = () => {
                 <Upload size={28} style={{ color: 'var(--text-tertiary)' }} />
               </div>
               <div className="text-center">
-                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>拖拽图片到此处，或点击上传</p>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>支持 JPG、PNG、WebP，最大 10MB</p>
+                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('img2prompt.upload.label')}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('img2prompt.upload.hint')}</p>
               </div>
             </div>
           )}
@@ -150,7 +150,7 @@ const Img2Prompt = () => {
             >
               <div className="flex flex-col items-center gap-2 text-white">
                 <ImageOff size={24} />
-                <span className="text-sm">点击更换图片</span>
+                <span className="text-sm">{t('img2prompt.upload.change')}</span>
               </div>
             </div>
           )}
@@ -168,9 +168,9 @@ const Img2Prompt = () => {
           }}
         >
           {isLoading ? (
-            <><Loader2 size={16} className="animate-spin" /> 正在生成...</>
+            <><Loader2 size={16} className="animate-spin" /> {t('img2prompt.generating')}</>
           ) : (
-            <><Upload size={16} /> 生成 Prompt</>
+            <><Upload size={16} /> {t('img2prompt.generate')}</>
           )}
         </button>
 
@@ -178,7 +178,7 @@ const Img2Prompt = () => {
         {result && (
           <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>生成结果</h2>
+              <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('img2prompt.result')}</h2>
               <button
                 onClick={handleCopy}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
@@ -188,7 +188,7 @@ const Img2Prompt = () => {
                 }}
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
-                {copied ? '已复制' : '复制'}
+                {copied ? t('common.copied') : t('common.copy')}
               </button>
             </div>
             <p
@@ -203,15 +203,14 @@ const Img2Prompt = () => {
         {!isAuthenticated && (
           <div className="text-center mt-6">
             <p style={{ color: 'var(--text-secondary)' }}>
-              请{' '}
               <button
                 onClick={openLoginModal}
                 className="underline"
                 style={{ color: 'var(--accent-primary)' }}
               >
-                登录
+                {t('img2prompt.login')}
               </button>
-              {' '}后使用此功能（每次消耗 1 积分）
+              {' '}{t('img2prompt.loginPrompt', { loginLink: '' }).replace('<1></1>', '').trim()}
             </p>
           </div>
         )}

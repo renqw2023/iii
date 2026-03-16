@@ -1,28 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Clock, Server, Database, Wifi } from 'lucide-react';
 import { enhancedAPI } from '../services/enhancedApi';
 
 const Health = () => {
+  const { t } = useTranslation();
   const [healthStatus, setHealthStatus] = useState({
     api: { status: 'checking', message: 'Checking...', timestamp: null },
     database: { status: 'checking', message: 'Checking...', timestamp: null },
     overall: 'checking'
   });
 
-  useEffect(() => {
-    checkHealth();
-    const interval = setInterval(checkHealth, 30000); // 每30秒检查一次
-    return () => clearInterval(interval);
-  }, []);
-
-  const checkHealth = async () => {
+  const checkHealth = useCallback(async () => {
     const timestamp = new Date().toISOString();
-    
+
     try {
-      // 检查API健康状态
       const response = await enhancedAPI.get('/health');
-      
+
       setHealthStatus(prev => ({
         ...prev,
         api: {
@@ -42,7 +37,7 @@ const Health = () => {
         ...prev,
         api: {
           status: 'error',
-          message: `API连接失败: ${error.message}`,
+          message: t('health.apiError', { message: error.message }),
           timestamp: timestamp
         },
         database: {
@@ -53,7 +48,13 @@ const Health = () => {
         overall: 'error'
       }));
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
+  }, [checkHealth]);
 
   const getStatusIcon = (status) => {
     switch (status) {
@@ -88,8 +89,8 @@ const Health = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">System Health Status</h1>
-          <p className="text-slate-600">Real-time monitoring of system components</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">{t('health.title')}</h1>
+          <p className="text-slate-600">{t('health.subtitle')}</p>
         </motion.div>
 
         {/* 总体状态 */}
@@ -103,11 +104,10 @@ const Health = () => {
             {getStatusIcon(healthStatus.overall)}
             <div className="text-center">
               <h2 className="text-2xl font-bold text-slate-900">
-                {healthStatus.overall === 'healthy' ? '系统正常' : 
-                 healthStatus.overall === 'error' ? '系统异常' : '检查中...'}
+                {t(`health.overall.${healthStatus.overall}`, t('health.overall.checking'))}
               </h2>
               <p className="text-slate-600">
-                最后更新: {new Date().toLocaleString()}
+                {t('health.lastUpdated', { time: new Date().toLocaleString() })}
               </p>
             </div>
           </div>
@@ -130,13 +130,13 @@ const Health = () => {
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="text-lg font-semibold text-slate-900">API服务</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">{t('health.api')}</h3>
                   {getStatusIcon(healthStatus.api.status)}
                 </div>
                 <p className="text-slate-600 mb-2">{healthStatus.api.message}</p>
                 {healthStatus.api.timestamp && (
                   <p className="text-sm text-slate-500">
-                    检查时间: {new Date(healthStatus.api.timestamp).toLocaleString()}
+                    {t('health.checkTime', { time: new Date(healthStatus.api.timestamp).toLocaleString() })}
                   </p>
                 )}
               </div>
@@ -158,13 +158,13 @@ const Health = () => {
               </div>
               <div className="flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h3 className="text-lg font-semibold text-slate-900">数据库</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">{t('health.database')}</h3>
                   {getStatusIcon(healthStatus.database.status)}
                 </div>
                 <p className="text-slate-600 mb-2">{healthStatus.database.message}</p>
                 {healthStatus.database.timestamp && (
                   <p className="text-sm text-slate-500">
-                    检查时间: {new Date(healthStatus.database.timestamp).toLocaleString()}
+                    {t('health.checkTime', { time: new Date(healthStatus.database.timestamp).toLocaleString() })}
                   </p>
                 )}
               </div>
@@ -181,19 +181,19 @@ const Health = () => {
         >
           <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
             <Wifi className="w-5 h-5 mr-2" />
-            系统信息
+            {t('health.systemInfo')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <span className="font-medium text-slate-700">前端版本:</span>
+              <span className="font-medium text-slate-700">{t('health.frontendVersion')}</span>
               <span className="ml-2 text-slate-600">v1.0.0</span>
             </div>
             <div>
-              <span className="font-medium text-slate-700">后端版本:</span>
+              <span className="font-medium text-slate-700">{t('health.backendVersion')}</span>
               <span className="ml-2 text-slate-600">v1.0.0</span>
             </div>
             <div>
-              <span className="font-medium text-slate-700">环境:</span>
+              <span className="font-medium text-slate-700">{t('health.environment')}</span>
               <span className="ml-2 text-slate-600">
                 {process.env.NODE_ENV || 'development'}
               </span>
@@ -211,10 +211,10 @@ const Health = () => {
             {healthStatus.overall === 'checking' ? (
               <>
                 <Clock className="w-4 h-4 mr-2 animate-spin" />
-                检查中...
+                {t('health.overall.checking')}
               </>
             ) : (
-              '刷新状态'
+              t('health.refresh')
             )}
           </button>
         </div>

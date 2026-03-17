@@ -2,6 +2,7 @@ const express = require('express');
 const Stripe = require('stripe');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
+const Order = require('../models/Order');
 const { auth } = require('../middleware/auth');
 const config = require('../config');
 const creditPlans = require('../config/creditPlans');
@@ -93,17 +94,29 @@ router.post('/webhook', async (req, res) => {
       );
 
       if (updatedUser) {
+        const plan = creditPlans.find(p => p.id === planId);
         await CreditTransaction.create({
           userId,
           type: 'earn',
           amount: creditsNum,
           reason: 'purchase',
-          note: `${creditPlans.find(p => p.id === planId)?.name || planId} pack`,
+          note: `${plan?.name || planId} pack`,
           walletType: 'paid',
           balanceAfter: updatedUser.credits,
           freeBalanceAfter: updatedUser.freeCredits ?? null,
           paidBalanceAfter: updatedUser.credits,
           totalBalanceAfter: (updatedUser.freeCredits ?? 0) + updatedUser.credits,
+        });
+        await Order.create({
+          userId,
+          planId,
+          planName: plan?.name || planId,
+          amountUSD: (session.amount_total || 0) / 100,
+          credits: creditsNum,
+          currency: session.currency || 'usd',
+          stripeSessionId: session.id,
+          stripePaymentIntentId: session.payment_intent || null,
+          status: 'completed',
         });
       }
     } catch (err) {

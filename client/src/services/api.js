@@ -144,6 +144,9 @@ export const adminAPI = {
 
   // 删除用户
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+
+  // 收入数据
+  getRevenue: (params) => api.get('/admin/revenue', { params }),
 };
 
 // 通知相关API

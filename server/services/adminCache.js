@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const PromptPost = require('../models/PromptPost');
 const CreditTransaction = require('../models/CreditTransaction');
+const Order = require('../models/Order');
 
 /**
  * Admin查询缓存管理器
@@ -14,14 +15,16 @@ class AdminCache {
     this.statsCache = new NodeCache({ stdTTL: 300 }); // 统计数据缓存5分钟
     this.analyticsCache = new NodeCache({ stdTTL: 600 }); // 分析数据缓存10分钟
     this.listCache = new NodeCache({ stdTTL: 180 }); // 列表数据缓存3分钟
-    
+    this.revenueCache = new NodeCache({ stdTTL: 300 }); // 收入数据缓存5分钟
+
     // 缓存键前缀
     this.CACHE_KEYS = {
       STATS: 'admin:stats',
       ANALYTICS: 'admin:analytics',
       USERS_LIST: 'admin:users:list',
       POSTS_LIST: 'admin:posts:list',
-      PROMPTS_LIST: 'admin:prompts:list'
+      PROMPTS_LIST: 'admin:prompts:list',
+      REVENUE: 'admin:revenue',
     };
   }
 
@@ -482,6 +485,134 @@ class AdminCache {
   }
 
   /**
+   * 获取收入数据（带缓存）
+   * period: '7d' | '30d' | '90d' | 'all'
+   */
+  async getCachedRevenue(period = '30d') {
+    const cacheKey = `${this.CACHE_KEYS.REVENUE}:${period}`;
+    const cached = this.revenueCache.get(cacheKey);
+    if (cached) return cached;
+
+    const periodDays = { '7d': 7, '30d': 30, '90d': 90, 'all': null };
+    const days = periodDays[period] ?? 30;
+    const startDate = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
+    const dateFilter = startDate ? { createdAt: { $gte: startDate } } : {};
+    const matchFilter = startDate
+      ? { $match: { createdAt: { $gte: startDate }, status: 'completed' } }
+      : { $match: { status: 'completed' } };
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [
+      summaryAgg,
+      revenueToday,
+      revenueThisMonth,
+      ordersToday,
+      ordersThisMonth,
+      planBreakdownRaw,
+      dailyRevenueRaw,
+      recentOrders,
+    ] = await Promise.all([
+      // Total revenue + orders in period
+      Order.aggregate([
+        matchFilter,
+        { $group: { _id: null, totalRevenue: { $sum: '$amountUSD' }, totalOrders: { $sum: 1 } } },
+      ]),
+      // Revenue today (always from today, regardless of period)
+      Order.aggregate([
+        { $match: { createdAt: { $gte: todayStart }, status: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$amountUSD' } } },
+      ]),
+      // Revenue this month
+      Order.aggregate([
+        { $match: { createdAt: { $gte: monthStart }, status: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$amountUSD' } } },
+      ]),
+      // Orders today
+      Order.countDocuments({ createdAt: { $gte: todayStart }, status: 'completed' }),
+      // Orders this month
+      Order.countDocuments({ createdAt: { $gte: monthStart }, status: 'completed' }),
+      // Plan breakdown
+      Order.aggregate([
+        matchFilter,
+        {
+          $group: {
+            _id: '$planId',
+            planName: { $first: '$planName' },
+            revenue: { $sum: '$amountUSD' },
+            orders: { $sum: 1 },
+          },
+        },
+        { $sort: { revenue: -1 } },
+      ]),
+      // Daily revenue (last 30 days regardless of period for chart consistency)
+      Order.aggregate([
+        { $match: { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }, status: 'completed' } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            revenue: { $sum: '$amountUSD' },
+            orders: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      // Recent orders
+      Order.find({ ...dateFilter, status: 'completed' })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('userId', 'username email avatar')
+        .lean(),
+    ]);
+
+    // Build 30-day array (fill missing days with 0)
+    const dailyRevenue = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const dateStr = d.toISOString().slice(0, 10);
+      const found = dailyRevenueRaw.find(r => r._id === dateStr);
+      dailyRevenue.push({ date: dateStr, revenue: found ? found.revenue : 0, orders: found ? found.orders : 0 });
+    }
+
+    // Plan breakdown with percentage
+    const totalRevenue = summaryAgg[0]?.totalRevenue || 0;
+    const planColors = { starter: '#6366f1', pro: '#3b82f6', ultimate: '#f59e0b' };
+    const planPrices = { starter: 9.99, pro: 19.99, ultimate: 49.99 };
+    const planBreakdown = planBreakdownRaw.map(p => ({
+      planId: p._id,
+      planName: p.planName,
+      price: planPrices[p._id] || 0,
+      color: planColors[p._id] || '#6366f1',
+      orders: p.orders,
+      revenue: p.revenue,
+      pct: totalRevenue > 0 ? Math.round((p.revenue / totalRevenue) * 100) : 0,
+    }));
+
+    const totalOrders = summaryAgg[0]?.totalOrders || 0;
+    const result = {
+      summary: {
+        totalRevenue,
+        totalOrders,
+        revenueToday: revenueToday[0]?.total || 0,
+        revenueThisMonth: revenueThisMonth[0]?.total || 0,
+        ordersToday,
+        ordersThisMonth,
+        avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      },
+      planBreakdown,
+      dailyRevenue,
+      recentOrders,
+    };
+
+    this.revenueCache.set(cacheKey, result);
+    return result;
+  }
+
+  /**
    * 清除相关缓存
    */
   clearCache(type) {
@@ -495,10 +626,14 @@ class AdminCache {
       case 'lists':
         this.listCache.flushAll();
         break;
+      case 'revenue':
+        this.revenueCache.flushAll();
+        break;
       case 'all':
         this.statsCache.flushAll();
         this.analyticsCache.flushAll();
         this.listCache.flushAll();
+        this.revenueCache.flushAll();
         break;
     }
   }

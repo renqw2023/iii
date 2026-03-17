@@ -1051,6 +1051,20 @@ router.post('/prompts/batch', adminAuth, [
   }
 });
 
+// 获取收入数据
+router.get('/revenue', adminAuth, async (req, res) => {
+  try {
+    const { period = '30d' } = req.query;
+    const validPeriods = ['7d', '30d', '90d', 'all'];
+    const safePeriod = validPeriods.includes(period) ? period : '30d';
+    const data = await adminCache.getCachedRevenue(safePeriod);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('获取收入数据错误:', error);
+    res.status(500).json({ message: '获取收入数据失败' });
+  }
+});
+
 // 获取积分流水（全用户，支持过滤）
 router.get('/transactions', adminAuth, async (req, res) => {
   try {

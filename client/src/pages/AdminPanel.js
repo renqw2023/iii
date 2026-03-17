@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, CreditCard, ShoppingBag,
+  LayoutDashboard, Users, CreditCard, DollarSign,
   ArrowLeft, Shield, RefreshCw, Circle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,13 +9,13 @@ import { adminAPI } from '../services/api';
 import OverviewTab from '../components/Admin/tabs/OverviewTab';
 import UsersTab from '../components/Admin/tabs/UsersTab';
 import TransactionsTab from '../components/Admin/tabs/TransactionsTab';
-import PaymentsTab from '../components/Admin/tabs/PaymentsTab';
+import RevenueTab from '../components/Admin/tabs/RevenueTab';
 
 const NAV = [
   { id: 'overview',     label: 'Overview',      icon: LayoutDashboard, desc: 'Platform KPIs' },
   { id: 'users',        label: 'Users',         icon: Users,           desc: 'Manage members' },
   { id: 'transactions', label: 'Transactions',  icon: CreditCard,      desc: 'Credits ledger' },
-  { id: 'payments',     label: 'Payments',      icon: ShoppingBag,     desc: 'Purchase history' },
+  { id: 'revenue',      label: 'Revenue',       icon: DollarSign,      desc: 'USD income analytics' },
 ];
 
 /* ─── Toast ─────────────────────────────────────────────────── */
@@ -216,8 +216,8 @@ export default function AdminPanel() {
           {activeTab === 'transactions' && (
             <TransactionsTab key={`tx-${refreshKey}`} />
           )}
-          {activeTab === 'payments' && (
-            <PaymentsTab key={`pay-${refreshKey}`} />
+          {activeTab === 'revenue' && (
+            <RevenueTab key={`rev-${refreshKey}`} />
           )}
         </main>
       </div>

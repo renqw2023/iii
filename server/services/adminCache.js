@@ -2,6 +2,7 @@ const NodeCache = require('node-cache');
 const User = require('../models/User');
 const Post = require('../models/Post');
 const PromptPost = require('../models/PromptPost');
+const CreditTransaction = require('../models/CreditTransaction');
 
 /**
  * Admin查询缓存管理器
@@ -82,15 +83,29 @@ class AdminCache {
    */
   async getCachedStats() {
     const cacheKey = this.CACHE_KEYS.STATS;
-    
+
     return this.getOrSetStats(cacheKey, async () => {
-      const [totalUsers, totalPosts, totalPrompts, activeUsers, totalViews, totalLikes, totalPromptViews, totalPromptLikes, recentUsers, recentPosts, recentPrompts] = await Promise.all([
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      // Build daily registration data for last 7 days
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const [
+        totalUsers, totalPosts, totalPrompts, activeUsers,
+        totalViews, totalLikes, totalPromptViews, totalPromptLikes,
+        recentUsers, recentPosts, recentPrompts,
+        newUsersToday,
+        creditsIssuedToday, creditsConsumedToday,
+        totalGenerations,
+        dailyRegistrationsRaw
+      ] = await Promise.all([
         User.countDocuments({ isActive: true }),
         Post.countDocuments({ isPublic: true }),
         PromptPost.countDocuments({ isPublic: true }),
-        User.countDocuments({ 
-          isActive: true, 
-          lastLoginAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } 
+        User.countDocuments({
+          isActive: true,
+          'analytics.lastActiveAt': { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
         }),
         Post.aggregate([
           { $group: { _id: null, totalViews: { $sum: { $ifNull: ['$views', 0] } } } }
@@ -124,8 +139,46 @@ class AdminCache {
           .limit(5)
           .populate('author', 'username')
           .select('title views likes createdAt author')
-          .lean()
+          .lean(),
+        // New users registered today
+        User.countDocuments({ createdAt: { $gte: todayStart } }),
+        // Credits issued today (earn transactions)
+        CreditTransaction.aggregate([
+          { $match: { type: 'earn', createdAt: { $gte: todayStart } } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]),
+        // Credits consumed today (spend transactions)
+        CreditTransaction.aggregate([
+          { $match: { type: 'spend', createdAt: { $gte: todayStart } } },
+          { $group: { _id: null, total: { $sum: '$amount' } } }
+        ]),
+        // Total generation count
+        CreditTransaction.countDocuments({
+          reason: { $in: ['generate_image', 'generate_video'] }
+        }),
+        // Daily registrations for last 7 days
+        User.aggregate([
+          { $match: { createdAt: { $gte: sevenDaysAgo } } },
+          {
+            $group: {
+              _id: {
+                $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+              },
+              count: { $sum: 1 }
+            }
+          },
+          { $sort: { _id: 1 } }
+        ])
       ]);
+
+      // Build 7-day registration array (fill missing days with 0)
+      const dailyRegistrations = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        const dateStr = d.toISOString().slice(0, 10);
+        const found = dailyRegistrationsRaw.find(r => r._id === dateStr);
+        dailyRegistrations.push({ date: dateStr, count: found ? found.count : 0 });
+      }
 
       return {
         totalUsers,
@@ -138,7 +191,12 @@ class AdminCache {
         totalPromptLikes: totalPromptLikes[0]?.totalLikes || 0,
         recentUsers,
         recentPosts,
-        recentPrompts
+        recentPrompts,
+        newUsersToday,
+        creditsIssuedToday: creditsIssuedToday[0]?.total || 0,
+        creditsConsumedToday: creditsConsumedToday[0]?.total || 0,
+        totalGenerations,
+        dailyRegistrations
       };
     });
   }
@@ -298,8 +356,7 @@ class AdminCache {
         query.isActive = true;
       } else if (status === 'inactive') {
         query.isActive = false;
-      } else {
-        query.isActive = true; // 默认只显示活跃用户
+      // else: show all users (no isActive filter)
       }
       
       const [users, total] = await Promise.all([
@@ -307,7 +364,7 @@ class AdminCache {
           .sort(sortOptions)
           .skip(skip)
           .limit(limit)
-          .select('username email avatar createdAt lastLoginAt analytics.loginCount analytics.lastActiveAt isActive')
+          .select('username email avatar createdAt lastLoginAt analytics.loginCount analytics.lastActiveAt isActive role authProvider credits freeCredits hasPurchasedBefore inviteUsedCount')
           .lean(),
         User.countDocuments(query)
       ]);

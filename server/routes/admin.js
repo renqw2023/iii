@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const Post = require('../models/Post');
 const PromptPost = require('../models/PromptPost');
+const CreditTransaction = require('../models/CreditTransaction');
 const { adminAuth } = require('../middleware/auth');
 const adminCache = require('../services/adminCache');
 
@@ -47,30 +48,52 @@ router.get('/analytics', adminAuth, async (req, res) => {
   }
 });
 
-// 获取用户列表
+// 获取用户列表（直接查询，不走缓存，保证 credits 等字段实时）
 router.get('/users', adminAuth, async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 20, 
-      search, 
+    const {
+      page = 1,
+      limit = 20,
+      search,
       status = 'all',
       sort = 'createdAt',
       order = 'desc'
     } = req.query;
 
-    const result = await adminCache.getCachedUsers(
-      parseInt(page), 
-      parseInt(limit), 
-      search, 
-      status,
-      sort, 
-      order
-    );
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const sortOptions = { [sort]: order === 'desc' ? -1 : 1 };
+
+    let query = {};
+    if (search) {
+      query.$or = [
+        { username: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    if (status === 'active') query.isActive = true;
+    else if (status === 'inactive') query.isActive = false;
+    else if (status === 'paid') query.hasPurchasedBefore = true;
+    else if (status === 'free') query.hasPurchasedBefore = { $ne: true };
+    // else 'all' — no filter
+
+    const [users, total] = await Promise.all([
+      User.find(query)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .select('username email avatar createdAt lastLoginAt analytics.lastActiveAt isActive role authProvider credits freeCredits hasPurchasedBefore inviteUsedCount')
+        .lean(),
+      User.countDocuments(query)
+    ]);
 
     res.json({
       success: true,
-      data: result
+      data: {
+        users,
+        total,
+        page: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
     });
   } catch (error) {
     console.error('获取用户列表错误:', error);
@@ -1025,6 +1048,75 @@ router.post('/prompts/batch', adminAuth, [
   } catch (error) {
     console.error('批量操作提示词错误:', error);
     res.status(500).json({ message: '批量操作失败' });
+  }
+});
+
+// 获取积分流水（全用户，支持过滤）
+router.get('/transactions', adminAuth, async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 30,
+      type,       // 'earn' | 'spend' | 'all'
+      reason,     // specific reason or 'all'
+      walletType,
+      userId,
+      search,     // search by email/username -> resolve to userId list
+      dateFrom,
+      dateTo,
+      sort = 'createdAt',
+      order = 'desc'
+    } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const query = {};
+
+    if (type && type !== 'all') query.type = type;
+    if (reason && reason !== 'all') query.reason = reason;
+    if (walletType && walletType !== 'all') query.walletType = walletType;
+    if (userId) query.userId = userId;
+
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) query.createdAt.$lte = new Date(dateTo);
+    }
+
+    // Resolve search string to userId list (max 50)
+    if (search) {
+      const matchedUsers = await User.find({
+        $or: [
+          { email: { $regex: search, $options: 'i' } },
+          { username: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id').limit(50).lean();
+      query.userId = { $in: matchedUsers.map(u => u._id) };
+    }
+
+    const sortOptions = { [sort]: order === 'desc' ? -1 : 1 };
+
+    const [transactions, total] = await Promise.all([
+      CreditTransaction.find(query)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('userId', 'username email avatar')
+        .lean(),
+      CreditTransaction.countDocuments(query)
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        transactions,
+        total,
+        page: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    console.error('获取积分流水错误:', error);
+    res.status(500).json({ message: '获取积分流水失败' });
   }
 });
 

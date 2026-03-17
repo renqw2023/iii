@@ -2,6 +2,7 @@ const express = require('express');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
 const { auth } = require('../middleware/auth');
+const adminCache = require('../services/adminCache');
 const { deductCredits, recordDeductTransactions } = require('../utils/creditsUtils');
 
 const router = express.Router();
@@ -169,6 +170,7 @@ router.post('/admin/grant', auth, async (req, res) => {
       totalBalanceAfter: (target.freeCredits ?? 0) + target.credits,
     });
 
+    adminCache.clearCache('stats');
     res.json({ credits: target.credits, freeCredits: target.freeCredits, transaction });
   } catch (error) {
     console.error('admin/grant error:', error);
@@ -208,6 +210,7 @@ router.post('/admin/deduct', auth, async (req, res) => {
       target.credits
     );
 
+    adminCache.clearCache('stats');
     res.json({ credits: target.credits, freeCredits: target.freeCredits });
   } catch (error) {
     console.error('admin/deduct error:', error);

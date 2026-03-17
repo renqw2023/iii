@@ -20,6 +20,13 @@ const auth = async (req, res, next) => {
     req.userId = user._id;
     req.user = user;
     next();
+
+    // Fire-and-forget lastActiveAt update (1 min throttle)
+    const now = new Date();
+    const lastActive = user.analytics?.lastActiveAt;
+    if (!lastActive || (now - lastActive) > 60_000) {
+      User.updateOne({ _id: user._id }, { $set: { 'analytics.lastActiveAt': now } }).catch(() => {});
+    }
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: '无效的token' });

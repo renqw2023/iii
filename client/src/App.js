@@ -157,14 +157,12 @@ function App() {
                         <Route path="credits" element={<Credits />} />
                       </Route>
 
-                      {/* 管理员路由 */}
+                      {/* 管理员路由 — 独立布局，不套 Layout（避免 app 侧边栏与 admin 侧边栏冲突） */}
                       <Route path="/admin" element={
                         <AdminRoute>
-                          <Layout />
+                          <AdminPanel />
                         </AdminRoute>
-                      }>
-                        <Route index element={<AdminPanel />} />
-                      </Route>
+                      } />
 
                       {/* 404页面 */}
                       <Route path="*" element={<NotFound />} />

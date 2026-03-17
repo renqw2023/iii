@@ -133,11 +133,17 @@ export const adminAPI = {
     }),
   
   // 数据导入
-  importData: (type, data, mode = 'create') => 
+  importData: (type, data, mode = 'create') =>
     api.post(`/admin/import/${type}`, { data, mode }),
-  
+
   // 发送系统通知
   sendSystemNotification: (data) => api.post('/notifications/system', data),
+
+  // 积分流水
+  getTransactions: (params) => api.get('/admin/transactions', { params }),
+
+  // 删除用户
+  deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
 };
 
 // 通知相关API

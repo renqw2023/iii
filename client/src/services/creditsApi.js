@@ -22,4 +22,7 @@ export const creditsAPI = {
 
   adminGrant: (userId, amount, note) =>
     axios.post('/api/credits/admin/grant', { userId, amount, note }, { headers: getAuthHeaders() }),
+
+  adminDeduct: (userId, amount, note) =>
+    axios.post('/api/credits/admin/deduct', { userId, amount, note }, { headers: getAuthHeaders() }),
 };

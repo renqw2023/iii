@@ -509,7 +509,7 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
                 onClick={() => locked ? toast('4K requires a paid plan — purchase credits first', { icon: '🔒' }) : setResolution(res)}
                 title={locked ? 'Requires paid plan' : undefined}
                 style={{ height: 30, padding: '0 10px', borderRadius: 8, border: `1px solid ${resolution === res ? 'rgba(0,0,0,0.20)' : 'rgba(0,0,0,0.10)'}`, backgroundColor: resolution === res ? '#fff' : 'transparent', fontSize: 12, fontWeight: resolution === res ? 500 : 400, color: locked ? '#c4b5fd' : resolution === res ? '#374151' : '#9ca3af', cursor: locked ? 'not-allowed' : 'pointer', transition: 'all 150ms', opacity: locked ? 0.65 : 1 }}>
-                {res}{locked ? ' 🔒' : ''}
+                {res}{res === '4K' ? (locked ? ' 🔒' : ' +5') : ''}
               </button>
             );
           })}
@@ -635,7 +635,7 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
             {selectedGenModel && genModels.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 6, padding: '2px 7px' }}>
                 <Zap size={10} style={{ color: '#FFDBA4' }} />
-                <span style={{ fontSize: 12 }}>{genModels.find(m => m.id === selectedGenModel)?.creditCost ?? '?'}</span>
+                <span style={{ fontSize: 12 }}>{(() => { const base = genModels.find(m => m.id === selectedGenModel)?.creditCost ?? null; return base != null ? base + (resolution === '4K' ? 5 : 0) : '?'; })()}</span>
               </div>
             )}
           </>

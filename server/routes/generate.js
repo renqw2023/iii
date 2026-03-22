@@ -240,11 +240,11 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
             }],
             generationConfig: {
               responseModalities: ['TEXT', 'IMAGE'],
-              // gemini-3.1-flash-image-preview requires explicit imageConfig
+              // gemini-3.1-flash-image-preview requires explicit imageConfig (imageSize must be uppercase)
               ...(modelId === 'gemini3-flash' ? {
                 imageConfig: {
                   aspectRatio: aspectRatio || '1:1',
-                  imageSize: '2K',
+                  imageSize: resolution === '4K' ? '4K' : '2K',
                 },
               } : {}),
             },

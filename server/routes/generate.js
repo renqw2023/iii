@@ -15,7 +15,8 @@ const generateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.use(generateLimiter);
+// Apply rate limit only to AI generation endpoints, not to /models lookup
+// router.use(generateLimiter); — moved to individual POST routes
 const User = require('../models/User');
 const Generation = require('../models/Generation');
 const { refreshFreeCreditsIfNeeded } = require('./credits');
@@ -30,6 +31,16 @@ const {
 const MODELS = [
   // ── Google Gemini 3 / Imagen ── (排在最前，优先展示)
   {
+    id: 'gemini3-flash',
+    name: 'Nanobanana 2',
+    provider: 'Google',
+    apiModel: 'gemini-3.1-flash-image-preview',
+    creditCost: 18,
+    available: () => !!process.env.GEMINI_API_KEY,
+    description: 'Nanobanana 2 · Pro-quality at Flash speed',
+    badge: 'New',
+  },
+  {
     id: 'gemini3-pro',
     name: 'Nanobanana Pro',
     provider: 'Google',
@@ -38,15 +49,6 @@ const MODELS = [
     available: () => !!process.env.GEMINI_API_KEY,
     description: 'Nanobanana Pro · Professional quality',
     badge: 'Pro',
-  },
-  {
-    id: 'gemini3-flash',
-    name: 'Nanobanana 2',
-    provider: 'Google',
-    apiModel: 'gemini-3.1-flash-image-preview',
-    creditCost: 12,
-    available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Nanobanana 2 · Fast generation',
   },
   {
     id: 'gemini25-flash',
@@ -147,7 +149,7 @@ router.get('/models', (req, res) => {
  * Body: { prompt, modelId, aspectRatio: '1:1'|'4:3'|'3:4'|'16:9' }
  * 需要登录，消耗积分（先 freeCredits，再 credits）
  */
-router.post('/image', auth, async (req, res) => {
+router.post('/image', auth, generateLimiter, async (req, res) => {
   try {
     const { prompt, modelId, aspectRatio = '1:1', referenceImageData, referenceImageMime, referenceImageUrl } = req.body;
     let resolution = req.body.resolution === '4K' ? '4K' : '2K';
@@ -211,12 +213,14 @@ router.post('/image', auth, async (req, res) => {
 
     // ── Gemini 3 Pro / 3.1 Flash（generateContent，IMAGE 输出）──
     if (modelId === 'gemini3-pro' || modelId === 'gemini3-flash' || modelId === 'gemini25-flash') {
+      // Pro 模型生成时间更长；Flash 模型 120s，Pro 模型 180s
+      const geminiTimeout = modelId === 'gemini3-pro' ? 180000 : 120000;
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model.apiModel}:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          signal: AbortSignal.timeout(90000), // 90 秒超时
+          signal: AbortSignal.timeout(geminiTimeout),
           body: JSON.stringify({
             contents: [{
               parts: [
@@ -520,6 +524,9 @@ router.post('/image', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('generate/image 错误:', error);
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      return res.status(504).json({ message: '生成超时，请尝试更简短的描述或切换至更快的模型' });
+    }
     res.status(500).json({ message: '生成失败，请稍后重试' });
   }
 });
@@ -563,7 +570,7 @@ router.post('/video/upload-frame', auth, frameUpload.single('frame'), (req, res)
  * Body: { prompt, modelKey, duration, resolution, ratio, generateAudio, firstFrameUrl, lastFrameUrl }
  * 需要登录，积分按规格动态扣除
  */
-router.post('/video', auth, async (req, res) => {
+router.post('/video', auth, generateLimiter, async (req, res) => {
   try {
     const { generateVideo, getCreditCost, MODELS } = require('../services/videoService');
     const config = require('../config');

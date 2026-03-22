@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSettingsSEO } from '../hooks/useSEO';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -26,6 +27,7 @@ import {
 } from '../config/settingsConfig';
 
 const Settings = () => {
+  useSettingsSEO();
   const { t } = useTranslation();
   const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');

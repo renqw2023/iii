@@ -242,6 +242,108 @@ export const useHelpSEO = () => {
 
 
 
+/**
+ * Gallery 画廊页 SEO Hook
+ */
+export const useGallerySEO = () => {
+  const { t } = useTranslation();
+
+  useSEO({
+    title: t('gallery.seo.title', 'Gallery - III.PICS | AI 风格参数画廊'),
+    description: t('gallery.seo.description', '浏览 III.PICS Gallery，探索精选 Midjourney Sref 风格参数和 AI 艺术风格库，激发你的创作灵感'),
+    keywords: t('gallery.seo.keywords', 'III.PICS,Gallery,Sref,Midjourney风格,AI艺术风格,风格参数,创意画廊'),
+    type: 'website'
+  });
+};
+
+/**
+ * Seedance 视频页 SEO Hook
+ */
+export const useSeedanceSEO = () => {
+  const { t } = useTranslation();
+
+  useSEO({
+    title: t('seedance.seo.title', 'Seedance - III.PICS | AI 视频生成画廊'),
+    description: t('seedance.seo.description', '探索 III.PICS Seedance AI 视频生成作品，发现最新 AI 动态影像创作，获取视频提示词灵感'),
+    keywords: t('seedance.seo.keywords', 'III.PICS,Seedance,AI视频,视频生成,动态影像,AI动画,视频提示词'),
+    type: 'website'
+  });
+};
+
+/**
+ * Img2Prompt / AI Generation 工具页 SEO Hook
+ */
+export const useImg2PromptSEO = () => {
+  const { t } = useTranslation();
+
+  useSEO({
+    title: t('img2prompt.seo.title', 'AI Generation - III.PICS | 图片反推提示词 & 文生图'),
+    description: t('img2prompt.seo.description', '使用 III.PICS AI Generation 工具，上传图片自动反推提示词，或通过文字描述生成精美 AI 图像'),
+    keywords: t('img2prompt.seo.keywords', 'III.PICS,图片反推提示词,img2prompt,文生图,AI生成,提示词生成,AI工具'),
+    type: 'website'
+  });
+};
+
+/**
+ * Docs / 文档中心页 SEO Hook
+ */
+export const useDocsSEO = () => {
+  const { t } = useTranslation();
+
+  useSEO({
+    title: t('docs.seo.title', '文档中心 - III.PICS | 使用指南与帮助'),
+    description: t('docs.seo.description', 'III.PICS 文档中心，包含使用指南、隐私政策、服务条款及关于我们的全部信息'),
+    keywords: t('docs.seo.keywords', 'III.PICS,文档,使用指南,帮助中心,隐私政策,服务条款'),
+    type: 'website'
+  });
+};
+
+/**
+ * Gallery 单项 SEO Hook
+ * @param {Object} item - Gallery 作品数据
+ */
+export const useGalleryItemSEO = (item) => {
+  const { t } = useTranslation();
+
+  const title = item?.prompt
+    ? `${item.prompt.substring(0, 60)} - III.PICS Gallery`
+    : t('gallery.item.defaultTitle', 'AI 艺术作品 - III.PICS Gallery');
+  const description = item?.prompt
+    ? `${item.prompt.substring(0, 150)} | 在 III.PICS 探索更多 AI 艺术作品`
+    : t('gallery.item.defaultDescription', '查看这个精美的 AI 艺术作品，在 III.PICS 探索更多创意');
+  const image = item?.imageUrl || item?.thumbnailUrl;
+
+  useSEO({
+    title,
+    description,
+    image,
+    type: 'article'
+  });
+};
+
+/**
+ * Sref 详情 SEO Hook
+ * @param {Object} sref - Sref 数据
+ */
+export const useSrefSEO = (sref) => {
+  const { t } = useTranslation();
+
+  const title = sref?.title || sref?.srefCode
+    ? `Sref ${sref.srefCode || sref.title} - III.PICS`
+    : t('sref.defaultTitle', 'Sref 风格参数 - III.PICS');
+  const description = sref?.description || sref?.prompt
+    ? `${(sref.description || sref.prompt).substring(0, 150)} | Midjourney 风格参数`
+    : t('sref.defaultDescription', '探索这个 Midjourney Sref 风格参数，在 III.PICS 发现更多创意风格');
+  const image = sref?.imageUrl || sref?.thumbnailUrl;
+
+  useSEO({
+    title,
+    description,
+    image,
+    type: 'article'
+  });
+};
+
 export default {
   useSEO,
   useHomeSEO,
@@ -253,5 +355,11 @@ export default {
   useLoginSEO,
   useRegisterSEO,
   useAboutSEO,
-  useHelpSEO
+  useHelpSEO,
+  useGallerySEO,
+  useSeedanceSEO,
+  useImg2PromptSEO,
+  useDocsSEO,
+  useGalleryItemSEO,
+  useSrefSEO
 };

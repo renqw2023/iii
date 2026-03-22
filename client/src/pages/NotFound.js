@@ -1,10 +1,12 @@
 import React from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Home, ArrowLeft, Sparkles } from 'lucide-react';
 
 const NotFound = () => {
+  useSEO({ noIndex: true, title: '404 - Page Not Found | III.PICS' });
   const { t } = useTranslation();
   
   return (

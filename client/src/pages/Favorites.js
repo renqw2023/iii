@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Palette, Image, Film } from 'lucide-react';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
@@ -60,6 +61,7 @@ const FavCard = ({ item, onRemove, navigate }) => {
 };
 
 const Favorites = () => {
+  useSEO({ noIndex: true, title: 'Favorites - III.PICS' });
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('sref');
   const [items, setItems] = useState([]);

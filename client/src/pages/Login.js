@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLoginSEO } from '../hooks/useSEO';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 
 const Login = () => {
+  useLoginSEO();
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',

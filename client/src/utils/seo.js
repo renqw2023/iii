@@ -29,7 +29,9 @@ export const generateSEOConfig = (options = {}) => {
   const baseKeywords = 'Midjourney,AI艺术,数字艺术,人工智能,创作平台,风格参数';
   const baseImage = `${config.app.baseUrl}/images/og-default.jpg`;
 
-  const finalTitle = title ? `${title} | ${baseTitle}` : baseTitle;
+  const finalTitle = title
+    ? (title.includes('III.PICS') ? title : `${title} | ${baseTitle}`)
+    : baseTitle;
   const finalDescription = description || baseDescription;
   const finalKeywords = keywords ? `${keywords},${baseKeywords}` : baseKeywords;
   const finalImage = image || baseImage;
@@ -58,7 +60,8 @@ export const updatePageMeta = (seoConfig) => {
     image,
     url,
     type,
-    lang
+    lang,
+    noIndex = false
   } = seoConfig;
 
   // 更新title
@@ -85,7 +88,7 @@ export const updatePageMeta = (seoConfig) => {
   // 基础SEO标签
   updateMeta('description', description);
   updateMeta('keywords', keywords);
-  updateMeta('robots', 'index, follow');
+  updateMeta('robots', noIndex ? 'noindex, nofollow' : 'index, follow');
   updateMeta('author', 'III.PICS Team');
   updateMeta('language', lang);
 
@@ -100,7 +103,7 @@ export const updatePageMeta = (seoConfig) => {
 
   // Twitter Card标签
   updateMeta('twitter:card', 'summary_large_image');
-  updateMeta('twitter:site', '@mjgallery');
+  updateMeta('twitter:site', '@iii_pics');
   updateMeta('twitter:title', title);
   updateMeta('twitter:description', description);
   updateMeta('twitter:image', image);
@@ -334,7 +337,8 @@ export const configurePageSEO = (options = {}) => {
     lang = 'zh-CN',
     structuredData,
     breadcrumbs,
-    currentPath = window.location.pathname
+    currentPath = window.location.pathname,
+    noIndex = false
   } = options;
 
   // 生成SEO配置
@@ -349,7 +353,7 @@ export const configurePageSEO = (options = {}) => {
   });
 
   // 更新页面meta标签
-  updatePageMeta(seoConfig);
+  updatePageMeta({ ...seoConfig, noIndex });
 
   // 更新canonical链接
   const canonicalUrl = generateCanonicalUrl(seoConfig.url);

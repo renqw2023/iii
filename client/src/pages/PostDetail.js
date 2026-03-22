@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { usePostSEO } from '../hooks/useSEO';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +33,7 @@ const PostDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [post, setPost] = useState(null);
+  usePostSEO(post);
   const [isLoading, setIsLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);

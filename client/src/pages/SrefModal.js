@@ -137,9 +137,10 @@ const SrefModal = () => {
         <>
             {sref && (
                 <Helmet>
-                    <title>--sref {sref.srefCode} - Style Gallery</title>
-                    <meta name="description" content={sref.description || sref.title} />
+                    <title>--sref {sref.srefCode} - III.PICS Style Gallery</title>
+                    <meta name="description" content={sref.description || sref.title || `Midjourney --sref ${sref.srefCode} 风格参数`} />
                     {sref.previewImage && <meta property="og:image" content={sref.previewImage} />}
+                    <meta property="og:url" content={`https://iii.pics/explore/${sref._id}`} />
                 </Helmet>
             )}
 

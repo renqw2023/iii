@@ -29,7 +29,7 @@ const SEOHead = ({
   const currentLang = i18n.language;
   
   // 基础配置
-  const baseUrl = process.env.REACT_APP_BASE_URL || 'https://mjgallery.com';
+  const baseUrl = process.env.REACT_APP_BASE_URL || 'https://iii.pics';
   const siteName = 'III.PICS';
   const defaultImage = `${baseUrl}/images/og-default.jpg`;
   
@@ -115,7 +115,7 @@ const SEOHead = ({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image || defaultImage} />
-      <meta name="twitter:site" content="@mjgallery" />
+      <meta name="twitter:site" content="@iii_pics" />
       
       {/* 移动端优化 */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />

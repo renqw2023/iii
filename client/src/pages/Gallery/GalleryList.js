@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, Outlet } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
 import { Loader2 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import { useGallerySEO } from '../../hooks/useSEO';
 import GalleryCard from '../../components/Gallery/GalleryCard';
 import { galleryAPI } from '../../services/galleryApi';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import GalleryPanel from '../../components/Sidebar/GalleryPanel';
 
 const GalleryList = () => {
     useSidebarPanel(GalleryPanel);
+    useGallerySEO();
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const sentinelRef = useRef(null);
@@ -86,11 +87,6 @@ const GalleryList = () => {
 
     return (
         <>
-            <Helmet>
-                <title>AI Prompts Gallery - Trending AI Image Prompts</title>
-                <meta name="description" content="Discover trending AI prompts for NanoBanana Pro, GPT Image. One-click copy, no prompt engineering needed." />
-            </Helmet>
-
             <div className="gallery-page">
                 <div className="gallery-stage">
                     <div className="gallery-stage-header">

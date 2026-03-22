@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRegisterSEO } from '../hooks/useSEO';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
@@ -362,6 +363,7 @@ const FireworkCore = () => (
    Only the JSX visual wrapper is changed.
 ═══════════════════════════════════════════════════════════ */
 const Register = () => {
+  useRegisterSEO();
   const { t } = useTranslation();
 
   /* ── Form state (unchanged) ── */

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useInfiniteQuery } from 'react-query';
 import { Loader2 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import { useExploreSEO } from '../hooks/useSEO';
 import { useSearchParams, useLocation, Outlet } from 'react-router-dom';
 import SrefCard from '../components/Sref/SrefCard';
 import { srefAPI } from '../services/srefApi';
@@ -10,6 +10,7 @@ import ExplorePanel from '../components/Sidebar/ExplorePanel';
 
 const Explore = () => {
   useSidebarPanel(ExplorePanel);
+  useExploreSEO();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const sentinelRef = useRef(null);
@@ -62,11 +63,6 @@ const Explore = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Style Gallery - Midjourney Sref Styles</title>
-        <meta name="description" content="Browse 1300+ Midjourney --sref style references. Find your perfect style code." />
-      </Helmet>
-
       <div className="gallery-page">
         <div className="gallery-stage">
           <div className="gallery-stage-header">

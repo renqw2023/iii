@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, Outlet } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from 'react-query';
 import { Loader2 } from 'lucide-react';
-import { Helmet } from 'react-helmet-async';
+import { useSeedanceSEO } from '../../hooks/useSEO';
 import VideoCard from '../../components/Seedance/VideoCard';
 import { seedanceAPI } from '../../services/seedanceApi';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import SeedancePanel from '../../components/Sidebar/SeedancePanel';
 
 const SeedanceList = () => {
     useSidebarPanel(SeedancePanel);
+    useSeedanceSEO();
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const sentinelRef = useRef(null);
@@ -83,12 +84,7 @@ const SeedanceList = () => {
 
     return (
         <>
-            <Helmet>
-                <title>Seedance 2.0 Video Prompts - AI Video Generation</title>
-                <meta name="description" content="Curated Seedance 2.0 video prompts with playable previews. Text-to-video, image-to-video, and more." />
-            </Helmet>
-
-            <div className="seedance-page">
+<div className="seedance-page">
                 <div style={{ padding: '0.25rem 1rem 0' }}>
                     <span className="gallery-results-info">
                         {total} video prompts

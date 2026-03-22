@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { Clock3, Heart, PenSquare, Coins, ArrowRight, Sparkles } from 'lucide-react';
@@ -19,6 +20,7 @@ const quickActions = [
 ];
 
 const Dashboard = () => {
+  useSEO({ noIndex: true, title: 'Dashboard - III.PICS' });
   const { user } = useAuth();
   const navigate = useNavigate();
   const { getHistory } = useBrowsingHistory();

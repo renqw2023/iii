@@ -3,6 +3,8 @@ const path = require('path');
 const config = require('../config');
 const Post = require('../models/Post');
 const User = require('../models/User');
+const GalleryPrompt = require('../models/GalleryPrompt');
+const SeedancePrompt = require('../models/SeedancePrompt');
 
 /**
  * 网站地图生成器
@@ -15,12 +17,13 @@ class SitemapGenerator {
     this.staticPages = [
       { path: '/', priority: 1.0, changefreq: 'daily' },
       { path: '/explore', priority: 0.9, changefreq: 'daily' },
-      { path: '/prompts', priority: 0.9, changefreq: 'daily' },
-      { path: '/about', priority: 0.7, changefreq: 'monthly' },
-      { path: '/help', priority: 0.7, changefreq: 'monthly' },
-      { path: '/contact', priority: 0.6, changefreq: 'monthly' },
-      { path: '/privacy', priority: 0.5, changefreq: 'yearly' },
-      { path: '/terms', priority: 0.5, changefreq: 'yearly' }
+      { path: '/gallery', priority: 0.9, changefreq: 'daily' },
+      { path: '/seedance', priority: 0.8, changefreq: 'daily' },
+      { path: '/img2prompt', priority: 0.7, changefreq: 'weekly' },
+      { path: '/docs', priority: 0.7, changefreq: 'monthly' },
+      { path: '/docs#about', priority: 0.6, changefreq: 'monthly' },
+      { path: '/docs#privacy', priority: 0.5, changefreq: 'yearly' },
+      { path: '/docs#terms', priority: 0.5, changefreq: 'yearly' }
     ];
   }
 
@@ -81,7 +84,9 @@ class SitemapGenerator {
     xml += await this.generatePostURLs(lang);
     xml += await this.generateUserURLs(lang);
     xml += await this.generatePromptURLs(lang);
-    
+    xml += await this.generateGalleryURLs();
+    xml += await this.generateSeedanceURLs();
+
     xml += '</urlset>';
     
     return xml;
@@ -374,6 +379,56 @@ Crawl-delay: 2
   }
 
   /**
+   * 生成 Gallery 内容 URLs
+   */
+  async generateGalleryURLs() {
+    let xml = '';
+    try {
+      const items = await GalleryPrompt.find({})
+        .select('_id createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(5000);
+      for (const item of items) {
+        const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
+        xml += `  <url>\n`;
+        xml += `    <loc>${this.baseUrl}/gallery?id=${item._id}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.7</priority>\n`;
+        xml += `  </url>\n`;
+      }
+    } catch (error) {
+      console.error('Error generating gallery URLs:', error);
+    }
+    return xml;
+  }
+
+  /**
+   * 生成 Seedance 内容 URLs
+   */
+  async generateSeedanceURLs() {
+    let xml = '';
+    try {
+      const items = await SeedancePrompt.find({})
+        .select('_id createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(5000);
+      for (const item of items) {
+        const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
+        xml += `  <url>\n`;
+        xml += `    <loc>${this.baseUrl}/seedance?id=${item._id}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.6</priority>\n`;
+        xml += `  </url>\n`;
+      }
+    } catch (error) {
+      console.error('Error generating seedance URLs:', error);
+    }
+    return xml;
+  }
+
+  /**
    * 生成slug
    */
   generateSlug(title) {
@@ -405,7 +460,7 @@ Crawl-delay: 2
    * 保存sitemap文件
    */
   async saveSitemap(filename, content) {
-    const publicDir = path.join(__dirname, '../../client/build');
+    const publicDir = path.join(__dirname, '../../client/public');
     const filePath = path.join(publicDir, filename);
     
     try {

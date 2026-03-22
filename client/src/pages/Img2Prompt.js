@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { useImg2PromptSEO } from '../hooks/useSEO';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -7,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 const Img2Prompt = () => {
+  useImg2PromptSEO();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();

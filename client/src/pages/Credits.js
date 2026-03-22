@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Coins, CheckCircle, TrendingUp, TrendingDown, Clock, Gift, Copy, Zap } from 'lucide-react';
 import axios from 'axios';
@@ -29,6 +30,7 @@ const getAuthHeaders = () => ({
 });
 
 const Credits = () => {
+  useSEO({ noIndex: true, title: 'Credits - III.PICS' });
   const queryClient = useQueryClient();
   const { user } = useAuth();
 

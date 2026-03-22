@@ -107,9 +107,10 @@ const GalleryModal = () => {
         <>
             {prompt && (
                 <Helmet>
-                    <title>{prompt.title} - AI Prompts Gallery</title>
-                    <meta name="description" content={prompt.prompt?.substring(0, 160)} />
+                    <title>{prompt.title} - III.PICS Gallery</title>
+                    <meta name="description" content={prompt.prompt?.substring(0, 160) || 'AI 艺术作品 - III.PICS Gallery'} />
                     {prompt.previewImage && <meta property="og:image" content={prompt.previewImage} />}
+                    <meta property="og:url" content={`https://iii.pics/gallery/${prompt._id}`} />
                 </Helmet>
             )}
 

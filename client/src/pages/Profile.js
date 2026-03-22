@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useUserSEO } from '../hooks/useSEO';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +30,7 @@ const Profile = () => {
   const { user: currentUser } = useAuth();
   const [viewMode, setViewMode] = useState('grid');
   const [user, setUser] = useState(null);
+  useUserSEO(user);
   const [userPosts, setUserPosts] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);

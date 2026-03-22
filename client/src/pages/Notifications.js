@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSEO } from '../hooks/useSEO';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bell, 
@@ -20,6 +21,7 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
 const Notifications = () => {
+  useSEO({ noIndex: true, title: 'Notifications - III.PICS' });
   const { t } = useTranslation();
   const {
     notifications,

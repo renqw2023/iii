@@ -24,9 +24,9 @@ export const generateSEOConfig = (options = {}) => {
     lang = 'zh-CN'
   } = options;
 
-  const baseTitle = 'III.PICS - AI艺术创作平台';
-  const baseDescription = '专业的AI艺术创作平台，展示Midjourney风格参数，激发无限创作灵感';
-  const baseKeywords = 'Midjourney,AI艺术,数字艺术,人工智能,创作平台,风格参数';
+  const baseTitle = 'III.PICS — AI Art Gallery & Midjourney Style Reference';
+  const baseDescription = 'Browse Midjourney sref style codes, AI-generated images, and creative prompts. Free AI art inspiration for every creator.';
+  const baseKeywords = 'midjourney sref, AI art gallery, AI image generator, midjourney prompts, text to image AI, AI art styles, midjourney style reference, III.PICS';
   const baseImage = `${config.app.baseUrl}/images/og-default.jpg`;
 
   const finalTitle = title
@@ -132,7 +132,7 @@ export const generateStructuredData = (data, type = 'WebSite') => {
         ...baseStructuredData,
         name: 'III.PICS',
         url: config.app.baseUrl,
-        description: '专业的AI艺术创作平台，展示Midjourney风格参数',
+        description: 'AI Art Gallery & Midjourney Style Reference — browse sref codes, AI images, and prompts',
         potentialAction: {
           '@type': 'SearchAction',
           target: `${config.app.baseUrl}/search?q={search_term_string}`,

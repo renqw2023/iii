@@ -5,16 +5,16 @@ import { configurePageSEO, generateStructuredData } from '../utils/seo';
 import config from '../config';
 
 /**
- * SEO Hook - 简化页面SEO配置
- * @param {Object} options - SEO配置选项
- * @param {string} options.title - 页面标题键名或直接标题
- * @param {string} options.description - 页面描述键名或直接描述
- * @param {string} options.keywords - 关键词
- * @param {string} options.image - 分享图片URL
- * @param {string} options.type - 页面类型 (website, article, etc.)
- * @param {Object} options.structuredData - 结构化数据
- * @param {Array} options.breadcrumbs - 面包屑导航
- * @param {boolean} options.noIndex - 是否禁止索引
+ * SEO Hook — configure page meta for any route
+ * @param {Object} options
+ * @param {string}  options.title
+ * @param {string}  options.description
+ * @param {string}  options.keywords
+ * @param {string}  options.image
+ * @param {string}  options.type     - 'website' | 'article' | 'profile'
+ * @param {Object}  options.structuredData
+ * @param {Array}   options.breadcrumbs
+ * @param {boolean} options.noIndex
  */
 export const useSEO = (options = {}) => {
   const { t, i18n } = useTranslation();
@@ -33,14 +33,12 @@ export const useSEO = (options = {}) => {
       noIndex = false
     } = options;
 
-    // 处理国际化标题和描述
-    const finalTitle = title.includes('.') ? t(title) : title;
+    // i18n key resolution (dot-notation key → translated string)
+    const finalTitle       = title.includes('.')       ? t(title)       : title;
     const finalDescription = description.includes('.') ? t(description) : description;
 
-    // 生成完整URL
     const fullUrl = `${config.app.baseUrl}${location.pathname}${location.search}`;
 
-    // 配置页面SEO
     configurePageSEO({
       title: finalTitle,
       description: finalDescription,
@@ -57,54 +55,49 @@ export const useSEO = (options = {}) => {
   }, [options, t, i18n.language, location, currentLang]);
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-level hooks
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * 首页SEO Hook
+ * Home page
  */
 export const useHomeSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('home.seo.title', 'III.PICS - 专业AI视觉艺术平台 | 激发灵感·释放想象·推动创新'),
-    description: t('home.seo.description', 'III.PICS专业AI视觉艺术平台，激发灵感(Inspire)、释放想象(Imagine)、推动创新(Innovate)。汇聚全球创作者的精美作品，发现无限创意可能，探索AI艺术的无限魅力'),
-    keywords: t('home.seo.keywords', 'III.PICS,AI艺术,视觉创作,Midjourney,创意灵感,艺术作品,提示词,风格参数,数字艺术,人工智能,创作平台'),
+    title: 'III.PICS — AI Art Gallery & Midjourney Style Reference',
+    description: 'Discover thousands of Midjourney sref style codes, AI-generated images, and creative prompts. Browse the best AI art gallery online — free inspiration for every artist.',
+    keywords: 'midjourney sref, midjourney style reference, AI art gallery, AI image generator, midjourney prompts, AI art styles, text to image AI, AI art inspiration, midjourney style codes, III.PICS',
     type: 'website',
     structuredData: generateStructuredData({
       name: 'III.PICS',
-      description: 'III.PICS - 专业AI视觉艺术平台，激发灵感、释放想象、推动创新',
+      description: 'AI Art Gallery & Midjourney Style Reference — browse sref codes, AI images, and creative prompts',
       url: 'https://iii.pics',
       logo: 'https://iii.pics/logo.svg',
-      sameAs: [
-        'https://iii.pics'
-      ]
+      sameAs: ['https://iii.pics']
     }, 'WebSite')
   });
 };
 
 /**
- * 探索页面SEO Hook
+ * Explore — Midjourney sref browser
  */
 export const useExploreSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('explore.seo.title', '探索 - III.PICS | 发现精美AI艺术作品'),
-    description: t('explore.seo.description', '在III.PICS探索页面浏览和发现来自全球创作者的精美AI艺术作品，获取无限创作灵感，激发你的想象力'),
-    keywords: t('explore.seo.keywords', 'III.PICS,AI艺术探索,数字艺术作品,创作灵感,艺术画廊,视觉艺术'),
+    title: 'Explore Midjourney Sref Styles — III.PICS Style Gallery',
+    description: 'Browse 1,300+ Midjourney --sref style reference codes with visual previews. Find the perfect AI art style for your next prompt — updated daily.',
+    keywords: 'midjourney sref, midjourney style reference, sref codes, midjourney --sref, AI art styles, midjourney style gallery, midjourney prompts, III.PICS explore',
     type: 'website'
   });
 };
 
 /**
- * 作品详情页SEO Hook
- * @param {Object} post - 作品数据
+ * Post detail
  */
 export const usePostSEO = (post) => {
-  const { t } = useTranslation();
-
-  const title = post?.title || t('post.defaultTitle', '精美AI艺术作品');
-  const description = post?.description || t('post.defaultDescription', '查看这个精美的AI艺术作品');
-  const image = post?.imageUrl || post?.thumbnailUrl;
-  const keywords = post?.tags ? post.tags.join(',') : '';
+  const title       = post?.title       || 'AI Art — III.PICS';
+  const description = post?.description || 'View this AI-generated artwork and discover more creative inspiration on III.PICS.';
+  const image       = post?.imageUrl    || post?.thumbnailUrl;
+  const keywords    = post?.tags ? post.tags.join(', ') : 'AI art, midjourney, AI image';
 
   useSEO({
     title,
@@ -114,31 +107,28 @@ export const usePostSEO = (post) => {
     type: 'article',
     structuredData: post ? generateStructuredData(post, 'Article') : null,
     breadcrumbs: [
-      { name: t('nav.home', '首页'), url: '/' },
-      { name: t('nav.explore', '探索'), url: '/explore' },
+      { name: 'Home', url: '/' },
+      { name: 'Explore', url: '/explore' },
       { name: title, url: post ? `/post/${post._id}` : '#' }
     ]
   });
 };
 
 /**
- * 用户页面SEO Hook
- * @param {Object} user - 用户数据
+ * User profile
  */
 export const useUserSEO = (user) => {
-  const { t } = useTranslation();
-
-  const username = user?.username || '用户';
-  const title = t('user.seo.title', { username });
-  const description = t('user.seo.description', {
-    username,
-    bio: user?.bio || '查看用户的精美作品集'
-  });
+  const username    = user?.username || 'Artist';
+  const title       = `${username} — AI Art Portfolio on III.PICS`;
+  const description = user?.bio
+    ? `${user.bio} — Browse ${username}'s AI artwork and style collections on III.PICS.`
+    : `View ${username}'s AI-generated art portfolio, Midjourney prompts, and style references on III.PICS.`;
   const image = user?.avatar;
 
   useSEO({
     title,
     description,
+    keywords: `${username}, AI art portfolio, midjourney artist, AI artwork, III.PICS`,
     image,
     type: 'profile',
     structuredData: user ? generateStructuredData({
@@ -149,196 +139,167 @@ export const useUserSEO = (user) => {
       url: `/user/${user._id}`
     }, 'Person') : null,
     breadcrumbs: [
-      { name: t('nav.home', '首页'), url: '/' },
+      { name: 'Home', url: '/' },
       { name: username, url: user ? `/user/${user._id}` : '#' }
     ]
   });
 };
 
 /**
- * 创作页面SEO Hook
+ * Create / upload (noindex)
  */
 export const useCreateSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('create.seo.title', '创作 - 分享你的AI艺术作品'),
-    description: t('create.seo.description', '上传和分享你的AI艺术作品，展示创作技巧和风格参数'),
-    keywords: t('create.seo.keywords', 'AI艺术创作,作品上传,创作分享,艺术社区'),
-    type: 'website',
-    noIndex: true // 创作页面通常不需要被索引
+    title: 'Upload AI Art — III.PICS',
+    description: 'Share your AI-generated artwork with the III.PICS community.',
+    noIndex: true
   });
 };
 
 /**
- * 设置页面SEO Hook
+ * Settings (noindex)
  */
 export const useSettingsSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('settings.seo.title', '设置 - 个人偏好配置'),
-    description: t('settings.seo.description', '配置个人偏好设置，自定义使用体验'),
-    type: 'website',
-    noIndex: true // 设置页面不需要被索引
+    title: 'Settings — III.PICS',
+    description: 'Manage your III.PICS account preferences and settings.',
+    noIndex: true
   });
 };
 
 /**
- * 登录页面SEO Hook
+ * Login (noindex)
  */
 export const useLoginSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('login.seo.title', '登录 - III.PICS'),
-    description: t('login.seo.description', '登录III.PICS，开始你的AI艺术创作之旅'),
-    type: 'website',
-    noIndex: true // 登录页面不需要被索引
+    title: 'Sign In — III.PICS',
+    description: 'Sign in to III.PICS to save favorites, collect sref styles, and generate AI images.',
+    noIndex: true
   });
 };
 
 /**
- * 注册页面SEO Hook
+ * Register (noindex)
  */
 export const useRegisterSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('register.seo.title', '注册 - 加入III.PICS'),
-    description: t('register.seo.description', '注册III.PICS账户，加入AI艺术创作社区'),
-    type: 'website',
-    noIndex: true // 注册页面不需要被索引
+    title: 'Join III.PICS — Free AI Art Community',
+    description: 'Create your free III.PICS account to explore Midjourney sref styles, save favorites, and generate AI images.',
+    noIndex: true
   });
 };
 
 /**
- * 关于页面SEO Hook
+ * About (public)
  */
 export const useAboutSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('about.seo.title', '关于我们 - III.PICS'),
-    description: t('about.seo.description', '了解III.PICS，专业的AI艺术创作平台的故事和使命'),
-    keywords: t('about.seo.keywords', 'III.PICS,关于我们,AI艺术平台,团队介绍'),
+    title: 'About III.PICS — AI Art Gallery Platform',
+    description: 'Learn about III.PICS, the AI art gallery and Midjourney style reference platform built for artists and creators worldwide.',
+    keywords: 'about III.PICS, AI art platform, midjourney community, AI image gallery',
     type: 'website'
   });
 };
 
 /**
- * 帮助页面SEO Hook
+ * Help / Docs
  */
 export const useHelpSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('help.seo.title', '帮助中心 - 使用指南'),
-    description: t('help.seo.description', '查看详细的使用指南和常见问题解答，快速上手III.PICS'),
-    keywords: t('help.seo.keywords', '帮助中心,使用指南,常见问题,教程'),
+    title: 'Help & Docs — III.PICS',
+    description: 'How to use III.PICS: browse sref styles, generate AI images, collect favorites, and more.',
+    keywords: 'III.PICS help, how to use midjourney sref, AI art tutorial, getting started',
     type: 'website'
   });
 };
 
-
-
 /**
- * Gallery 画廊页 SEO Hook
+ * Gallery — AI prompt gallery (NanoBanana / GPT Image)
  */
 export const useGallerySEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('gallery.seo.title', 'Gallery - III.PICS | AI 风格参数画廊'),
-    description: t('gallery.seo.description', '浏览 III.PICS Gallery，探索精选 Midjourney Sref 风格参数和 AI 艺术风格库，激发你的创作灵感'),
-    keywords: t('gallery.seo.keywords', 'III.PICS,Gallery,Sref,Midjourney风格,AI艺术风格,风格参数,创意画廊'),
+    title: 'AI Prompt Gallery — III.PICS | Trending AI Image Prompts',
+    description: 'Browse the best AI image prompts for NanoBanana Pro, GPT Image, and more. One-click copy — no prompt engineering needed. Updated daily with trending AI art.',
+    keywords: 'AI image prompts, AI art prompts, GPT image prompts, NanoBanana prompts, text to image prompts, AI art generator, best AI prompts, III.PICS gallery',
     type: 'website'
   });
 };
 
 /**
- * Seedance 视频页 SEO Hook
+ * Seedance — AI video gallery
  */
 export const useSeedanceSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('seedance.seo.title', 'Seedance - III.PICS | AI 视频生成画廊'),
-    description: t('seedance.seo.description', '探索 III.PICS Seedance AI 视频生成作品，发现最新 AI 动态影像创作，获取视频提示词灵感'),
-    keywords: t('seedance.seo.keywords', 'III.PICS,Seedance,AI视频,视频生成,动态影像,AI动画,视频提示词'),
+    title: 'AI Video Gallery — III.PICS | Seedance & Kling Video Prompts',
+    description: 'Explore AI-generated video clips made with Seedance 2.0, Kling, and Wan. Browse text-to-video and image-to-video prompts with playable previews.',
+    keywords: 'AI video generator, Seedance prompts, Kling AI video, text to video AI, image to video AI, AI video prompts, AI animation, Wan video, III.PICS video',
     type: 'website'
   });
 };
 
 /**
- * Img2Prompt / AI Generation 工具页 SEO Hook
+ * Img2Prompt / AI Generation tool
  */
 export const useImg2PromptSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('img2prompt.seo.title', 'AI Generation - III.PICS | 图片反推提示词 & 文生图'),
-    description: t('img2prompt.seo.description', '使用 III.PICS AI Generation 工具，上传图片自动反推提示词，或通过文字描述生成精美 AI 图像'),
-    keywords: t('img2prompt.seo.keywords', 'III.PICS,图片反推提示词,img2prompt,文生图,AI生成,提示词生成,AI工具'),
+    title: 'AI Image Generator & Reverse Prompt Tool — III.PICS',
+    description: 'Generate AI images from text prompts, or upload any image to instantly extract its prompt. Free AI art generator powered by Gemini, DALL·E, and more.',
+    keywords: 'AI image generator, image to prompt, reverse prompt, img2prompt, text to image AI, AI art generator free, Gemini image, DALL-E prompts, AI prompt extractor, III.PICS generate',
     type: 'website'
   });
 };
 
 /**
- * Docs / 文档中心页 SEO Hook
+ * Docs center
  */
 export const useDocsSEO = () => {
-  const { t } = useTranslation();
-
   useSEO({
-    title: t('docs.seo.title', '文档中心 - III.PICS | 使用指南与帮助'),
-    description: t('docs.seo.description', 'III.PICS 文档中心，包含使用指南、隐私政策、服务条款及关于我们的全部信息'),
-    keywords: t('docs.seo.keywords', 'III.PICS,文档,使用指南,帮助中心,隐私政策,服务条款'),
+    title: 'Docs & Help — III.PICS',
+    description: 'III.PICS documentation: user guide, privacy policy, terms of service, and everything you need to get started with AI art creation.',
+    keywords: 'III.PICS docs, user guide, privacy policy, terms of service, AI art help',
     type: 'website'
   });
 };
 
 /**
- * Gallery 单项 SEO Hook
- * @param {Object} item - Gallery 作品数据
+ * Gallery item detail (modal)
  */
 export const useGalleryItemSEO = (item) => {
-  const { t } = useTranslation();
-
-  const title = item?.prompt
-    ? `${item.prompt.substring(0, 60)} - III.PICS Gallery`
-    : t('gallery.item.defaultTitle', 'AI 艺术作品 - III.PICS Gallery');
-  const description = item?.prompt
-    ? `${item.prompt.substring(0, 150)} | 在 III.PICS 探索更多 AI 艺术作品`
-    : t('gallery.item.defaultDescription', '查看这个精美的 AI 艺术作品，在 III.PICS 探索更多创意');
+  const prompt = item?.prompt || '';
+  const title = prompt
+    ? `${prompt.substring(0, 55)}… — III.PICS Gallery`
+    : 'AI Image Prompt — III.PICS Gallery';
+  const description = prompt
+    ? `${prompt.substring(0, 150)} — Browse more AI image prompts on III.PICS.`
+    : 'View this AI-generated image prompt and discover more creative ideas on III.PICS Gallery.';
   const image = item?.imageUrl || item?.thumbnailUrl;
 
   useSEO({
     title,
     description,
+    keywords: 'AI image prompt, AI art, midjourney prompt, text to image, III.PICS gallery',
     image,
     type: 'article'
   });
 };
 
 /**
- * Sref 详情 SEO Hook
- * @param {Object} sref - Sref 数据
+ * Sref detail (modal)
  */
 export const useSrefSEO = (sref) => {
-  const { t } = useTranslation();
-
-  const title = sref?.title || sref?.srefCode
-    ? `Sref ${sref.srefCode || sref.title} - III.PICS`
-    : t('sref.defaultTitle', 'Sref 风格参数 - III.PICS');
+  const code = sref?.srefCode || '';
+  const title = code
+    ? `Midjourney --sref ${code} Style Reference — III.PICS`
+    : 'Midjourney Sref Style Reference — III.PICS';
   const description = sref?.description || sref?.prompt
-    ? `${(sref.description || sref.prompt).substring(0, 150)} | Midjourney 风格参数`
-    : t('sref.defaultDescription', '探索这个 Midjourney Sref 风格参数，在 III.PICS 发现更多创意风格');
+    ? `${(sref.description || sref.prompt).substring(0, 150)} — Midjourney style code --sref ${code}.`
+    : `Explore Midjourney --sref ${code || 'style codes'} with visual previews. Find your perfect style reference on III.PICS.`;
   const image = sref?.imageUrl || sref?.thumbnailUrl;
 
   useSEO({
     title,
     description,
+    keywords: `midjourney sref ${code}, midjourney style reference, sref codes, midjourney --sref, AI art styles, III.PICS`,
     image,
     type: 'article'
   });

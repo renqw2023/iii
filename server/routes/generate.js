@@ -5,8 +5,12 @@ const path = require('path');
 const fs = require('fs');
 const { auth } = require('../middleware/auth');
 
-// Language helper — checks Accept-Language header, defaults to English
-const isZh = (req) => (req.headers['accept-language'] || '').toLowerCase().startsWith('zh');
+// Language helper — checks req.body.lang, then Accept-Language header, defaults to English
+const isZh = (req) => {
+  const bodyLang = req.body?.lang || '';
+  if (bodyLang) return bodyLang.toLowerCase().startsWith('zh');
+  return (req.headers['accept-language'] || '').toLowerCase().startsWith('zh');
+};
 const t = (req, zh, en) => isZh(req) ? zh : en;
 
 // Per-user rate limit: max 60 AI generation requests per hour
@@ -234,7 +238,16 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
                 { text: prompt },
               ],
             }],
-            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+            generationConfig: {
+              responseModalities: ['TEXT', 'IMAGE'],
+              // gemini-3.1-flash-image-preview requires explicit imageConfig
+              ...(modelId === 'gemini3-flash' ? {
+                imageConfig: {
+                  aspectRatio: aspectRatio || '1:1',
+                  imageSize: '2K',
+                },
+              } : {}),
+            },
           }),
         }
       );

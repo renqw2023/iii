@@ -219,6 +219,11 @@ router.post('/avatar', auth, upload.single('avatar'), (req, res) => {
 router.delete('/:filename', auth, (req, res) => {
   try {
     const filename = req.params.filename;
+
+    // Prevent path traversal: only allow safe filename characters
+    if (!/^[a-zA-Z0-9._-]+$/.test(filename)) {
+      return res.status(400).json({ message: '无效的文件名' });
+    }
     const userId = req.userId;
     const possiblePaths = [
       path.join(__dirname, '..', 'uploads', filename), // 兼容旧文件

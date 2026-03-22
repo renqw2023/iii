@@ -226,9 +226,10 @@ router.get('/proxy-video', async (req, res) => {
         const acceptRanges = response.headers.get('accept-ranges');
         if (acceptRanges) res.setHeader('Accept-Ranges', acceptRanges);
 
-        // 允许跨域嵌入（前端和后端端口不同）
+        // 允许跨域嵌入（限定 iii.pics 域名，开发环境允许 localhost）
         res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        const allowedOrigin = process.env.CLIENT_URL || 'https://iii.pics';
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
 
         // 缓存 1 小时
         res.setHeader('Cache-Control', 'public, max-age=3600');

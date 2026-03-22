@@ -192,7 +192,7 @@ class Config {
     return {
       username: process.env.ADMIN_USERNAME || 'admin',
       email: process.env.ADMIN_EMAIL || 'admin@example.com',
-      password: process.env.ADMIN_PASSWORD || 'admin123456',
+      password: process.env.ADMIN_PASSWORD,
       autoCreate: process.env.ADMIN_AUTO_CREATE !== 'false',
     };
   }
@@ -319,7 +319,15 @@ class Config {
 
     // 验证JWT密钥强度
     if (this.jwt.secret.length < 32) {
+      if (this.isProduction) {
+        throw new Error('JWT_SECRET 长度不足32字符，生产环境禁止启动');
+      }
       console.warn('⚠️  警告: JWT_SECRET 长度过短，建议使用至少32个字符的强密钥');
+    }
+
+    // 生产环境强制要求 ADMIN_PASSWORD
+    if (this.isProduction && !process.env.ADMIN_PASSWORD) {
+      throw new Error('生产环境必须设置 ADMIN_PASSWORD 环境变量');
     }
 
     // 验证数据库连接字符串

@@ -33,4 +33,5 @@ liblib_*.json
 *.png
 *.jpg
 !client/public/ImageFlow/gptimage/*.jpg
+!client/public/og-default.jpg
 output/

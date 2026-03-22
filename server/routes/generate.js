@@ -1,8 +1,21 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { auth } = require('../middleware/auth');
+
+// Per-user rate limit: max 60 AI generation requests per hour
+const generateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 60,
+  keyGenerator: (req) => req.userId?.toString() || req.ip,
+  message: { message: '生成请求过于频繁，每小时最多60次，请稍后再试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.use(generateLimiter);
 const User = require('../models/User');
 const Generation = require('../models/Generation');
 const { refreshFreeCreditsIfNeeded } = require('./credits');
@@ -168,7 +181,7 @@ router.post('/image', auth, async (req, res) => {
     // 刷新每日免费额度
     await refreshFreeCreditsIfNeeded(user);
 
-    const totalCreditCost = model.creditCost + (resolution === '4K' ? 5 : 0);
+    let totalCreditCost = model.creditCost + (resolution === '4K' ? 5 : 0);
     const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
     if (totalAvail < totalCreditCost) {
       return res.status(402).json({ message: `积分不足，需要 ${totalCreditCost} 积分（当前 ${totalAvail}）` });
@@ -450,6 +463,7 @@ router.post('/image', auth, async (req, res) => {
       } catch (upscaleErr) {
         console.error('Upscale failed, falling back to original:', upscaleErr.message);
         resolution = '2K';
+        totalCreditCost -= 5; // No upscale premium when falling back to 2K
       }
     }
 

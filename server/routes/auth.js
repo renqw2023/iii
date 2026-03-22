@@ -1,5 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
@@ -10,6 +11,22 @@ const emailService = require('../services/emailService');
 const { updateLoginAnalytics, updateUserAnalytics } = require('../middleware/analytics');
 
 const router = express.Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  message: { message: '请求过于频繁，请15分钟后重试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const emailCheckLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  message: { message: '请求过于频繁，请稍后重试' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // 生成JWT Token
 const generateToken = (userId) => {
@@ -54,7 +71,7 @@ const sendWelcomeEmailSafe = async (user) => {
 };
 
 // 注册 - 第一步：发送验证码
-router.post('/register', [
+router.post('/register', authLimiter, [
   body('username')
     .isLength({ min: 3, max: 20 })
     .withMessage('用户名长度必须在3-20个字符之间')
@@ -159,25 +176,15 @@ router.post('/verify-email', [
     }
 
     const { userId, code } = req.body;
-    
+
     // 确保验证码是字符串类型
     const codeStr = String(code).trim();
-    
-    console.log('验证邮箱请求:', { userId, inputCode: codeStr });
 
     // 查找用户
     const user = await User.findById(userId);
     if (!user) {
-      console.log('用户不存在:', userId);
       return res.status(404).json({ message: '用户不存在' });
     }
-    
-    console.log('用户验证码信息:', {
-      storedCode: user.emailVerificationCode,
-      expiresAt: user.emailVerificationExpires,
-      currentTime: new Date(),
-      emailVerified: user.emailVerified
-    });
 
     if (user.emailVerified) {
       return res.status(400).json({ message: '邮箱已经验证过了' });
@@ -185,8 +192,6 @@ router.post('/verify-email', [
 
     // 验证验证码
     const isValid = user.verifyEmailCode(codeStr);
-    console.log('验证码验证结果:', isValid);
-    
     if (!isValid) {
       return res.status(400).json({ message: '验证码错误或已过期' });
     }
@@ -203,8 +208,6 @@ router.post('/verify-email', [
 
     // 记录注册奖励流水
     await createPaidEarnTransaction(user, REGISTER_BONUS, 'register_bonus', '新用户注册奖励');
-
-    console.log('用户邮箱验证成功:', user.email);
 
     // 发送欢迎邮件
     await sendWelcomeEmailSafe(user);
@@ -272,7 +275,7 @@ router.post('/resend-verification', [
 });
 
 // 登录
-router.post('/login', [
+router.post('/login', authLimiter, [
   body('email').isEmail().withMessage('请输入有效的邮箱地址'),
   body('password').notEmpty().withMessage('请输入密码')
 ], async (req, res) => {
@@ -391,7 +394,7 @@ router.get('/check-username/:username', async (req, res) => {
 });
 
 // 检查邮箱是否可用
-router.get('/check-email/:email', async (req, res) => {
+router.get('/check-email/:email', emailCheckLimiter, async (req, res) => {
   try {
     const { email } = req.params;
     
@@ -431,7 +434,7 @@ router.post('/refresh', auth, async (req, res) => {
 });
 
 // 忘记密码 - 发送重置邮件
-router.post('/forgot-password', [
+router.post('/forgot-password', authLimiter, [
   body('email').isEmail().withMessage('请输入有效的邮箱地址')
 ], async (req, res) => {
   try {
@@ -650,8 +653,6 @@ router.post('/google', [
         await createPaidEarnTransaction(user, REGISTER_BONUS, 'register_bonus', 'Google sign-up bonus');
 
         await sendWelcomeEmailSafe(user);
-
-        console.log(`Google 新用户注册: ${email}`);
       }
     }
 

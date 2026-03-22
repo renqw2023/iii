@@ -76,6 +76,33 @@ Recommended maintenance rule:
 
 ## Recent Results
 
+### 2026-03-22 上线前全面安全审计 (25项)
+
+**批次A — P0 已修复 (6项)**
+- A1 `server/routes/payments.js` — Stripe webhook 幂等性：先查 Order 再处理
+- A2 `server/middleware/auth.js` — adminAuth 内联 JWT 验证，不再依赖空 next()
+- A3 `server/routes/auth.js` — /login /register /forgot-password 加 authLimiter (20次/15min)；/check-email 加 emailCheckLimiter (10次/min)
+- A4 `client/public/_redirects` — Vercel SPA 路由 `/* /index.html 200`
+- A5 `client/src/App.js` — /browse-history /generate-history /img2prompt 移入 ProtectedRoute
+- A6 `client/src/App.js` — 删除 /health /error-demo 测试路由及其 import
+
+**批次B — P1 已修复 (7项)**
+- B1 `server/utils/creditsUtils.js` — deductCredits 改用 findOneAndUpdate + $expr 原子化
+- B2 `server/routes/credits.js` — refreshFreeCreditsIfNeeded 改用 findOneAndUpdate 原子化
+- B3 `server/routes/generate.js` — 4K upscale 失败时 totalCreditCost -= 5，按 2K 扣费
+- B4 `server/routes/generate.js` — per-user generateLimiter (60次/小时)
+- B5 `client/src/services/promptApi.js` — 硬编码 localhost:5000 → 改用 /api (相对路径)
+- B6 `server/config/index.js` — 移除 admin 默认密码 admin123456，生产环境强制验证
+- B7 `server/config/index.js` — 生产环境 JWT_SECRET < 32字符直接拒绝启动
+
+**批次C — P2 已修复 (6项)**
+- C1 `server/routes/auth.js` — 移除验证码 console.log 泄露
+- C2 同 A3（/check-email 已在批次A加限流）
+- C3 `server/routes/upload.js` — 文件名格式验证，防路径穿越
+- C4 `server/routes/seedance.js` — CORS Access-Control-Allow-Origin 从 * 改为 CLIENT_URL
+- C5 admin.js 用户查询已有显式 select 白名单，敏感字段未暴露 ✅
+- C6 `client/public/og-default.jpg` — 创建默认 OG 图片占位符
+
 ### 2026-03-22 Seedream 5.0 图像生成接入
 
 - **新模型**：`seedream-5-0` (doubao-seedream-5-0-260128)，积分 8/次，`ARK_API_KEY` 驱动

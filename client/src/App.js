@@ -26,7 +26,6 @@ import PostDetail from './pages/PostDetail';
 import CreatePost from './pages/CreatePost';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
-import Health from './pages/Health';
 import NotFound from './pages/NotFound';
 import Explore from './pages/Explore';
 import SrefModal from './pages/SrefModal';
@@ -36,10 +35,9 @@ import DocsCenter from './pages/DocsCenter';
 import Notifications from './pages/Notifications';
 import Credits from './pages/Credits';
 import History from './pages/History';
-import GenerateHistory from './pages/GenerateHistory'; // eslint-disable-line no-unused-vars
+import GenerateHistory from './pages/GenerateHistory';
 import MagicLinkVerify from './pages/MagicLinkVerify';
 import Img2Prompt from './pages/Img2Prompt';
-import ErrorDemo from './pages/ErrorDemo';
 import GalleryList from './pages/Gallery/GalleryList';
 import GalleryModal from './pages/Gallery/GalleryModal';
 import SeedanceList from './pages/Seedance/SeedanceList';
@@ -125,12 +123,6 @@ function App() {
                         </Route>
                         <Route path="post/:id" element={<PostDetail />} />
                         <Route path="user/:id" element={<Profile />} />
-                        <Route path="browse-history" element={<History />} />
-                        <Route path="history" element={<Navigate to="/browse-history" replace />} />
-                        <Route path="generate-history" element={<GenerateHistory />} />
-                        <Route path="health" element={<Health />} />
-                        <Route path="error-demo" element={<ErrorDemo />} />
-                        <Route path="img2prompt" element={<Img2Prompt />} />
                       </Route>
 
                       <Route path="/" element={<DocsLayout />}>
@@ -155,6 +147,10 @@ function App() {
                         <Route path="settings" element={<Settings />} />
                         <Route path="notifications" element={<Notifications />} />
                         <Route path="credits" element={<Credits />} />
+                        <Route path="browse-history" element={<History />} />
+                        <Route path="history" element={<Navigate to="/browse-history" replace />} />
+                        <Route path="generate-history" element={<GenerateHistory />} />
+                        <Route path="img2prompt" element={<Img2Prompt />} />
                       </Route>
 
                       {/* 管理员路由 — 独立布局，不套 Layout（避免 app 侧边栏与 admin 侧边栏冲突） */}

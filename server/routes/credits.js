@@ -27,10 +27,29 @@ function isSameDay(date1, date2) {
 
 async function refreshFreeCreditsIfNeeded(user) {
   const now = new Date();
-  if (!isSameDay(user.lastFreeCreditsRefreshAt, now)) {
-    user.freeCredits = DAILY_FREE_AMOUNT;
-    user.lastFreeCreditsRefreshAt = now;
-    await user.save();
+  // Compute UTC+8 start-of-today as UTC timestamp for comparison
+  const offset = 8 * 60 * 60 * 1000;
+  const nowUTC8 = new Date(now.getTime() + offset);
+  const todayStartUTC8 = new Date(
+    Date.UTC(nowUTC8.getUTCFullYear(), nowUTC8.getUTCMonth(), nowUTC8.getUTCDate()) - offset
+  );
+
+  // Atomic update: only refresh if not already refreshed today (prevents concurrent double-refresh)
+  const updated = await User.findOneAndUpdate(
+    {
+      _id: user._id,
+      $or: [
+        { lastFreeCreditsRefreshAt: null },
+        { lastFreeCreditsRefreshAt: { $lt: todayStartUTC8 } },
+      ],
+    },
+    { $set: { freeCredits: DAILY_FREE_AMOUNT, lastFreeCreditsRefreshAt: now } },
+    { new: true }
+  );
+
+  if (updated) {
+    user.freeCredits = updated.freeCredits;
+    user.lastFreeCreditsRefreshAt = updated.lastFreeCreditsRefreshAt;
   }
 }
 

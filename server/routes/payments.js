@@ -87,6 +87,12 @@ router.post('/webhook', async (req, res) => {
     }
 
     try {
+      // Idempotency: skip if this session was already processed
+      const existingOrder = await Order.findOne({ stripeSessionId: session.id });
+      if (existingOrder) {
+        return res.json({ received: true });
+      }
+
       const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $inc: { credits: creditsNum }, $set: { hasPurchasedBefore: true } },

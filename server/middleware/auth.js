@@ -42,14 +42,31 @@ const auth = async (req, res, next) => {
 // 管理员权限检查
 const adminAuth = async (req, res, next) => {
   try {
-    await auth(req, res, () => {});
-    
-    if (req.user.role !== 'admin') {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ message: '访问被拒绝，请提供有效的token' });
+    }
+
+    const decoded = jwt.verify(token, config.jwt.secret);
+    const user = await User.findById(decoded.userId).select('-password');
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ message: '用户不存在或已被禁用' });
+    }
+
+    if (user.role !== 'admin') {
       return res.status(403).json({ message: '需要管理员权限' });
     }
-    
+
+    req.userId = user._id;
+    req.user = user;
     next();
   } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: '无效的token' });
+    } else if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'token已过期' });
+    }
     console.error('管理员认证错误:', error);
     res.status(500).json({ message: '服务器内部错误' });
   }

@@ -243,7 +243,9 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
               // gemini-3.1-flash-image-preview requires explicit imageConfig (imageSize must be uppercase)
               ...(modelId === 'gemini3-flash' ? {
                 imageConfig: {
-                  aspectRatio: aspectRatio || '1:1',
+                  // Supported: '1:1','4:3','3:4','16:9','9:16','2:3','3:2','4:5','5:4','21:9','1:4','4:1','1:8','8:1'
+                  aspectRatio: ['1:1','4:3','3:4','16:9','9:16','2:3','3:2','4:5','5:4','21:9'].includes(aspectRatio)
+                    ? aspectRatio : '1:1',
                   imageSize: resolution === '4K' ? '4K' : '2K',
                 },
               } : {}),

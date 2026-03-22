@@ -5,12 +5,18 @@ const path = require('path');
 const fs = require('fs');
 const { auth } = require('../middleware/auth');
 
+// Language helper — checks Accept-Language header, defaults to English
+const isZh = (req) => (req.headers['accept-language'] || '').toLowerCase().startsWith('zh');
+const t = (req, zh, en) => isZh(req) ? zh : en;
+
 // Per-user rate limit: max 60 AI generation requests per hour
 const generateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 60,
   keyGenerator: (req) => req.userId?.toString() || req.ip,
-  message: { message: '生成请求过于频繁，每小时最多60次，请稍后再试' },
+  handler: (req, res) => res.status(429).json({
+    message: t(req, '生成请求过于频繁，每小时最多60次，请稍后再试', 'Too many generation requests. Limit: 60/hour. Please try again later.'),
+  }),
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -155,29 +161,29 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
     let resolution = req.body.resolution === '4K' ? '4K' : '2K';
 
     if (!prompt || !prompt.trim()) {
-      return res.status(400).json({ message: '请输入生成描述' });
+      return res.status(400).json({ message: t(req, '请输入生成描述', 'Please enter a prompt.') });
     }
     if (!modelId) {
-      return res.status(400).json({ message: '请选择生成模型' });
+      return res.status(400).json({ message: t(req, '请选择生成模型', 'Please select a model.') });
     }
 
     const model = MODELS.find(m => m.id === modelId);
     if (!model) {
-      return res.status(400).json({ message: '无效的模型 ID' });
+      return res.status(400).json({ message: t(req, '无效的模型 ID', 'Invalid model ID.') });
     }
     if (model.comingSoon) {
       return res.status(503).json({ message: `${model.name} 即将上线，敬请期待` });
     }
     if (!model.available()) {
-      return res.status(503).json({ message: `${model.name} API 未配置，请联系管理员` });
+      return res.status(503).json({ message: t(req, `${model.name} API 未配置，请联系管理员`, `${model.name} API is not configured. Please contact support.`) });
     }
 
     const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: '用户不存在' });
+    if (!user) return res.status(404).json({ message: t(req, '用户不存在', 'User not found.') });
 
     // 4K 鉴权：需要付费过至少一次
     if (resolution === '4K' && !user.hasPurchasedBefore) {
-      return res.status(403).json({ message: '4K 画质需要付费套餐，请先购买积分' });
+      return res.status(403).json({ message: t(req, '4K 画质需要付费套餐，请先购买积分', '4K quality requires a paid plan. Please purchase credits first.') });
     }
 
     // 刷新每日免费额度
@@ -186,7 +192,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
     let totalCreditCost = model.creditCost + (resolution === '4K' ? 5 : 0);
     const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
     if (totalAvail < totalCreditCost) {
-      return res.status(402).json({ message: `积分不足，需要 ${totalCreditCost} 积分（当前 ${totalAvail}）` });
+      return res.status(402).json({ message: t(req, `积分不足，需要 ${totalCreditCost} 积分（当前 ${totalAvail}）`, `Insufficient credits. Need ${totalCreditCost}, you have ${totalAvail}.`) });
     }
 
     // referenceImageUrl → 服务端 fetch 转 base64（避免浏览器 CORS 限制）
@@ -237,19 +243,19 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
         const errBody = await geminiRes.json().catch(() => ({}));
         console.error('Gemini API 错误:', errBody);
         if (geminiRes.status === 503 || errBody?.error?.status === 'UNAVAILABLE') {
-          return res.status(503).json({ message: `${model.name} 当前访问量过高，请稍后重试或切换其他模型` });
+          return res.status(503).json({ message: t(req, `${model.name} 当前访问量过高，请稍后重试或切换其他模型`, `${model.name} is experiencing high demand. Please try again later or switch to another model.`) });
         }
         if (geminiRes.status === 429) {
-          return res.status(429).json({ message: 'API 请求过于频繁，请稍后重试' });
+          return res.status(429).json({ message: t(req, 'API 请求过于频繁，请稍后重试', 'API rate limit exceeded. Please try again later.') });
         }
-        return res.status(502).json({ message: `Gemini 服务错误: ${errBody?.error?.message || geminiRes.status}` });
+        return res.status(502).json({ message: t(req, `Gemini 服务错误: ${errBody?.error?.message || geminiRes.status}`, `Gemini service error: ${errBody?.error?.message || geminiRes.status}`) });
       }
 
       const data = await geminiRes.json();
       const part = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
       if (!part) {
         console.error('Gemini 无图片 part:', JSON.stringify(data).slice(0, 400));
-        return res.status(502).json({ message: 'Gemini 未返回图片，请换一个描述试试' });
+        return res.status(502).json({ message: t(req, 'Gemini 未返回图片，请换一个描述试试', 'Gemini did not return an image. Try a different prompt.') });
       }
 
       fs.writeFileSync(filePath, Buffer.from(part.inlineData.data, 'base64'));
@@ -274,14 +280,14 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       if (!imagenRes.ok) {
         const errBody = await imagenRes.json().catch(() => ({}));
         console.error('Imagen API 错误:', errBody);
-        return res.status(502).json({ message: `Imagen 服务错误: ${errBody?.error?.message || imagenRes.status}` });
+        return res.status(502).json({ message: t(req, `Imagen 服务错误: ${errBody?.error?.message || imagenRes.status}`, `Imagen service error: ${errBody?.error?.message || imagenRes.status}`) });
       }
 
       const imagenData = await imagenRes.json();
       const b64 = imagenData.predictions?.[0]?.bytesBase64Encoded;
       if (!b64) {
         console.error('Imagen 无 predictions:', JSON.stringify(imagenData).slice(0, 400));
-        return res.status(502).json({ message: 'Imagen 未返回图片，请换一个描述试试' });
+        return res.status(502).json({ message: t(req, 'Imagen 未返回图片，请换一个描述试试', 'Imagen did not return an image. Try a different prompt.') });
       }
       fs.writeFileSync(filePath, Buffer.from(b64, 'base64'));
 
@@ -312,13 +318,13 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       if (!gptRes.ok) {
         const errBody = await gptRes.json().catch(() => ({}));
         console.error('GPT Image API 错误:', errBody);
-        return res.status(502).json({ message: 'GPT Image 服务暂时不可用，请稍后重试' });
+        return res.status(502).json({ message: t(req, 'GPT Image 服务暂时不可用，请稍后重试', 'GPT Image service is temporarily unavailable. Please try again later.') });
       }
 
       const gptData = await gptRes.json();
       const b64 = gptData.data?.[0]?.b64_json;
       if (!b64) {
-        return res.status(502).json({ message: 'GPT Image 未返回图片数据' });
+        return res.status(502).json({ message: t(req, 'GPT Image 未返回图片数据', 'GPT Image did not return image data.') });
       }
       fs.writeFileSync(filePath, Buffer.from(b64, 'base64'));
 
@@ -348,18 +354,18 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       if (!dallRes.ok) {
         const errBody = await dallRes.json().catch(() => ({}));
         console.error('DALL·E 3 API 错误:', errBody);
-        return res.status(502).json({ message: 'DALL·E 服务暂时不可用，请稍后重试' });
+        return res.status(502).json({ message: t(req, 'DALL·E 服务暂时不可用，请稍后重试', 'DALL·E service is temporarily unavailable. Please try again later.') });
       }
 
       const dallData = await dallRes.json();
       const imgUrl = dallData.data?.[0]?.url;
       if (!imgUrl) {
-        return res.status(502).json({ message: 'DALL·E 未返回图片 URL' });
+        return res.status(502).json({ message: t(req, 'DALL·E 未返回图片 URL', 'DALL·E did not return an image URL.') });
       }
 
       const imgRes = await fetch(imgUrl);
       if (!imgRes.ok) {
-        return res.status(502).json({ message: '图片下载失败' });
+        return res.status(502).json({ message: t(req, '图片下载失败', 'Image download failed.') });
       }
       const buffer = Buffer.from(await imgRes.arrayBuffer());
       fs.writeFileSync(filePath, buffer);
@@ -381,18 +387,18 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       if (!zhipuRes.ok) {
         const errBody = await zhipuRes.json().catch(() => ({}));
         console.error('Zhipu CogView API 错误:', errBody);
-        return res.status(502).json({ message: 'Z Image 服务暂时不可用，请稍后重试' });
+        return res.status(502).json({ message: t(req, 'Z Image 服务暂时不可用，请稍后重试', 'Z Image service is temporarily unavailable. Please try again later.') });
       }
 
       const zhipuData = await zhipuRes.json();
       const imgUrl = zhipuData.data?.[0]?.url;
       if (!imgUrl) {
-        return res.status(502).json({ message: 'Z Image 未返回图片 URL' });
+        return res.status(502).json({ message: t(req, 'Z Image 未返回图片 URL', 'Z Image did not return an image URL.') });
       }
 
       const imgFetch = await fetch(imgUrl);
       if (!imgFetch.ok) {
-        return res.status(502).json({ message: 'Z Image 图片下载失败' });
+        return res.status(502).json({ message: t(req, 'Z Image 图片下载失败', 'Z Image download failed.') });
       }
       const buffer = Buffer.from(await imgFetch.arrayBuffer());
       fs.writeFileSync(filePath, buffer);
@@ -431,25 +437,25 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       if (!seedreamRes.ok) {
         const errBody = await seedreamRes.json().catch(() => ({}));
         console.error('Seedream API 错误:', errBody);
-        return res.status(502).json({ message: `Seedream 服务错误: ${errBody?.error?.message || seedreamRes.status}` });
+        return res.status(502).json({ message: t(req, `Seedream 服务错误: ${errBody?.error?.message || seedreamRes.status}`, `Seedream service error: ${errBody?.error?.message || seedreamRes.status}`) });
       }
 
       const seedreamData = await seedreamRes.json();
       const imgUrl = seedreamData.data?.[0]?.url;
       if (!imgUrl) {
         console.error('Seedream 无图片 URL:', JSON.stringify(seedreamData).slice(0, 400));
-        return res.status(502).json({ message: 'Seedream 未返回图片，请换一个描述试试' });
+        return res.status(502).json({ message: t(req, 'Seedream 未返回图片，请换一个描述试试', 'Seedream did not return an image. Try a different prompt.') });
       }
 
       // URL 24h 有效，立即下载保存
       const imgFetch = await fetch(imgUrl, { signal: AbortSignal.timeout(60000) });
       if (!imgFetch.ok) {
-        return res.status(502).json({ message: 'Seedream 图片下载失败' });
+        return res.status(502).json({ message: t(req, 'Seedream 图片下载失败', 'Seedream image download failed.') });
       }
       fs.writeFileSync(filePath, Buffer.from(await imgFetch.arrayBuffer()));
 
     } else {
-      return res.status(400).json({ message: '不支持的模型 ID' });
+      return res.status(400).json({ message: t(req, '不支持的模型 ID', 'Unsupported model ID.') });
     }
 
     // 4K upscaling（在积分扣除前完成，避免扣费但 upscale 失败）
@@ -483,7 +489,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
     if (!ok) {
       // 极端情况：生图成功但积分不足（并发场景），删除文件
       fs.unlinkSync(filePath);
-      return res.status(402).json({ message: `积分不足，需要 ${totalCreditCost} 积分` });
+      return res.status(402).json({ message: t(req, `积分不足，需要 ${totalCreditCost} 积分`, `Insufficient credits. Need ${totalCreditCost}.`) });
     }
 
     // 记录交易流水
@@ -531,9 +537,9 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
   } catch (error) {
     console.error('generate/image 错误:', error);
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-      return res.status(504).json({ message: '生成超时，请尝试更简短的描述或切换至更快的模型' });
+      return res.status(504).json({ message: t(req, '生成超时，请尝试更简短的描述或切换至更快的模型', 'Generation timed out. Try a shorter prompt or switch to a faster model.') });
     }
-    res.status(500).json({ message: '生成失败，请稍后重试' });
+    res.status(500).json({ message: t(req, '生成失败，请稍后重试', 'Generation failed. Please try again later.') });
   }
 });
 
@@ -597,7 +603,7 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
     } = req.body;
 
     if (!prompt || !prompt.trim()) {
-      return res.status(400).json({ message: '请输入视频描述' });
+      return res.status(400).json({ message: t(req, '请输入视频描述', 'Please enter a video prompt.') });
     }
 
     // Validate model
@@ -616,13 +622,13 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
     const creditCost = getCreditCost(validResolution, validDuration, Boolean(generateAudio));
 
     const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: '用户不存在' });
+    if (!user) return res.status(404).json({ message: t(req, '用户不存在', 'User not found.') });
 
     await refreshFreeCreditsIfNeeded(user);
 
     const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
     if (totalAvail < creditCost) {
-      return res.status(402).json({ message: `积分不足，需要 ${creditCost} 积分（当前 ${totalAvail}）` });
+      return res.status(402).json({ message: t(req, `积分不足，需要 ${creditCost} 积分（当前 ${totalAvail}）`, `Insufficient credits. Need ${creditCost}, you have ${totalAvail}.`) });
     }
 
     // ── Call Seedance API ──
@@ -678,7 +684,7 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
   } catch (error) {
     console.error('generate/video 错误:', error);
     const isKnown = error.message?.includes('not configured') || error.message?.includes('即将上线');
-    res.status(isKnown ? 503 : 500).json({ message: isKnown ? error.message : '视频生成失败，请稍后重试' });
+    res.status(isKnown ? 503 : 500).json({ message: isKnown ? error.message : t(req, '视频生成失败，请稍后重试', 'Video generation failed. Please try again later.') });
   }
 });
 

@@ -236,6 +236,12 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       if (!geminiRes.ok) {
         const errBody = await geminiRes.json().catch(() => ({}));
         console.error('Gemini API 错误:', errBody);
+        if (geminiRes.status === 503 || errBody?.error?.status === 'UNAVAILABLE') {
+          return res.status(503).json({ message: `${model.name} 当前访问量过高，请稍后重试或切换其他模型` });
+        }
+        if (geminiRes.status === 429) {
+          return res.status(429).json({ message: 'API 请求过于频繁，请稍后重试' });
+        }
         return res.status(502).json({ message: `Gemini 服务错误: ${errBody?.error?.message || geminiRes.status}` });
       }
 

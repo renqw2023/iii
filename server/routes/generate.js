@@ -93,6 +93,17 @@ const MODELS = [
     available: () => !!process.env.ZHIPU_API_KEY,
     description: 'CogView-3 · Fast & free tier',
   },
+  // ── Doubao Seedream 5.0 (火山引擎方舟) ──
+  {
+    id: 'seedream-5-0',
+    name: 'Seedream 5.0',
+    provider: 'Doubao',
+    apiModel: 'doubao-seedream-5-0-260128',
+    creditCost: 8,
+    available: () => !!process.env.ARK_API_KEY,
+    description: 'Seedream 5.0 · 字节豆包旗舰图像模型',
+    badge: 'New',
+  },
   // ── Coming Soon ──
   {
     id: 'midjourney-niji',
@@ -168,7 +179,7 @@ router.post('/image', auth, async (req, res) => {
     let finalRefMime = referenceImageMime || 'image/jpeg';
     if (!finalRefData && referenceImageUrl) {
       try {
-        const imgRes = await fetch(referenceImageUrl, { signal: AbortSignal.timeout(10000) });
+        const imgRes = await fetch(referenceImageUrl, { signal: AbortSignal.timeout(30000) });
         if (imgRes.ok) {
           const buf = await imgRes.arrayBuffer();
           finalRefData = Buffer.from(buf).toString('base64');
@@ -361,6 +372,57 @@ router.post('/image', auth, async (req, res) => {
       }
       const buffer = Buffer.from(await imgFetch.arrayBuffer());
       fs.writeFileSync(filePath, buffer);
+
+    // ── Doubao Seedream 5.0 (火山引擎方舟) ──
+    } else if (modelId === 'seedream-5-0') {
+      // 按 aspectRatio 映射 2K 档精确像素（官方推荐值）
+      const sizeMap = {
+        '1:1':  '2048x2048',
+        '4:3':  '2304x1728',
+        '3:4':  '1728x2304',
+        '16:9': '2848x1600',
+        '9:16': '1600x2848',
+      };
+      const seedreamSize = sizeMap[aspectRatio] || '2048x2048';
+
+      const seedreamRes = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.ARK_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(120000),
+        body: JSON.stringify({
+          model: model.apiModel,
+          prompt,
+          size: seedreamSize,
+          output_format: 'png',
+          watermark: false,
+          sequential_image_generation: 'disabled',
+          // 图生图：直接传递 URL，Volcengine 服务端抓取图片
+          ...(referenceImageUrl ? { image: referenceImageUrl } : {}),
+        }),
+      });
+
+      if (!seedreamRes.ok) {
+        const errBody = await seedreamRes.json().catch(() => ({}));
+        console.error('Seedream API 错误:', errBody);
+        return res.status(502).json({ message: `Seedream 服务错误: ${errBody?.error?.message || seedreamRes.status}` });
+      }
+
+      const seedreamData = await seedreamRes.json();
+      const imgUrl = seedreamData.data?.[0]?.url;
+      if (!imgUrl) {
+        console.error('Seedream 无图片 URL:', JSON.stringify(seedreamData).slice(0, 400));
+        return res.status(502).json({ message: 'Seedream 未返回图片，请换一个描述试试' });
+      }
+
+      // URL 24h 有效，立即下载保存
+      const imgFetch = await fetch(imgUrl, { signal: AbortSignal.timeout(60000) });
+      if (!imgFetch.ok) {
+        return res.status(502).json({ message: 'Seedream 图片下载失败' });
+      }
+      fs.writeFileSync(filePath, Buffer.from(await imgFetch.arrayBuffer()));
 
     } else {
       return res.status(400).json({ message: '不支持的模型 ID' });

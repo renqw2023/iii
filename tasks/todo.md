@@ -76,6 +76,14 @@ Recommended maintenance rule:
 
 ## Recent Results
 
+### 2026-03-22 Seedream 5.0 图像生成接入
+
+- **新模型**：`seedream-5-0` (doubao-seedream-5-0-260128)，积分 8/次，`ARK_API_KEY` 驱动
+- **文生图**：全局 `fetch` + 120s 超时，aspectRatio → 精确像素尺寸映射
+- **图生图**：参考图以 URL 直接传 `image` 字段，Volcengine 服务端抓取
+- **排查记录**：端口 5500 Hyper-V 保留 → `net stop/start winnat`；undici 无法连通 → 改用全局 fetch；base64 data URI 被 API 拒绝 → 改为 URL 传递
+- **开发日志**：`docs/2026/20260322_stage47_seedream5_integration_devlog.md`
+
 ### 2026-03-13 MeiGen-Style Generate History Page
 
 - **New page**: `/generate-history` — inline grid card layout with SVG stroke-dasharray progress ring

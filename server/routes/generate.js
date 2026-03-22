@@ -37,16 +37,6 @@ const {
 const MODELS = [
   // ── Google Gemini 3 / Imagen ── (排在最前，优先展示)
   {
-    id: 'gemini3-flash',
-    name: 'Nanobanana 2',
-    provider: 'Google',
-    apiModel: 'gemini-3.1-flash-image-preview',
-    creditCost: 18,
-    available: () => !!process.env.GEMINI_API_KEY,
-    description: 'Nanobanana 2 · Pro-quality at Flash speed',
-    badge: 'New',
-  },
-  {
     id: 'gemini3-pro',
     name: 'Nanobanana Pro',
     provider: 'Google',
@@ -55,6 +45,16 @@ const MODELS = [
     available: () => !!process.env.GEMINI_API_KEY,
     description: 'Nanobanana Pro · Professional quality',
     badge: 'Pro',
+  },
+  {
+    id: 'gemini3-flash',
+    name: 'Nanobanana 2',
+    provider: 'Google',
+    apiModel: 'gemini-3.1-flash-image-preview',
+    creditCost: 18,
+    available: () => !!process.env.GEMINI_API_KEY,
+    description: 'Nanobanana 2 · Pro-quality at Flash speed',
+    badge: 'New',
   },
   {
     id: 'gemini25-flash',

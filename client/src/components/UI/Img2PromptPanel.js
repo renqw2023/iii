@@ -85,7 +85,7 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
       .then(list => {
         const available = list.filter(m => !m.comingSoon);
         setGenModels(available);
-        const preferred = available.find(m => m.id === 'gemini3-flash') ?? available[0];
+        const preferred = available.find(m => m.id === 'gemini3-pro') ?? available[0];
         if (preferred) setSelectedGenModel(preferred.id);
       })
       .catch(() => {});

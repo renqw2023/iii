@@ -33,6 +33,7 @@ import { dashboard } from './dashboard';
 import { seo } from './seo';
 import { gallery } from './gallery';
 import { seedance } from './seedance';
+import { sidebar } from './sidebar';
 
 // 合并所有翻译模块
 export const mergeTranslations = (lang) => {
@@ -74,6 +75,7 @@ export const mergeTranslations = (lang) => {
     seo: seo[lang] || {},
     gallery: gallery[lang] || {},
     seedance: seedance[lang] || {},
+    sidebar: sidebar[lang] || {},
   };
 
   // 特殊处理adminStats，将其内容合并到根级别

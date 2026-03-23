@@ -139,11 +139,27 @@ const GenerateHistory = () => {
       return;
     }
 
-    // Local image — direct download
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `generated_${Date.now()}.png`;
-    a.click();
+    // Use fetch → blob → objectURL for reliable download across all browsers
+    try {
+      const fullUrl = url.startsWith('http') ? url : `${window.location.origin}${url}`;
+      const res = await fetch(fullUrl);
+      if (!res.ok) throw new Error('fetch failed');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `iii_generated_${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback: direct anchor download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `iii_generated_${Date.now()}.png`;
+      a.click();
+    }
   };
 
   const handleCopyUrl = async (job) => {

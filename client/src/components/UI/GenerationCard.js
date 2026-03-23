@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertCircle, ArrowDownToLine, Maximize2, Play, RefreshCw, RotateCcw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
 const ASPECT_RATIO_MAP = {
@@ -20,9 +21,18 @@ const ICON_BTN = {
 const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismiss, onDelete, onUseIdea }) => {
   const [hovered, setHovered] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   // Videos generated with audio start unmuted; plain videos start muted
   const [muted, setMuted] = useState(!job.generateAudio);
   const videoRef = useRef(null);
+
+  // ESC 关闭 lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setLightboxOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [lightboxOpen]);
 
   const handleMouseEnterCard = () => {
     setHovered(true);
@@ -262,10 +272,19 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
             )}
           </div>
 
-          {/* Right-top: Fullscreen (video) + Delete/Dismiss */}
+          {/* Right-top: Fullscreen/Zoom + Delete/Dismiss */}
           <div style={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 5 }}>
             {isVideo && (
               <button onClick={handleFullscreen} title="Fullscreen" style={ICON_BTN}>
+                <Maximize2 size={14} />
+              </button>
+            )}
+            {!isVideo && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightboxOpen(true); }}
+                title="View full size"
+                style={ICON_BTN}
+              >
                 <Maximize2 size={14} />
               </button>
             )}
@@ -328,6 +347,93 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
           </div>
         </div>
       </div>
+
+      {/* ── Image Lightbox — portal to body, bypasses backdropFilter containing block ── */}
+      {lightboxOpen && !isVideo && createPortal(
+        <div
+          onClick={() => setLightboxOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            backgroundColor: 'rgba(0,0,0,0.88)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'zoom-out',
+            animation: 'fadeIn 0.15s ease',
+          }}
+        >
+          {/* Image — click stops propagation so only bg-click closes */}
+          <img
+            src={imageUrl}
+            alt={job.prompt}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '90vw', maxHeight: '90vh',
+              objectFit: 'contain',
+              borderRadius: 12,
+              boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+              cursor: 'default',
+              userSelect: 'none',
+            }}
+          />
+
+          {/* Close button — top right */}
+          <button
+            onClick={() => setLightboxOpen(false)}
+            style={{
+              position: 'fixed', top: 20, right: 20,
+              width: 40, height: 40, borderRadius: '50%',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={18} />
+          </button>
+
+          {/* Download button — bottom right */}
+          {onDownload && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDownload(); }}
+              title="Download"
+              style={{
+                position: 'fixed', bottom: 28, right: 28,
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '10px 18px', borderRadius: 10,
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff', cursor: 'pointer',
+                fontSize: 13, fontWeight: 500,
+              }}
+            >
+              <ArrowDownToLine size={15} />
+              Download
+            </button>
+          )}
+
+          {/* Prompt text — bottom center */}
+          {job.prompt && (
+            <p
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'fixed', bottom: 28, left: '50%',
+                transform: 'translateX(-50%)',
+                maxWidth: '60vw',
+                fontSize: 12, color: 'rgba(255,255,255,0.55)',
+                margin: 0, textAlign: 'center',
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {job.prompt}
+            </p>
+          )}
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

@@ -38,6 +38,28 @@ const {
   markFirstGeneration,
 } = require('../utils/referralUtils');
 
+// ── 全局并发限制：每个 provider 同时最多 N 个 AI 请求 ──
+const activeConcurrency = { google: 0, openai: 0, zhipu: 0, doubao: 0 };
+const MAX_CONCURRENCY   = { google: 5, openai: 3, zhipu: 5, doubao: 5 };
+const PROVIDER_MAP = {
+  'gemini3-pro':   'google', 'gemini3-flash': 'google', 'gemini25-flash': 'google',
+  'imagen4-pro':   'google', 'imagen4-fast':  'google',
+  'gpt-image-1':   'openai', 'dall-e-3':      'openai',
+  'cogview-flash': 'zhipu',
+  'seedream-5-0':  'doubao',
+};
+
+// ── 429 自动重试：等 2s 后重试一次 ──
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+async function retryFetch(url, options, retries = 1, delay = 2000) {
+  const res = await fetch(url, options);
+  if (res.status === 429 && retries > 0) {
+    await sleep(delay);
+    return retryFetch(url, options, retries - 1, delay);
+  }
+  return res;
+}
+
 const MODELS = [
   // ── Google Gemini 3 / Imagen ── (排在最前，优先展示)
   {
@@ -199,6 +221,17 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       return res.status(402).json({ message: t(req, `积分不足，需要 ${totalCreditCost} 积分（当前 ${totalAvail}）`, `Insufficient credits. Need ${totalCreditCost}, you have ${totalAvail}.`) });
     }
 
+    // ── 全局并发检查（积分验证通过后） ──
+    const provider = PROVIDER_MAP[modelId];
+    if (provider && activeConcurrency[provider] >= MAX_CONCURRENCY[provider]) {
+      return res.status(503).json({
+        message: t(req, '当前请求人数较多，请稍后重试', 'Server is busy, please try again in a moment.'),
+        retryAfter: 10,
+      });
+    }
+    if (provider) activeConcurrency[provider]++;
+    try {
+
     // referenceImageUrl → 服务端 fetch 转 base64（避免浏览器 CORS 限制）
     let finalRefData = referenceImageData || null;
     let finalRefMime = referenceImageMime || 'image/jpeg';
@@ -225,7 +258,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
     if (modelId === 'gemini3-pro' || modelId === 'gemini3-flash' || modelId === 'gemini25-flash') {
       // Pro 模型生成时间更长；Flash 模型 120s，Pro 模型 180s
       const geminiTimeout = modelId === 'gemini3-pro' ? 180000 : 120000;
-      const geminiRes = await fetch(
+      const geminiRes = await retryFetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model.apiModel}:generateContent?key=${process.env.GEMINI_API_KEY}`,
         {
           method: 'POST',
@@ -277,7 +310,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
 
     // ── Google Imagen 3 (Fast / Pro) via Generative Language API ──
     } else if (modelId === 'imagen4-fast' || modelId === 'imagen4-pro') {
-      const imagenRes = await fetch(
+      const imagenRes = await retryFetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model.apiModel}:predict?key=${process.env.GEMINI_API_KEY}`,
         {
           method: 'POST',
@@ -315,7 +348,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
         '16:9': '1536x1024',
       };
 
-      const gptRes = await fetch('https://api.openai.com/v1/images/generations', {
+      const gptRes = await retryFetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -352,7 +385,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
         '16:9': '1792x1024',
       };
 
-      const dallRes = await fetch('https://api.openai.com/v1/images/generations', {
+      const dallRes = await retryFetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
@@ -387,7 +420,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
 
     // ── Zhipu CogView-3-flash ──
     } else if (modelId === 'cogview-flash') {
-      const zhipuRes = await fetch('https://open.bigmodel.cn/api/paas/v4/images/generations', {
+      const zhipuRes = await retryFetch('https://open.bigmodel.cn/api/paas/v4/images/generations', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.ZHIPU_API_KEY}`,
@@ -430,7 +463,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       };
       const seedreamSize = sizeMap[aspectRatio] || '2048x2048';
 
-      const seedreamRes = await fetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
+      const seedreamRes = await retryFetch('https://ark.cn-beijing.volces.com/api/v3/images/generations', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.ARK_API_KEY}`,
@@ -549,6 +582,11 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
         ? `Referral rewards unlocked: you received ${INVITEE_BONUS} credits and your inviter received ${INVITER_BONUS} credits.`
         : null,
     });
+
+    } finally {
+      // 无论成功/失败/超时，都归还并发槽位
+      if (provider) activeConcurrency[provider]--;
+    }
   } catch (error) {
     console.error('generate/image 错误:', error);
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {

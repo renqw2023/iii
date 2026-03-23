@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Coins, CheckCircle, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { creditsAPI } from '../../services/creditsApi';
 import { useAuth } from '../../contexts/AuthContext';
 import CreditsModal from './CreditsModal';
@@ -11,6 +12,7 @@ const DAILY_FREE = 40;
 
 const CreditsDisplay = () => {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [hovered, setHovered] = useState(false);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
@@ -62,20 +64,20 @@ const CreditsDisplay = () => {
               color: '#fff',
               opacity: checkinMutation.isLoading ? 0.7 : 1,
             }}
-            title="Daily check-in"
+            title={t('sidebar.checkin')}
           >
-            {checkinMutation.isLoading ? '...' : 'Check-in'}
+            {checkinMutation.isLoading ? '...' : t('sidebar.checkin')}
           </button>
         )}
         {data.checkedInToday && (
-          <CheckCircle size={14} style={{ color: '#10b981' }} title="Checked in today" />
+          <CheckCircle size={14} style={{ color: '#10b981' }} title={t('sidebar.checkedInToday')} />
         )}
 
         <Link
           to="/credits"
           className="flex items-center gap-1 text-sm font-medium transition-colors"
           style={{ color: 'var(--text-secondary)' }}
-          title="View credits"
+          title={t('sidebar.viewCredits')}
         >
           <Coins size={15} style={{ color: '#f59e0b' }} />
           <span>{totalCredits}</span>
@@ -98,7 +100,7 @@ const CreditsDisplay = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <span style={{ fontWeight: 600, color: '#111' }}>Credits</span>
+              <span style={{ fontWeight: 600, color: '#111' }}>{t('sidebar.credits')}</span>
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -120,14 +122,14 @@ const CreditsDisplay = () => {
                 }}
               >
                 <Plus size={11} />
-                Add Credits
+                {t('sidebar.addCredits')}
               </button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#374151' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: '#f59e0b', fontSize: 14 }}>+</span>
-                Permanent Credits
+                {t('sidebar.permanentCredits')}
               </span>
               <strong style={{ color: '#111' }}>{paidCredits}</strong>
             </div>
@@ -135,7 +137,7 @@ const CreditsDisplay = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: '#374151' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontSize: 14 }}>→</span>
-                Free Daily Credits
+                {t('sidebar.freeDailyCredits')}
               </span>
               <strong style={{ color: '#111' }}>{freeCredits}/{dailyFree}</strong>
             </div>
@@ -169,7 +171,7 @@ const CreditsDisplay = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#9ca3af', fontSize: 11 }}>
               <span style={{ fontSize: 9, color: '#fbbf24' }}>•</span>
-              Resets to {dailyFree} daily and is used first
+              {t('sidebar.resetsDaily', { count: dailyFree })}
             </div>
           </div>
         )}

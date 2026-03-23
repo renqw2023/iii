@@ -32,7 +32,7 @@ const navItemClass = (active) =>
    }`;
 
 /* ── 积分 Hover 明细卡片组件 ── */
-const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
+const CreditsHoverArea = ({ credits: data, onAddCredits, t }) => {
   const [cardPos, setCardPos] = useState(null);
   const triggerRef = useRef(null);
   const hideTimer  = useRef(null);
@@ -73,7 +73,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
         onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#363636'; }}
         onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1B1B1B'; }}
       >
-        <span>Add Credits</span>
+        <span>{t('sidebar.addCredits')}</span>
         <div className="flex items-center gap-1"
              style={{ backgroundColor: '#262626', borderRadius: 5, height: 22, padding: '0 8px' }}>
           <Zap size={10} style={{ color: '#FFDBA4' }} />
@@ -101,7 +101,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
         }}>
           {/* 顶行 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontWeight: 600, color: '#111', fontSize: 14 }}>Free</span>
+            <span style={{ fontWeight: 600, color: '#111', fontSize: 14 }}>{t('sidebar.free')}</span>
             <button
               onClick={onAddCredits}
               style={{
@@ -111,7 +111,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#363636'; }}
               onMouseLeave={e => { e.currentTarget.style.background = '#1B1B1B'; }}
-            >Upgrade</button>
+            >{t('sidebar.upgrade')}</button>
           </div>
 
           {/* Credits 行 */}
@@ -120,7 +120,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
               <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                 <path d="M11.85 4.22L11.72 3.24C11.69 3 11.49 2.83 11.25 2.83C11.01 2.83 10.81 3 10.78 3.24L10.65 4.22C10.27 7.08 8.01 9.34 5.14 9.72L4.16 9.85C3.93 9.89 3.75 10.09 3.75 10.33C3.75 10.56 3.93 10.77 4.16 10.8L5.14 10.93C8.01 11.31 10.27 13.57 10.65 16.43L10.78 17.41C10.81 17.65 11.01 17.83 11.25 17.83C11.49 17.83 11.69 17.65 11.72 17.41L11.85 16.43C12.23 13.57 14.49 11.31 17.36 10.93L18.34 10.8C18.57 10.77 18.75 10.56 18.75 10.33C18.75 10.09 18.57 9.89 18.34 9.85L17.36 9.72C14.49 9.34 12.23 7.08 11.85 4.22Z" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round"/>
               </svg>
-              Credits
+              {t('sidebar.credits')}
             </span>
             <strong style={{ color: '#111' }}>{paidCredits}</strong>
           </div>
@@ -129,7 +129,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, color: '#374151' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 15 }}>↺</span>
-              Free Daily Credits
+              {t('sidebar.freeDailyCredits')}
             </span>
             <strong style={{ color: '#111' }}>{freeCredits}/{dailyFree}</strong>
           </div>
@@ -149,7 +149,7 @@ const CreditsHoverArea = ({ credits: data, onAddCredits }) => {
           {/* 说明 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#9ca3af', fontSize: 11 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', flexShrink: 0 }} />
-            Daily credits used first
+            {t('sidebar.dailyCreditsUsedFirst')}
           </div>
         </div>
       )}
@@ -262,7 +262,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
         {!collapsed && <div className="overflow-hidden"><Logo size="sm" showText /></div>}
         <button
           onClick={toggleCollapsed}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')}
           className="flex-shrink-0 p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--gallery-filter-hover-bg,#f1f5f9)] transition-colors"
           style={{ marginLeft: collapsed ? 'auto' : 0, marginRight: collapsed ? 'auto' : 0 }}
         >
@@ -275,29 +275,29 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
 
         {/* Nav items */}
         <nav className="space-y-0.5 mb-4">
-          <Link to="/" title={collapsed ? 'Home' : undefined} className={navItemClass(isActive('/', true))}>
+          <Link to="/" title={collapsed ? t('navigation.home') : undefined} className={navItemClass(isActive('/', true))}>
             <Home size={18} className="flex-shrink-0" />
-            {!collapsed && <span>Home</span>}
+            {!collapsed && <span>{t('navigation.home')}</span>}
           </Link>
 
-          <div title={collapsed ? 'Search' : undefined} className={navItemClass(false)} onClick={openSearch}>
+          <div title={collapsed ? t('common.search') : undefined} className={navItemClass(false)} onClick={openSearch}>
             <Search size={18} className="flex-shrink-0" />
-            {!collapsed && <span>Search</span>}
+            {!collapsed && <span>{t('common.search')}</span>}
           </div>
 
-          <Link to="/browse-history" title={collapsed ? 'Browse History' : undefined} className={navItemClass(isActive('/browse-history'))}>
+          <Link to="/browse-history" title={collapsed ? t('sidebar.browseHistory') : undefined} className={navItemClass(isActive('/browse-history'))}>
             <Clock size={18} className="flex-shrink-0" />
-            {!collapsed && <span>Browse History</span>}
+            {!collapsed && <span>{t('sidebar.browseHistory')}</span>}
           </Link>
 
-          <Link to="/generate-history" title={collapsed ? 'Generation History' : undefined} className={navItemClass(isActive('/generate-history'))}>
+          <Link to="/generate-history" title={collapsed ? t('sidebar.generationHistory') : undefined} className={navItemClass(isActive('/generate-history'))}>
             <Wand2 size={18} className="flex-shrink-0" />
-            {!collapsed && <span>Generation History</span>}
+            {!collapsed && <span>{t('sidebar.generationHistory')}</span>}
           </Link>
 
-          <div title={collapsed ? 'Favorites' : undefined} className={navItemClass(isActive('/favorites'))} onClick={handleFavorites}>
+          <div title={collapsed ? t('navigation.favorites') : undefined} className={navItemClass(isActive('/favorites'))} onClick={handleFavorites}>
             <Heart size={18} className="flex-shrink-0" />
-            {!collapsed && <span>Favorites</span>}
+            {!collapsed && <span>{t('navigation.favorites')}</span>}
           </div>
         </nav>
 
@@ -320,8 +320,8 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Share MeiGen</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>Invite friends, get 200 credits</p>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{t('sidebar.shareTitle')}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('sidebar.shareDesc')}</p>
               </div>
               <Gift size={16} style={{ color: '#f472b6', flexShrink: 0 }} />
             </div>
@@ -345,7 +345,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     return nextOpen;
                   });
                 }}
-                title="Account"
+                title={t('sidebar.account')}
                 className="flex items-center justify-center transition-colors duration-200"
                 style={{
                   width: 40, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -438,7 +438,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                       aria-expanded={dashboardMenuOpen}
                     >
                       <LayoutDashboard size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
-                      <span style={{ flex: 1 }}>Dashboard</span>
+                      <span style={{ flex: 1 }}>{t('navigation.dashboard')}</span>
                       {unreadCount > 0 && (
                         <span
                           style={{
@@ -471,8 +471,8 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                         aria-label="Dashboard menu"
                       >
                         {[
-                          { icon: LayoutDashboard, label: 'Overview', to: '/dashboard', showDot: false },
-                          { icon: Bell, label: 'Notifications', to: '/notifications', showDot: unreadCount > 0 },
+                          { icon: LayoutDashboard, label: t('sidebar.overview'), to: '/dashboard', showDot: false },
+                          { icon: Bell, label: t('navigation.notifications'), to: '/notifications', showDot: unreadCount > 0 },
                         ].map(({ icon: Icon, label, to, showDot }) => (
                           <Link
                             key={to}
@@ -509,11 +509,11 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                   </div>
 
                   {[
-                    { icon: Settings,        label: 'Settings',           to: '/settings' },
-                    { icon: Wand2,           label: 'Generation History', to: '/generate-history' },
-                    { icon: Clock,           label: 'Browse History',     to: '/browse-history' },
-                    { icon: Heart,           label: 'Favorites',          to: '/favorites' },
-                    { icon: BookOpenText,    label: 'Docs',               to: '/docs' },
+                    { icon: Settings,        label: t('navigation.settings'),        to: '/settings' },
+                    { icon: Wand2,           label: t('sidebar.generationHistory'),  to: '/generate-history' },
+                    { icon: Clock,           label: t('sidebar.browseHistory'),      to: '/browse-history' },
+                    { icon: Heart,           label: t('navigation.favorites'),       to: '/favorites' },
+                    { icon: BookOpenText,    label: t('sidebar.docs'),               to: '/docs' },
                   ].map(({ icon: Icon, label, to }) => (
                     <Link
                       key={to} to={to}
@@ -551,7 +551,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                       aria-expanded={contactMenuOpen}
                     >
                       <Headphones size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
-                      <span style={{ flex: 1 }}>Contact Us</span>
+                      <span style={{ flex: 1 }}>{t('sidebar.contactUs')}</span>
                       <ChevronRight size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
                     </button>
 
@@ -651,7 +651,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                       aria-expanded={languageMenuOpen}
                     >
                       <Languages size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
-                      <span style={{ flex: 1 }}>Language</span>
+                      <span style={{ flex: 1 }}>{t('sidebar.language')}</span>
                       <ChevronRight size={16} style={{ color: '#6b7280', flexShrink: 0 }} />
                     </button>
 
@@ -696,7 +696,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                               onMouseLeave={e => { e.currentTarget.style.backgroundColor = isSelected ? 'rgba(0,0,0,0.05)' : 'transparent'; }}
                             >
                               <span style={{ flex: 1 }}>{language.label}</span>
-                              {isSelected && <span style={{ fontSize: 11, color: '#6b7280' }}>Current</span>}
+                              {isSelected && <span style={{ fontSize: 11, color: '#6b7280' }}>{t('sidebar.currentLang')}</span>}
                             </button>
                           );
                         })}
@@ -724,7 +724,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; }}
                   >
                     <LogOut size={16} style={{ flexShrink: 0 }} />
-                    <span>Sign Out</span>
+                    <span>{t('navigation.logout')}</span>
                   </button>
                 </div>
               )}
@@ -735,6 +735,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
               <CreditsHoverArea
                 credits={creditsData}
                 onAddCredits={onCreditsClick}
+                t={t}
               />
             )}
           </div>
@@ -743,7 +744,7 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
             <button onClick={openLoginModal}
                     className="w-full text-sm font-medium py-2 px-3 rounded-lg transition-colors"
                     style={{ backgroundColor: '#1B1B1B', color: '#fff', border: 'none', cursor: 'pointer' }}>
-              Sign In
+              {t('sidebar.signIn')}
             </button>
           )
         )}

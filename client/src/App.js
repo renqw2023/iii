@@ -38,6 +38,7 @@ import History from './pages/History';
 import GenerateHistory from './pages/GenerateHistory';
 import Orders from './pages/Orders';
 import Subscription from './pages/Subscription';
+import Invoice from './pages/Invoice';
 import MagicLinkVerify from './pages/MagicLinkVerify';
 import Img2Prompt from './pages/Img2Prompt';
 import GalleryList from './pages/Gallery/GalleryList';
@@ -155,6 +156,7 @@ function App() {
                         <Route path="img2prompt" element={<Img2Prompt />} />
                         <Route path="orders" element={<Orders />} />
                         <Route path="subscription" element={<Subscription />} />
+                        <Route path="invoice/:orderId" element={<Invoice />} />
                       </Route>
 
                       {/* 管理员路由 — 独立布局，不套 Layout（避免 app 侧边栏与 admin 侧边栏冲突） */}

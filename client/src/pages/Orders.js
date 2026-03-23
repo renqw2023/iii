@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, ArrowLeft, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { ShoppingBag, ArrowLeft, CheckCircle, XCircle, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { creditsAPI } from '../services/creditsApi';
 
@@ -117,6 +117,26 @@ export default function Orders() {
                   <span className="text-xs font-medium" style={{ color: '#6366f1' }}>
                     +{order.credits} Credits
                   </span>
+                  <button
+                    title="Download Invoice"
+                    onClick={() => window.open(
+                      `/invoice/${order._id}?` + new URLSearchParams({
+                        plan: order.planName,
+                        amount: order.amountUSD,
+                        credits: order.credits,
+                        currency: order.currency || 'usd',
+                        date: order.createdAt,
+                        orderId: order._id,
+                      }),
+                      '_blank'
+                    )}
+                    className="p-1 rounded-md transition-colors"
+                    style={{ color: 'var(--text-tertiary,#94a3b8)' }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary,#94a3b8)'}
+                  >
+                    <Printer size={14} />
+                  </button>
                 </div>
                 {statusBadge(order.status)}
               </div>

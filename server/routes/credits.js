@@ -1,6 +1,8 @@
 const express = require('express');
+const crypto = require('crypto');
 const User = require('../models/User');
 const CreditTransaction = require('../models/CreditTransaction');
+const GiftCode = require('../models/GiftCode');
 const { auth } = require('../middleware/auth');
 const adminCache = require('../services/adminCache');
 const { deductCredits, recordDeductTransactions } = require('../utils/creditsUtils');
@@ -233,6 +235,131 @@ router.post('/admin/deduct', auth, async (req, res) => {
     res.json({ credits: target.credits, freeCredits: target.freeCredits });
   } catch (error) {
     console.error('admin/deduct error:', error);
+    res.status(500).json({ message: 'Operation failed' });
+  }
+});
+
+// ── Gift code helpers ──────────────────────────────────────────────────────
+function generateGiftCode() {
+  const seg = () => crypto.randomBytes(2).toString('hex').toUpperCase();
+  return `GIFT-${seg()}-${seg()}`;
+}
+
+// POST /api/credits/redeem  (auth)
+router.post('/redeem', auth, async (req, res) => {
+  try {
+    const code = (req.body.code || '').toUpperCase().trim();
+    if (!code) return res.status(400).json({ message: 'Code is required' });
+
+    const gift = await GiftCode.findOne({ code });
+    if (!gift) return res.status(404).json({ message: 'Invalid gift code' });
+    if (!gift.isActive) return res.status(400).json({ message: 'This code has been deactivated' });
+    if (gift.expiresAt && gift.expiresAt < new Date()) {
+      return res.status(400).json({ message: 'This code has expired' });
+    }
+    if (gift.usedCount >= gift.maxUses) {
+      return res.status(400).json({ message: 'This code has reached its maximum uses' });
+    }
+    const alreadyUsed = gift.usedBy.some(u => String(u.userId) === String(req.userId));
+    if (alreadyUsed) return res.status(400).json({ message: 'You have already used this code' });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.userId,
+      { $inc: { credits: gift.credits } },
+      { new: true }
+    );
+
+    gift.usedCount += 1;
+    gift.usedBy.push({ userId: req.userId, usedAt: new Date() });
+    await gift.save();
+
+    await CreditTransaction.create({
+      userId: req.userId,
+      type: 'earn',
+      amount: gift.credits,
+      reason: 'admin_grant',
+      note: `Gift code: ${gift.code}`,
+      walletType: 'paid',
+      balanceAfter: updatedUser.credits,
+      freeBalanceAfter: updatedUser.freeCredits ?? null,
+      paidBalanceAfter: updatedUser.credits,
+      totalBalanceAfter: (updatedUser.freeCredits ?? 0) + updatedUser.credits,
+    });
+
+    res.json({ credits: gift.credits, message: `${gift.credits} credits added!` });
+  } catch (err) {
+    console.error('redeem error:', err);
+    res.status(500).json({ message: 'Redemption failed' });
+  }
+});
+
+// POST /api/credits/admin/generate-codes  (admin)
+router.post('/admin/generate-codes', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId).select('role');
+    if (!admin || admin.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const { credits, count = 1, maxUses = 1, expiresAt, note } = req.body;
+    if (!credits || credits < 1) return res.status(400).json({ message: 'credits must be >= 1' });
+    if (count < 1 || count > 100) return res.status(400).json({ message: 'count must be 1–100' });
+
+    const docs = [];
+    for (let i = 0; i < count; i++) {
+      docs.push({
+        code: generateGiftCode(),
+        credits,
+        maxUses,
+        createdBy: req.userId,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        note: note || '',
+      });
+    }
+
+    const inserted = await GiftCode.insertMany(docs, { ordered: false });
+    res.json({ codes: inserted.map(g => g.code) });
+  } catch (err) {
+    console.error('generate-codes error:', err);
+    res.status(500).json({ message: 'Generation failed' });
+  }
+});
+
+// GET /api/credits/admin/gift-codes  (admin, pagination)
+router.get('/admin/gift-codes', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId).select('role');
+    if (!admin || admin.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const page = parseInt(req.query.page || '1', 10);
+    const limit = parseInt(req.query.limit || '20', 10);
+    const total = await GiftCode.countDocuments();
+    const codes = await GiftCode.find()
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .select('code credits usedCount maxUses isActive expiresAt note createdAt');
+
+    res.json({ codes, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    console.error('gift-codes list error:', err);
+    res.status(500).json({ message: 'Failed to fetch codes' });
+  }
+});
+
+// PATCH /api/credits/admin/gift-codes/:code/deactivate  (admin)
+router.patch('/admin/gift-codes/:code/deactivate', auth, async (req, res) => {
+  try {
+    const admin = await User.findById(req.userId).select('role');
+    if (!admin || admin.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+    const gift = await GiftCode.findOneAndUpdate(
+      { code: req.params.code.toUpperCase() },
+      { $set: { isActive: false } },
+      { new: true }
+    );
+    if (!gift) return res.status(404).json({ message: 'Code not found' });
+    res.json({ code: gift.code, isActive: gift.isActive });
+  } catch (err) {
+    console.error('deactivate error:', err);
     res.status(500).json({ message: 'Operation failed' });
   }
 });

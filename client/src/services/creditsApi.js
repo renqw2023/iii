@@ -31,4 +31,16 @@ export const creditsAPI = {
 
   getCurrentPlan: () =>
     axios.get('/api/payments/current-plan', { headers: getAuthHeaders() }),
+
+  redeem: (code) =>
+    axios.post('/api/credits/redeem', { code }, { headers: getAuthHeaders() }),
+
+  adminGenerateCodes: (payload) =>
+    axios.post('/api/credits/admin/generate-codes', payload, { headers: getAuthHeaders() }),
+
+  adminGetGiftCodes: (page = 1, limit = 20) =>
+    axios.get(`/api/credits/admin/gift-codes?page=${page}&limit=${limit}`, { headers: getAuthHeaders() }),
+
+  adminDeactivateCode: (code) =>
+    axios.patch(`/api/credits/admin/gift-codes/${code}/deactivate`, {}, { headers: getAuthHeaders() }),
 };

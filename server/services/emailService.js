@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
+const { generateInvoicePDF } = require('./pdfService');
 
 // ─── Shared design tokens ─────────────────────────────────────────────────────
 const BRAND = {
@@ -52,7 +53,7 @@ const wrap = (title, bodyHtml) => `<!DOCTYPE html>
           <tr>
             <td style="text-align:center;padding:0 20px;">
               <p style="color:#3f3f5a;font-size:12px;line-height:1.8;margin:0;">
-                © 2025 III.PICS — All rights reserved.<br>
+                © 2026 III.PICS — All rights reserved.<br>
                 You received this because you have an account on
                 <a href="${BRAND.url}" style="color:#7c3aed;text-decoration:none;">III.PICS</a>.
                 If this wasn't you, ignore this email.
@@ -269,13 +270,183 @@ class EmailService {
     return this._send(email, 'Sign in to III.PICS', wrap('Sign In', body));
   }
 
+  // ── 6. Purchase Receipt ────────────────────────────────────────────────────
+  async sendPurchaseReceiptEmail(email, username, opts = {}) {
+    if (!this.transporter) throw new Error('Email service not enabled');
+
+    const {
+      planName = 'Credits Pack',
+      amountUSD = 0,
+      currency = 'usd',
+      credits = 0,
+      orderId = '—',
+      fullOrderId = '',
+      purchasedAt = new Date(),
+    } = opts;
+
+    const invoiceNum = `INV-${orderId}`;
+    const formattedDate = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    }).format(new Date(purchasedAt));
+
+    const subject = `Receipt from III.PICS — $${Number(amountUSD).toFixed(2)}`;
+
+    // Generate PDF attachment
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateInvoicePDF({
+        invoiceNum,
+        planName,
+        amountUSD,
+        currency,
+        credits,
+        purchasedAt,
+        username,
+        email,
+      });
+    } catch (e) {
+      console.error('PDF generation failed, sending email without attachment:', e);
+    }
+
+    // Clean Stripe-style receipt — white background, no gradient strip
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" style="max-width:540px;" cellpadding="0" cellspacing="0">
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:4px;border:1px solid #e5e7eb;">
+
+              <!-- Card body -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 44px 36px;">
+                <tr>
+                  <td>
+
+                    <!-- Logo + label row -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+                      <tr>
+                        <td>
+                          <span style="font-size:20px;font-weight:800;letter-spacing:-0.8px;font-style:italic;color:#111827;">III</span><span style="font-size:20px;font-weight:800;letter-spacing:-0.5px;color:#7c3aed;">.PICS</span>
+                        </td>
+                        <td style="text-align:right;vertical-align:middle;">
+                          <span style="font-size:11px;color:#9ca3af;letter-spacing:0.06em;text-transform:uppercase;">Receipt</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Big amount -->
+                    <p style="margin:0 0 4px;font-size:36px;font-weight:800;color:#111827;letter-spacing:-1px;">$${Number(amountUSD).toFixed(2)}</p>
+                    <p style="margin:0 0 28px;font-size:13px;color:#16a34a;font-weight:600;">✓ Paid on ${formattedDate}</p>
+
+                    <!-- Divider -->
+                    <div style="border-top:1px solid #e5e7eb;margin-bottom:20px;"></div>
+
+                    <!-- Meta rows -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:24px;">
+                      <tr>
+                        <td style="color:#6b7280;padding:5px 0;">Receipt number</td>
+                        <td style="text-align:right;color:#111827;font-family:'Courier New',monospace;font-weight:600;font-size:12px;">${invoiceNum}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#6b7280;padding:5px 0;">Date</td>
+                        <td style="text-align:right;color:#111827;">${formattedDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#6b7280;padding:5px 0;">Payment method</td>
+                        <td style="text-align:right;color:#111827;">Credit card</td>
+                      </tr>
+                    </table>
+
+                    <!-- Divider -->
+                    <div style="border-top:1px solid #e5e7eb;margin-bottom:20px;"></div>
+
+                    <!-- Line item -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;margin-bottom:16px;">
+                      <tr>
+                        <td style="padding:10px 0;color:#111827;font-weight:500;vertical-align:top;">
+                          ${planName} Credit Pack
+                          <br/><span style="font-size:12px;color:#9ca3af;">${Number(credits).toLocaleString()} permanent credits · Never expire</span>
+                        </td>
+                        <td style="padding:10px 0;text-align:right;color:#111827;font-weight:600;vertical-align:top;">$${Number(amountUSD).toFixed(2)}</td>
+                      </tr>
+                    </table>
+
+                    <!-- Totals -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
+                      <tr>
+                        <td style="padding:3px 0;color:#6b7280;">Subtotal</td>
+                        <td style="text-align:right;color:#374151;">$${Number(amountUSD).toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:3px 0;color:#6b7280;">Tax</td>
+                        <td style="text-align:right;color:#374151;">$0.00</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:10px 0 0;font-weight:700;color:#111827;font-size:14px;border-top:1px solid #e5e7eb;">Total</td>
+                        <td style="text-align:right;padding:10px 0 0;font-weight:800;color:#111827;font-size:14px;border-top:1px solid #e5e7eb;">$${Number(amountUSD).toFixed(2)} ${currency.toUpperCase()}</td>
+                      </tr>
+                    </table>
+
+                    <!-- Divider -->
+                    <div style="border-top:1px solid #e5e7eb;margin:24px 0 28px;"></div>
+
+                    <!-- Note about attachment -->
+                    <p style="margin:0 0 24px;font-size:13px;color:#6b7280;">Your invoice is attached to this email as a PDF. You can also view your full order history at any time.</p>
+
+                    <!-- CTA -->
+                    <div style="text-align:center;">
+                      <a href="${config.server.clientUrl}/orders" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 32px;border-radius:6px;letter-spacing:0.1px;">View Order History →</a>
+                    </div>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 0 8px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.8;">
+                © 2026 III.PICS · <a href="${BRAND.url}" style="color:#9ca3af;text-decoration:none;">iii.pics</a> · <a href="mailto:support@iii.pics" style="color:#9ca3af;text-decoration:none;">support@iii.pics</a>
+              </p>
+              <p style="margin:4px 0 0;font-size:11px;color:#d1d5db;">
+                You're receiving this because you made a purchase on III.PICS.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    const attachments = pdfBuffer
+      ? [{ filename: `${invoiceNum}.pdf`, content: pdfBuffer, contentType: 'application/pdf' }]
+      : [];
+
+    return this._send(email, subject, html, attachments);
+  }
+
   // ── Internal send helper ───────────────────────────────────────────────────
-  async _send(to, subject, html) {
+  async _send(to, subject, html, attachments = []) {
     const mailOptions = {
       from: { name: config.email.from.name, address: config.email.from.address },
       to,
       subject,
       html,
+      ...(attachments.length > 0 ? { attachments } : {}),
     };
     const result = await this.transporter.sendMail(mailOptions);
     console.log(`📧 Email sent [${subject}] → ${to} (${result.messageId})`);

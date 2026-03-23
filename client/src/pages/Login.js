@@ -21,7 +21,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
+  // Preserve full location (pathname + search) when redirecting back after auth
+  const from = location.state?.from || { pathname: '/' };
 
   useEffect(() => {
     if (isAuthenticated) {

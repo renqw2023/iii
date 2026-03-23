@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, CreditCard, DollarSign,
+  LayoutDashboard, Users, CreditCard, DollarSign, Gift,
   ArrowLeft, Shield, RefreshCw, Circle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,12 +10,14 @@ import OverviewTab from '../components/Admin/tabs/OverviewTab';
 import UsersTab from '../components/Admin/tabs/UsersTab';
 import TransactionsTab from '../components/Admin/tabs/TransactionsTab';
 import RevenueTab from '../components/Admin/tabs/RevenueTab';
+import GiftCodesTab from '../components/Admin/tabs/GiftCodesTab';
 
 const NAV = [
   { id: 'overview',     label: 'Overview',      icon: LayoutDashboard, desc: 'Platform KPIs' },
   { id: 'users',        label: 'Users',         icon: Users,           desc: 'Manage members' },
   { id: 'transactions', label: 'Transactions',  icon: CreditCard,      desc: 'Credits ledger' },
   { id: 'revenue',      label: 'Revenue',       icon: DollarSign,      desc: 'USD income analytics' },
+  { id: 'giftcodes',    label: 'Gift Codes',    icon: Gift,            desc: 'Generate & manage codes' },
 ];
 
 /* ─── Toast ─────────────────────────────────────────────────── */
@@ -218,6 +220,9 @@ export default function AdminPanel() {
           )}
           {activeTab === 'revenue' && (
             <RevenueTab key={`rev-${refreshKey}`} />
+          )}
+          {activeTab === 'giftcodes' && (
+            <GiftCodesTab key={`gc-${refreshKey}`} />
           )}
         </main>
       </div>

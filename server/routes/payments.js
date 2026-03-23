@@ -6,6 +6,7 @@ const Order = require('../models/Order');
 const { auth } = require('../middleware/auth');
 const config = require('../config');
 const creditPlans = require('../config/creditPlans');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ router.post('/create-checkout', auth, async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${clientUrl}/credits?payment=success`,
+      success_url: `${clientUrl}/credits?payment=success&credits=${plan.credits}`,
       cancel_url: `${clientUrl}/credits?payment=cancelled`,
       metadata: {
         userId: String(req.userId),
@@ -113,7 +114,7 @@ router.post('/webhook', async (req, res) => {
           paidBalanceAfter: updatedUser.credits,
           totalBalanceAfter: (updatedUser.freeCredits ?? 0) + updatedUser.credits,
         });
-        await Order.create({
+        const newOrder = await Order.create({
           userId,
           planId,
           planName: plan?.name || planId,
@@ -124,6 +125,21 @@ router.post('/webhook', async (req, res) => {
           stripePaymentIntentId: session.payment_intent || null,
           status: 'completed',
         });
+
+        if (config.email.enabled) {
+          try {
+            const userForMail = await User.findById(userId).select('email username');
+            await emailService.sendPurchaseReceiptEmail(userForMail.email, userForMail.username, {
+              planName: plan?.name || planId,
+              amountUSD: (session.amount_total || 0) / 100,
+              currency: session.currency || 'usd',
+              credits: creditsNum,
+              orderId: session.id.slice(-8).toUpperCase(),
+              fullOrderId: String(newOrder._id),
+              purchasedAt: newOrder.createdAt,
+            });
+          } catch (e) { console.error('Receipt email failed:', e); }
+        }
       }
     } catch (err) {
       console.error('Webhook credit update error:', err);

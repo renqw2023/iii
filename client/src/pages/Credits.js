@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSEO } from '../hooks/useSEO';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Coins, CheckCircle, TrendingUp, TrendingDown, Clock, Gift, Copy, Zap } from 'lucide-react';
@@ -6,6 +6,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { creditsAPI } from '../services/creditsApi';
 import { useAuth } from '../contexts/AuthContext';
+import PurchaseSuccessModal from '../components/UI/PurchaseSuccessModal';
 
 const REASON_LABELS = {
   daily_checkin: 'Daily check-in',
@@ -33,6 +34,10 @@ const Credits = () => {
   useSEO({ noIndex: true, title: 'Credits - III.PICS' });
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [purchasedCredits, setPurchasedCredits] = useState(0);
+  const [giftCode, setGiftCode] = useState('');
+  const [isRedeeming, setIsRedeeming] = useState(false);
 
   const { data: balanceData } = useQuery(
     ['credits-balance'],
@@ -55,7 +60,9 @@ const Credits = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'success') {
-      toast.success('Payment successful! Credits added to your account.');
+      const credits = parseInt(params.get('credits') || '0', 10);
+      setPurchasedCredits(credits);
+      setShowSuccessModal(true);
       queryClient.invalidateQueries(['credits-balance']);
       queryClient.invalidateQueries(['credits-history']);
       window.history.replaceState({}, '', '/credits');
@@ -64,6 +71,22 @@ const Credits = () => {
       window.history.replaceState({}, '', '/credits');
     }
   }, [queryClient]);
+
+  const handleRedeem = async () => {
+    if (!giftCode.trim()) return;
+    setIsRedeeming(true);
+    try {
+      const res = await creditsAPI.redeem(giftCode.trim());
+      toast.success(res.data.message);
+      setGiftCode('');
+      queryClient.invalidateQueries(['credits-balance']);
+      queryClient.invalidateQueries(['credits-history']);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Redemption failed');
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
 
   const handlePurchase = async (planId) => {
     try {
@@ -97,6 +120,12 @@ const Credits = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
+      <PurchaseSuccessModal
+        open={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        creditsAdded={purchasedCredits}
+        newBalance={totalBalance}
+      />
       <h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
         My Credits
       </h1>
@@ -193,6 +222,55 @@ const Credits = () => {
           </div>
         </div>
       )}
+
+      {/* ── Redeem Gift Code ── */}
+      <div
+        className="rounded-xl p-4 mb-6"
+        style={{
+          backgroundColor: 'rgba(16,185,129,0.06)',
+          border: '1px solid rgba(16,185,129,0.2)',
+        }}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16,185,129,0.12)' }}>
+            <Gift size={16} style={{ color: '#10b981' }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Redeem a Gift Code</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Enter a gift code to add credits to your account.</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={giftCode}
+            onChange={e => setGiftCode(e.target.value.toUpperCase())}
+            onKeyDown={e => e.key === 'Enter' && handleRedeem()}
+            placeholder="GIFT-XXXX-XXXX"
+            className="flex-1 px-3 py-2 rounded-lg text-sm font-mono"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-primary)',
+              outline: 'none',
+              letterSpacing: '0.05em',
+            }}
+          />
+          <button
+            onClick={handleRedeem}
+            disabled={isRedeeming || !giftCode.trim()}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+            style={{
+              backgroundColor: '#10b981',
+              color: '#fff',
+              opacity: (isRedeeming || !giftCode.trim()) ? 0.5 : 1,
+              cursor: (isRedeeming || !giftCode.trim()) ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isRedeeming ? 'Redeeming…' : 'Redeem'}
+          </button>
+        </div>
+      </div>
 
       {user?.inviteCode && (
         <div

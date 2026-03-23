@@ -10,9 +10,11 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Wand2, Loader2, Download, Link, Zap } from 'lucide-react';
+import { Link as RouterLink } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateAPI } from '../../services/generateApi';
+import InsufficientCreditsModal from './InsufficientCreditsModal';
 
 const MUTED   = 'rgba(0,0,0,0.04)';
 const MUTED_H = 'rgba(0,0,0,0.07)';
@@ -29,6 +31,7 @@ const ImageGenPanel = ({ open, onClose }) => {
   const [result, setResult]               = useState(null); // { imageUrl, modelName }
   const [isDragging, setIsDragging]       = useState(false);
   const [modelsLoading, setModelsLoading] = useState(false);
+  const [showInsufficientModal, setShowInsufficientModal] = useState(false);
 
   // 面板打开时拉取可用模型
   useEffect(() => {
@@ -80,6 +83,13 @@ const ImageGenPanel = ({ open, onClose }) => {
     if (!prompt.trim()) { toast.error('请输入生成描述'); return; }
     if (!selectedModel) { toast.error('请选择生成模型'); return; }
 
+    // Pre-check: insufficient credits
+    const totalAvail = (user?.freeCredits ?? 0) + (user?.credits ?? 0);
+    if (currentModel && totalAvail < currentModel.creditCost) {
+      setShowInsufficientModal(true);
+      return;
+    }
+
     setIsLoading(true);
     setResult(null);
     try {
@@ -112,9 +122,20 @@ const ImageGenPanel = ({ open, onClose }) => {
   };
 
   const credits = user?.credits ?? 0;
+  const freeCredits = user?.freeCredits ?? 0;
+  const totalAvailCredits = credits + freeCredits;
+  const LOW_THRESHOLD = 20;
   const canGenerate = !isLoading && !!prompt.trim() && !!selectedModel;
 
   return (
+    <>
+    <InsufficientCreditsModal
+      open={showInsufficientModal}
+      onClose={() => setShowInsufficientModal(false)}
+      currentModel={currentModel}
+      freeCredits={freeCredits}
+      paidCredits={credits}
+    />
     <div
       style={{
         position: 'fixed', top: 16, bottom: 16, right: 16,
@@ -245,6 +266,23 @@ const ImageGenPanel = ({ open, onClose }) => {
           {/* ── Divider ── */}
           <div style={{ height: 1, backgroundColor: 'rgba(0,0,0,0.06)', flexShrink: 0 }} />
 
+          {/* ── Low credits banner ── */}
+          {isAuthenticated && totalAvailCredits > 0 && totalAvailCredits < LOW_THRESHOLD && (
+            <div style={{
+              background: 'rgba(251,191,36,0.10)',
+              border: '1px solid rgba(251,191,36,0.35)',
+              borderRadius: 10, padding: '6px 12px',
+              display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
+            }}>
+              <Zap size={12} style={{ color: '#f59e0b' }} />
+              <span style={{ fontSize: 12, color: '#92400e' }}>Only {totalAvailCredits} credits left</span>
+              <RouterLink to="/credits" style={{ color: '#f59e0b', fontSize: 12, marginLeft: 'auto', textDecoration: 'none' }}>
+                Add more →
+              </RouterLink>
+            </div>
+          )}
+
           {/* ── Generate button ── */}
           <button
             onClick={handleGenerate}
@@ -350,6 +388,7 @@ const ImageGenPanel = ({ open, onClose }) => {
         }
       `}</style>
     </div>
+    </>
   );
 };
 

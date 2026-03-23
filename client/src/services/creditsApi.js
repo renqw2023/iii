@@ -25,4 +25,10 @@ export const creditsAPI = {
 
   adminDeduct: (userId, amount, note) =>
     axios.post('/api/credits/admin/deduct', { userId, amount, note }, { headers: getAuthHeaders() }),
+
+  getOrders: () =>
+    axios.get('/api/payments/orders', { headers: getAuthHeaders() }),
+
+  getCurrentPlan: () =>
+    axios.get('/api/payments/current-plan', { headers: getAuthHeaders() }),
 };

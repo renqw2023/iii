@@ -25,6 +25,8 @@ export const sidebar = {
     viewCredits: '查看积分',
     permanentCredits: '永久积分',
     resetsDaily: '每日重置为 {{count}} 积分，优先消耗',
+    orders: '订单记录',
+    subscription: '我的套餐',
   },
   'en-US': {
     addCredits: 'Add Credits',
@@ -51,6 +53,8 @@ export const sidebar = {
     viewCredits: 'View credits',
     permanentCredits: 'Permanent Credits',
     resetsDaily: 'Resets to {{count}} daily and is used first',
+    orders: 'Order History',
+    subscription: 'Subscription',
   },
   'ja-JP': {
     addCredits: 'クレジット追加',
@@ -77,5 +81,7 @@ export const sidebar = {
     viewCredits: 'クレジットを見る',
     permanentCredits: '永久クレジット',
     resetsDaily: '毎日 {{count}} にリセット、先に消費',
+    orders: '注文履歴',
+    subscription: 'サブスクリプション',
   },
 };

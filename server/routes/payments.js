@@ -133,4 +133,41 @@ router.post('/webhook', async (req, res) => {
   res.json({ received: true });
 });
 
+const PLAN_ORDER = ['free', 'starter', 'pro', 'ultimate'];
+
+router.get('/orders', auth, async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .select('planId planName amountUSD currency credits status createdAt stripeSessionId');
+    res.json({ orders });
+  } catch (err) {
+    console.error('Get orders error:', err);
+    res.status(500).json({ message: 'Failed to fetch orders' });
+  }
+});
+
+router.get('/current-plan', auth, async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.userId, status: 'completed' })
+      .select('planId planName credits createdAt');
+    const totalPurchased = orders.reduce((sum, o) => sum + (o.credits || 0), 0);
+    const best = orders.reduce((prev, cur) =>
+      PLAN_ORDER.indexOf(cur.planId) > PLAN_ORDER.indexOf(prev.planId) ? cur : prev,
+      { planId: 'free', planName: 'Free', credits: 0, createdAt: null }
+    );
+    res.json({
+      planId: best.planId,
+      planName: best.planName,
+      purchasedAt: best.createdAt || null,
+      totalPurchased,
+      ordersCount: orders.length,
+    });
+  } catch (err) {
+    console.error('Get current plan error:', err);
+    res.status(500).json({ message: 'Failed to fetch current plan' });
+  }
+});
+
 module.exports = router;

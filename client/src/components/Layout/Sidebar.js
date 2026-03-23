@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Home, Search, Clock, Heart, ChevronLeft, ChevronRight, Zap, Gift,
   LayoutDashboard, Settings, LogOut, Languages, BookOpenText, Headphones,
-  Mail, Copy, MessageCircle, ExternalLink, Bell, Wand2,
+  Mail, Copy, MessageCircle, ExternalLink, Bell, Wand2, ShoppingBag, CreditCard,
 } from 'lucide-react';
 import Logo from '../UI/Logo';
 import { useAuth } from '../../contexts/AuthContext';
@@ -513,6 +513,8 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
                     { icon: Wand2,           label: t('sidebar.generationHistory'),  to: '/generate-history' },
                     { icon: Clock,           label: t('sidebar.browseHistory'),      to: '/browse-history' },
                     { icon: Heart,           label: t('navigation.favorites'),       to: '/favorites' },
+                    { icon: ShoppingBag,     label: t('sidebar.orders'),             to: '/orders' },
+                    { icon: CreditCard,      label: t('sidebar.subscription'),       to: '/subscription' },
                     { icon: BookOpenText,    label: t('sidebar.docs'),               to: '/docs' },
                   ].map(({ icon: Icon, label, to }) => (
                     <Link

@@ -274,15 +274,24 @@ async function fetchYouMindCSVMap() {
     let hasMore = true;
 
     while (hasMore) {
-      const resp = await fetch(YOUMIND_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://youmind.com/zh-CN/seedance-2-0-prompts',
-        },
-        body: JSON.stringify({ model: 'seedance-2.0', page }),
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+
+      let resp;
+      try {
+        resp = await fetch(YOUMIND_API_URL, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://youmind.com/zh-CN/seedance-2-0-prompts',
+          },
+          body: JSON.stringify({ model: 'seedance-2.0', page }),
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if (!resp.ok) throw new Error(`HTTP ${resp.status} on page ${page}`);
       const data = await resp.json();
@@ -343,17 +352,26 @@ async function fetchYouMindNanoBanana() {
   let hasMore = true;
 
   while (hasMore) {
-    const resp = await fetch(YOUMIND_NB_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        'Origin': 'https://youmind.com',
-        'Referer': 'https://youmind.com/zh-CN/nano-banana-pro-prompts',
-        'Accept': 'application/json, */*',
-      },
-      body: JSON.stringify({ model: 'nano-banana-pro', page }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    let resp;
+    try {
+      resp = await fetch(YOUMIND_NB_API_URL, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Origin': 'https://youmind.com',
+          'Referer': 'https://youmind.com/zh-CN/nano-banana-pro-prompts',
+          'Accept': 'application/json, */*',
+        },
+        body: JSON.stringify({ model: 'nano-banana-pro', page }),
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!resp.ok) throw new Error(`HTTP ${resp.status} on page ${page}`);
     const data = await resp.json();

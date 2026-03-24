@@ -286,7 +286,8 @@ async function startCrawl(opts = {}) {
 
   const {
     startPage = 1,
-    endPage = 34,
+    // endPage is a safety ceiling only — actual stop is driven by content/error logic
+    endPage = 999,
     delayMs = DEFAULT_DELAY_MS,
     jitterMs = DEFAULT_JITTER_MS,
     cookie = process.env.PROMPTSREF_COOKIE || '',
@@ -296,6 +297,8 @@ async function startCrawl(opts = {}) {
     incrementalMode = true,
     // How many consecutive all-known pages before stopping (default 1)
     stopAfterPages = 1,
+    // Stop discovery after N consecutive failed pages (handles site total page boundary)
+    maxConsecutivePageErrors = 3,
   } = opts;
 
   const outputDir = process.env.SREF_OUTPUT_DIR
@@ -325,13 +328,13 @@ async function startCrawl(opts = {}) {
   };
 
   // Run in background
-  _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId: log._id, incrementalMode, stopAfterPages })
+  _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId: log._id, incrementalMode, stopAfterPages, maxConsecutivePageErrors })
     .catch(err => console.error('[sref-scraper] fatal:', err.message));
 
   return { ok: true, logId: log._id };
 }
 
-async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId, incrementalMode, stopAfterPages }) {
+async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId, incrementalMode, stopAfterPages, maxConsecutivePageErrors }) {
   const requestOpts = { delayMs, jitterMs, timeout: DEFAULT_TIMEOUT_MS, cookie };
 
   try {
@@ -349,18 +352,28 @@ async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDown
     const detailUrls = [];
     const seen = new Set();
     let consecutiveAllKnownPages = 0;
+    let consecutivePageErrors = 0;
+    let actualLastPage = startPage;
 
     for (let page = startPage; page <= endPage; page++) {
       if (_stopFlag) { await _finalize(logId, 'stopped'); return; }
       _currentProgress.currentPage = page;
 
       const url = DISCOVER_URL.replace('{page}', page);
-      console.log(`[sref-scraper] [discover] page=${page}/${endPage} ${url}`);
+      console.log(`[sref-scraper] [discover] page=${page} ${url}`);
       try {
         const resp = await fetchWithRetry(url, requestOpts);
         const urls = parseDiscoverDetailUrls(resp.data);
+        consecutivePageErrors = 0; // reset on success
+        actualLastPage = page;
 
-        if (incrementalMode && urls.length > 0) {
+        if (urls.length === 0) {
+          // Empty page = past the end of content
+          console.log(`[sref-scraper] [discover] page=${page}: empty (end of content)`);
+          break;
+        }
+
+        if (incrementalMode) {
           // Split into new vs already-known
           const newUrls = [];
           for (const u of urls) {
@@ -380,7 +393,7 @@ async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDown
           if (newUrls.length === 0) {
             consecutiveAllKnownPages++;
             if (consecutiveAllKnownPages >= stopAfterPages) {
-              console.log(`[sref-scraper] [discover] incremental stop after ${consecutiveAllKnownPages} all-known page(s) at page ${page}`);
+              console.log(`[sref-scraper] [discover] incremental stop: ${consecutiveAllKnownPages} all-known page(s) at page ${page}`);
               break;
             }
           } else {
@@ -395,10 +408,16 @@ async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDown
         }
       } catch (err) {
         if (err.message === 'stopped') { await _finalize(logId, 'stopped'); return; }
-        console.warn(`[sref-scraper] [discover] page=${page} failed: ${err.message}`);
+        consecutivePageErrors++;
+        console.warn(`[sref-scraper] [discover] page=${page} failed (${consecutivePageErrors}/${maxConsecutivePageErrors}): ${err.message}`);
+        // Stop discovery when we hit N consecutive failures — page boundary reached
+        if (consecutivePageErrors >= maxConsecutivePageErrors) {
+          console.log(`[sref-scraper] [discover] hit page boundary at page ${page} (last valid: ${actualLastPage})`);
+          break;
+        }
       }
 
-      await DataSyncLog.updateOne({ _id: logId }, { $set: { 'meta.currentPage': page, 'meta.discoverCount': detailUrls.length } });
+      await DataSyncLog.updateOne({ _id: logId }, { $set: { 'meta.currentPage': page, 'meta.lastValidPage': actualLastPage, 'meta.discoverCount': detailUrls.length } });
     }
 
     const limitedUrls = maxDetails ? detailUrls.slice(0, maxDetails) : detailUrls;

@@ -23,6 +23,8 @@ const paymentsRoutes = require('./routes/payments');
 const toolsRoutes = require('./routes/tools');
 const generateRoutes = require('./routes/generate');
 const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
+const syncRoutes = require('./routes/sync');
+const { startCronJobs } = require('./cron/index');
 
 const app = express();
 // 信任代理设置
@@ -91,6 +93,7 @@ app.use('/api/credits', creditsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/tools', toolsRoutes);
 app.use('/api/generate', generateRoutes);
+app.use('/api/admin/sync', syncRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
@@ -120,6 +123,9 @@ mongoose.connect(config.database.uri, config.database.options)
 
       // 启动自动同步服务
       startGptImageSync();
+
+      // 启动定时数据同步任务
+      startCronJobs();
     });
   })
   .catch(err => {

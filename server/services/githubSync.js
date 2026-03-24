@@ -259,6 +259,66 @@ function parseSeedanceReadme(content) {
   return promptMap;
 }
 
+// ─── YouMind API helpers ───────────────────────────────────────
+
+const YOUMIND_API_URL = 'https://youmind.com/youhome-api/video-prompts';
+
+/**
+ * Fetch all Seedance prompts from YouMind API (paginated, 12 per page).
+ * Returns a map of { [id]: { title, prompt, description, videoUrl, thumbnailUrl, authorName, authorLink, sourceUrl } }
+ */
+async function fetchYouMindCSVMap() {
+  try {
+    const map = {};
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const resp = await fetch(YOUMIND_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://youmind.com/zh-CN/seedance-2-0-prompts',
+        },
+        body: JSON.stringify({ model: 'seedance-2.0', page }),
+      });
+
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} on page ${page}`);
+      const data = await resp.json();
+      const prompts = data.prompts || [];
+      if (prompts.length === 0) break;
+
+      for (const item of prompts) {
+        const id = String(item.id);
+        const video = item.videos?.[0];
+        map[id] = {
+          title: item.title || '',
+          prompt: item.content || item.description || '',
+          description: item.description || '',
+          videoUrl: video?.sourceUrl || '',
+          thumbnailUrl: video?.thumbnail || '',
+          authorName: item.author?.name || '',
+          authorLink: item.author?.link || '',
+          sourceUrl: item.sourceLink || `https://youmind.com/en-US/seedance-2-0-prompts?id=${id}`,
+        };
+      }
+
+      hasMore = data.hasMore === true;
+      page++;
+
+      // Polite delay between pages
+      if (hasMore) await new Promise(r => setTimeout(r, 300));
+    }
+
+    console.log(`[github-sync] YouMind API fetched: ${Object.keys(map).length} entries`);
+    return map;
+  } catch (err) {
+    console.warn(`[github-sync] YouMind API fetch failed (${err.message}), will use README-only prompts`);
+    return {};
+  }
+}
+
 // ─── Sync functions ───────────────────────────────────────────
 
 async function syncNanoBanana() {
@@ -310,31 +370,50 @@ async function syncSeedanceGithub() {
   let newCount = 0, updatedCount = 0, skippedCount = 0, errorCount = 0;
 
   try {
-    console.log('[github-sync] Fetching Seedance README + video-urls from GitHub...');
-    const [readmeResp, videosResp] = await Promise.all([
+    console.log('[github-sync] Fetching Seedance README + video-urls + YouMind CSV...');
+    const [readmeResp, videosResp, csvMap] = await Promise.all([
       axios.get(RAW_SEEDANCE_README, { timeout: 30000, responseType: 'text' }),
       axios.get(RAW_SEEDANCE_VIDEOS, { timeout: 30000 }).catch(() => ({ data: { prompts: {} } })),
+      fetchYouMindCSVMap(),
     ]);
 
     const promptMap = parseSeedanceReadme(readmeResp.data);
     const videoUrls = videosResp.data?.prompts || {};
-    console.log(`[github-sync] Seedance README: ${Object.keys(promptMap).length} prompts, videos: ${Object.keys(videoUrls).length}`);
+    console.log(`[github-sync] README: ${Object.keys(promptMap).length} prompts | GH videos: ${Object.keys(videoUrls).length} | CSV: ${Object.keys(csvMap).length}`);
 
-    // Merge prompt data with video URLs
-    const allIds = new Set([...Object.keys(promptMap), ...Object.keys(videoUrls)]);
+    // Three-way merge: README (curated) > YouMind CSV (complete) > placeholder
+    const allIds = new Set([...Object.keys(promptMap), ...Object.keys(videoUrls), ...Object.keys(csvMap)]);
     for (const id of allIds) {
-      const matched = promptMap[id];
-      const videoUrl = videoUrls[id] || '';
+      const readme = promptMap[id];   // curated README data (rich but sparse)
+      const csv = csvMap[id];         // YouMind CSV data (complete prompts for all entries)
+      const ghVideo = videoUrls[id] || '';
+
+      // Priority: README title > CSV title > placeholder
+      const title = readme?.title || csv?.title || `Seedance Prompt #${id}`;
+      // Priority: README prompt > CSV prompt > empty
+      const prompt = (readme?.prompt?.length > 10 ? readme.prompt : null) || csv?.prompt || '';
+      const description = readme?.description || csv?.description || '';
+      // Priority: CSV Twitter video (has audio) > GitHub CDN video
+      const videoUrl = csv?.videoUrl || ghVideo;
+      const thumbnailUrl = csv?.thumbnailUrl || '';
+      const fullText = title + ' ' + prompt;
+      const category = readme?.category || guessCategory(title, fullText);
+      const tags = readme?.tags || extractSeedanceTags(title, fullText);
+      const sourceUrl = readme?.sourceUrl || csv?.sourceUrl || `https://youmind.com/en-US/seedance-2-0-prompts?id=${id}`;
+
       const record = {
-        title: matched ? matched.title : `Seedance Prompt #${id}`,
-        prompt: matched ? matched.prompt : `Video generation prompt #${id}`,
-        description: matched ? matched.description : '',
+        title: title.substring(0, 300),
+        prompt: prompt.substring(0, 15000),
+        description: description.substring(0, 3000),
         videoUrl,
-        category: matched ? matched.category : 'other',
-        tags: matched ? matched.tags : ['seedance-2.0'],
-        sourceUrl: matched?.sourceUrl || `https://youmind.com/en-US/seedance-2-0-prompts?id=${id}`,
+        thumbnailUrl,
+        category,
+        tags,
+        sourceUrl,
+        authorName: csv?.authorName || '',
+        authorLink: csv?.authorLink || '',
         sourceId: `seedance-${id}`,
-        isFeatured: !!matched,
+        isFeatured: !!readme || (prompt.length > 100),
         isActive: true,
         isPublic: true,
       };
@@ -357,7 +436,7 @@ async function syncSeedanceGithub() {
     await DataSyncLog.findByIdAndUpdate(log._id, {
       status: errorCount > 0 ? 'partial' : 'success',
       completedAt: new Date(), newCount, updatedCount, skippedCount, errorCount, totalAfter, errorMessages: errors,
-      meta: { readmeUrl: RAW_SEEDANCE_README, videosUrl: RAW_SEEDANCE_VIDEOS },
+      meta: { readmeUrl: RAW_SEEDANCE_README, videosUrl: RAW_SEEDANCE_VIDEOS, apiUrl: YOUMIND_API_URL },
     });
     console.log(`[github-sync] Seedance GitHub done: +${newCount} ~${updatedCount} err${errorCount}`);
     return { newCount, updatedCount, skippedCount, errorCount };

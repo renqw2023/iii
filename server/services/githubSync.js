@@ -292,11 +292,21 @@ async function fetchYouMindCSVMap() {
       for (const item of prompts) {
         const id = String(item.id);
         const video = item.videos?.[0];
+
+        // Extract original Twitter MP4 URL from caption (preferred: has audio, works with proxy)
+        // Caption format: "Imported from URL: https://video.twimg.com/.../file.mp4?tag=21"
+        let videoUrl = '';
+        if (video?.caption) {
+          const m = video.caption.match(/https?:\/\/video\.twimg\.com[^\s]+\.mp4[^\s]*/);
+          if (m) videoUrl = m[0];
+        }
+        if (!videoUrl) videoUrl = video?.sourceUrl || '';
+
         map[id] = {
           title: item.title || '',
           prompt: item.content || item.description || '',
           description: item.description || '',
-          videoUrl: video?.sourceUrl || '',
+          videoUrl,
           thumbnailUrl: video?.thumbnail || '',
           authorName: item.author?.name || '',
           authorLink: item.author?.link || '',

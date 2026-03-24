@@ -286,12 +286,16 @@ async function startCrawl(opts = {}) {
 
   const {
     startPage = 1,
-    endPage = 33,
+    endPage = 34,
     delayMs = DEFAULT_DELAY_MS,
     jitterMs = DEFAULT_JITTER_MS,
     cookie = process.env.PROMPTSREF_COOKIE || '',
     noDownload = false,
     maxDetails = null,
+    // Incremental mode: start from page 1, stop when a full page has no new codes
+    incrementalMode = true,
+    // How many consecutive all-known pages before stopping (default 1)
+    stopAfterPages = 1,
   } = opts;
 
   const outputDir = process.env.SREF_OUTPUT_DIR
@@ -302,7 +306,7 @@ async function startCrawl(opts = {}) {
     source: 'sref',
     status: 'running',
     startedAt: new Date(),
-    meta: { startPage, endPage, currentPage: startPage, totalPages: endPage - startPage + 1 },
+    meta: { startPage, endPage, currentPage: startPage, totalPages: endPage - startPage + 1, incrementalMode },
   });
   _currentLogId = log._id;
 
@@ -317,24 +321,34 @@ async function startCrawl(opts = {}) {
     errorCount: 0,
     lastDetailUrl: '',
     startedAt: new Date(),
+    incrementalMode,
   };
 
   // Run in background
-  _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId: log._id })
+  _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId: log._id, incrementalMode, stopAfterPages })
     .catch(err => console.error('[sref-scraper] fatal:', err.message));
 
   return { ok: true, logId: log._id };
 }
 
-async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId }) {
+async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDownload, maxDetails, outputDir, logId, incrementalMode, stopAfterPages }) {
   const requestOpts = { delayMs, jitterMs, timeout: DEFAULT_TIMEOUT_MS, cookie };
 
   try {
     fs.mkdirSync(outputDir, { recursive: true });
 
+    // ── Load known codes for incremental mode ──
+    let knownCodes = new Set();
+    if (incrementalMode) {
+      const existingDocs = await SrefStyle.find({}).select('sourceId').lean();
+      existingDocs.forEach(d => knownCodes.add(String(d.sourceId)));
+      console.log(`[sref-scraper] incremental mode ON — ${knownCodes.size} known codes loaded`);
+    }
+
     // ── Phase 1: Discover ──
     const detailUrls = [];
     const seen = new Set();
+    let consecutiveAllKnownPages = 0;
 
     for (let page = startPage; page <= endPage; page++) {
       if (_stopFlag) { await _finalize(logId, 'stopped'); return; }
@@ -345,9 +359,39 @@ async function _runCrawl({ startPage, endPage, delayMs, jitterMs, cookie, noDown
       try {
         const resp = await fetchWithRetry(url, requestOpts);
         const urls = parseDiscoverDetailUrls(resp.data);
-        console.log(`[sref-scraper] [discover] page=${page} found ${urls.length} detail links`);
-        for (const u of urls) {
-          if (!seen.has(u)) { seen.add(u); detailUrls.push(u); }
+
+        if (incrementalMode && urls.length > 0) {
+          // Split into new vs already-known
+          const newUrls = [];
+          for (const u of urls) {
+            const code = srefCodesFromUrl(u)[0];
+            if (code && !knownCodes.has(code) && !seen.has(u)) {
+              newUrls.push(u);
+            }
+          }
+          const knownCount = urls.length - newUrls.length;
+          console.log(`[sref-scraper] [discover] page=${page}: ${newUrls.length} new / ${knownCount} known`);
+
+          for (const u of newUrls) {
+            seen.add(u);
+            detailUrls.push(u);
+          }
+
+          if (newUrls.length === 0) {
+            consecutiveAllKnownPages++;
+            if (consecutiveAllKnownPages >= stopAfterPages) {
+              console.log(`[sref-scraper] [discover] incremental stop after ${consecutiveAllKnownPages} all-known page(s) at page ${page}`);
+              break;
+            }
+          } else {
+            consecutiveAllKnownPages = 0; // reset streak
+          }
+        } else {
+          // Full mode: add all URLs
+          console.log(`[sref-scraper] [discover] page=${page} found ${urls.length} detail links`);
+          for (const u of urls) {
+            if (!seen.has(u)) { seen.add(u); detailUrls.push(u); }
+          }
         }
       } catch (err) {
         if (err.message === 'stopped') { await _finalize(logId, 'stopped'); return; }

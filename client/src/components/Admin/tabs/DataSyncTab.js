@@ -121,6 +121,7 @@ function SrefProgressBar({ progress }) {
 
 function SourceCard({ src, srefProgress, onTrigger, onStop }) {
   const [triggering, setTriggering] = useState(false);
+  const [srefMode, setSrefMode] = useState('incremental'); // 'incremental' | 'full'
   const log = src.lastLog;
   const isRunning = src.running;
   const isSref = src.source === 'sref';
@@ -128,7 +129,8 @@ function SourceCard({ src, srefProgress, onTrigger, onStop }) {
   const handleTrigger = async () => {
     setTriggering(true);
     try {
-      await onTrigger(src.source);
+      const opts = isSref ? { incrementalMode: srefMode === 'incremental', endPage: 34 } : undefined;
+      await onTrigger(src.source, opts);
     } finally {
       setTimeout(() => setTriggering(false), 2000);
     }
@@ -141,11 +143,31 @@ function SourceCard({ src, srefProgress, onTrigger, onStop }) {
         <div>
           <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{src.label}</p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-            {isSref ? 'Manual only · ~8h full crawl' : 'Auto-synced daily'}
+            {isSref ? (srefMode === 'incremental' ? 'Incremental · stops when no new entries' : 'Full scan · all 34 pages · ~8h') : 'Auto-synced daily'}
           </p>
         </div>
         <StatusBadge status={log?.status} running={isRunning} />
       </div>
+
+      {/* Sref mode toggle */}
+      {isSref && !isRunning && (
+        <div className="flex gap-1.5 mb-3 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+          {[['incremental', 'Incremental'], ['full', 'Full Scan']].map(([mode, label]) => (
+            <button
+              key={mode}
+              onClick={() => setSrefMode(mode)}
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{
+                background: srefMode === mode ? 'var(--bg-secondary)' : 'transparent',
+                color: srefMode === mode ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                boxShadow: srefMode === mode ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Stats row */}
       {log && (
@@ -323,9 +345,9 @@ export default function DataSyncTab() {
     return () => clearInterval(pollRef.current);
   }, [sources, loadStatus, loadSrefProgress]);
 
-  const handleTrigger = async (source) => {
+  const handleTrigger = async (source, opts) => {
     try {
-      const res = await adminAPI.triggerSync(source);
+      const res = await adminAPI.triggerSync(source, opts);
       if (res.data?.ok) {
         showToast(`${source} sync started`);
         setTimeout(loadStatus, 1500);

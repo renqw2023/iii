@@ -329,6 +329,80 @@ async function fetchYouMindCSVMap() {
   }
 }
 
+// ─── YouMind NanoBanana API ────────────────────────────────────
+
+const YOUMIND_NB_API_URL = 'https://youmind.com/youhome-api/prompts';
+
+/**
+ * Fetch all NanoBanana prompts from YouMind API (paginated, 30 per page).
+ * Returns array of mapped GalleryPrompt records.
+ */
+async function fetchYouMindNanoBanana() {
+  const records = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const resp = await fetch(YOUMIND_NB_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Origin': 'https://youmind.com',
+        'Referer': 'https://youmind.com/zh-CN/nano-banana-pro-prompts',
+        'Accept': 'application/json, */*',
+      },
+      body: JSON.stringify({ model: 'nano-banana-pro', page }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} on page ${page}`);
+    const data = await resp.json();
+    const prompts = data.prompts || [];
+    if (prompts.length === 0) break;
+
+    for (const item of prompts) {
+      const id = String(item.id);
+      // Prefer English translation; fall back to original content (often Chinese)
+      const promptText = item.translatedContent || item.content || '';
+      const previewImage = item.mediaThumbnails?.[0] || item.media?.[0] || '';
+      const fullText = item.title + ' ' + promptText;
+
+      records.push({
+        title: (item.title || '').substring(0, 200),
+        prompt: promptText.substring(0, 10000),
+        description: (item.description || promptText.substring(0, 300)).substring(0, 500),
+        model: 'nanobanana',
+        useCase: extractUseCase(item.title || ''),
+        style: extractStyle(item.title || '', promptText),
+        subject: extractSubject(item.title || '', promptText),
+        tags: (() => {
+          const t = new Set(['nanobanana-pro']);
+          const uc = extractUseCase(item.title || '');
+          const st = extractStyle(item.title || '', promptText);
+          const sb = extractSubject(item.title || '', promptText);
+          if (uc !== 'other') t.add(uc);
+          if (st !== 'other') t.add(st);
+          if (sb !== 'other') t.add(sb);
+          return Array.from(t);
+        })(),
+        previewImage,
+        sourceAuthor: item.author?.name || '',
+        sourceUrl: item.sourceLink || item.author?.link || '',
+        sourcePlatform: item.sourcePlatform || 'twitter',
+        dataSource: 'nano-banana-pro',
+        sourceId: `nanobanana-ym-${id}`,
+        isFeatured: item.featured === true,
+      });
+    }
+
+    hasMore = data.hasMore === true;
+    page++;
+    if (hasMore) await new Promise(r => setTimeout(r, 200));
+  }
+
+  return records;
+}
+
 // ─── Sync functions ───────────────────────────────────────────
 
 async function syncNanoBanana() {
@@ -337,10 +411,9 @@ async function syncNanoBanana() {
   let newCount = 0, updatedCount = 0, skippedCount = 0, errorCount = 0;
 
   try {
-    console.log('[github-sync] Fetching NanoBanana README from GitHub...');
-    const resp = await axios.get(RAW_NANOBANANA, { timeout: 30000, responseType: 'text' });
-    const prompts = parseNanoBananaContent(resp.data);
-    console.log(`[github-sync] Parsed ${prompts.length} NanoBanana prompts`);
+    console.log('[github-sync] Fetching NanoBanana from YouMind API...');
+    const prompts = await fetchYouMindNanoBanana();
+    console.log(`[github-sync] YouMind NanaBanana fetched: ${prompts.length} entries`);
 
     for (const record of prompts) {
       try {
@@ -361,9 +434,9 @@ async function syncNanoBanana() {
     await DataSyncLog.findByIdAndUpdate(log._id, {
       status: errorCount > 0 ? 'partial' : 'success',
       completedAt: new Date(), newCount, updatedCount, skippedCount, errorCount, totalAfter, errorMessages: errors,
-      meta: { rawUrl: RAW_NANOBANANA },
+      meta: { apiUrl: YOUMIND_NB_API_URL, fetched: prompts.length },
     });
-    console.log(`[github-sync] NanoBanana done: +${newCount} ~${updatedCount} skip${skippedCount} err${errorCount}`);
+    console.log(`[github-sync] NanoBanana done: +${newCount} ~${updatedCount} skip${skippedCount} err${errorCount} total${totalAfter}`);
     return { newCount, updatedCount, skippedCount, errorCount };
   } catch (err) {
     errors.push(err.message.substring(0, 500));

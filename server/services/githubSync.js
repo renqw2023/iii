@@ -274,27 +274,17 @@ async function fetchYouMindCSVMap() {
     let hasMore = true;
 
     while (hasMore) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 30000);
-
-      let resp;
-      try {
-        resp = await fetch(YOUMIND_API_URL, {
-          method: 'POST',
-          signal: controller.signal,
+      const { data } = await axios.post(YOUMIND_API_URL,
+        { model: 'seedance-2.0', page },
+        {
+          timeout: 30000,
           headers: {
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Referer': 'https://youmind.com/zh-CN/seedance-2-0-prompts',
           },
-          body: JSON.stringify({ model: 'seedance-2.0', page }),
-        });
-      } finally {
-        clearTimeout(timeout);
-      }
-
-      if (!resp.ok) throw new Error(`HTTP ${resp.status} on page ${page}`);
-      const data = await resp.json();
+        }
+      );
       const prompts = data.prompts || [];
       if (prompts.length === 0) break;
 
@@ -346,121 +336,119 @@ const YOUMIND_NB_API_URL = 'https://youmind.com/youhome-api/prompts';
  * Fetch all NanoBanana prompts from YouMind API (paginated, 30 per page).
  * Returns array of mapped GalleryPrompt records.
  */
-async function fetchYouMindNanoBanana() {
-  const records = [];
-  let page = 1;
-  let hasMore = true;
-
-  while (hasMore) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-
-    let resp;
-    try {
-      resp = await fetch(YOUMIND_NB_API_URL, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          'Origin': 'https://youmind.com',
-          'Referer': 'https://youmind.com/zh-CN/nano-banana-pro-prompts',
-          'Accept': 'application/json, */*',
-        },
-        body: JSON.stringify({ model: 'nano-banana-pro', page }),
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!resp.ok) throw new Error(`HTTP ${resp.status} on page ${page}`);
-    const data = await resp.json();
-    const prompts = data.prompts || [];
-    if (prompts.length === 0) break;
-
-    for (const item of prompts) {
-      const id = String(item.id);
-      // Prefer English translation; fall back to original content (often Chinese)
-      const promptText = item.translatedContent || item.content || '';
-      const previewImage = item.mediaThumbnails?.[0] || item.media?.[0] || '';
-      const fullText = item.title + ' ' + promptText;
-
-      records.push({
-        title: (item.title || '').substring(0, 200),
-        prompt: promptText.substring(0, 10000),
-        description: (item.description || promptText.substring(0, 300)).substring(0, 500),
-        model: 'nanobanana',
-        useCase: extractUseCase(item.title || ''),
-        style: extractStyle(item.title || '', promptText),
-        subject: extractSubject(item.title || '', promptText),
-        tags: (() => {
-          const t = new Set(['nanobanana-pro']);
-          const uc = extractUseCase(item.title || '');
-          const st = extractStyle(item.title || '', promptText);
-          const sb = extractSubject(item.title || '', promptText);
-          if (uc !== 'other') t.add(uc);
-          if (st !== 'other') t.add(st);
-          if (sb !== 'other') t.add(sb);
-          return Array.from(t);
-        })(),
-        previewImage,
-        sourceAuthor: item.author?.name || '',
-        sourceUrl: item.sourceLink || item.author?.link || '',
-        sourcePlatform: item.sourcePlatform || 'twitter',
-        dataSource: 'nano-banana-pro',
-        sourceId: `nanobanana-ym-${id}`,
-        isFeatured: item.featured === true,
-      });
-    }
-
-    hasMore = data.hasMore === true;
-    page++;
-    if (hasMore) await new Promise(r => setTimeout(r, 200));
-  }
-
-  return records;
-}
-
 // ─── Sync functions ───────────────────────────────────────────
 
 async function syncNanoBanana() {
   const log = await DataSyncLog.create({ source: 'nanobanana', status: 'running', startedAt: new Date() });
   const errors = [];
   let newCount = 0, updatedCount = 0, skippedCount = 0, errorCount = 0;
+  let page = 1, hasMore = true, totalFetched = 0;
+
+  console.log('[github-sync] Fetching NanoBanana from YouMind API...');
 
   try {
-    console.log('[github-sync] Fetching NanoBanana from YouMind API...');
-    const prompts = await fetchYouMindNanoBanana();
-    console.log(`[github-sync] YouMind NanaBanana fetched: ${prompts.length} entries`);
-
-    for (const record of prompts) {
-      try {
-        const result = await GalleryPrompt.findOneAndUpdate(
-          { sourceId: record.sourceId },
-          { $set: record },
-          { upsert: true, new: true, rawResult: true }
-        );
-        if (result.lastErrorObject?.updatedExisting) updatedCount++;
-        else newCount++;
-      } catch (err) {
-        if (err.code === 11000) skippedCount++;
-        else { errorCount++; errors.push(err.message.substring(0, 200)); }
+    while (hasMore) {
+      // Fetch one page with retry
+      let data;
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+          const res = await axios.post(YOUMIND_NB_API_URL,
+            { model: 'nano-banana-pro', page, limit: 18, locale: 'zh-CN', campaign: 'nano-banana-pro-prompts', filterMode: 'imageCategories' },
+            {
+              timeout: 60000,
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
+                'Origin': 'https://youmind.com',
+                'Referer': 'https://youmind.com/zh-CN/nano-banana-pro-prompts',
+                'Accept': '*/*',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+              },
+            }
+          );
+          data = res.data;
+          break;
+        } catch (err) {
+          if (attempt === 5) throw err;
+          console.warn(`[github-sync] NanoBanana page ${page} attempt ${attempt} failed (${err.message}), retrying...`);
+          await new Promise(r => setTimeout(r, 3000 * attempt));
+        }
       }
+
+      const prompts = data.prompts || [];
+      if (prompts.length === 0) break;
+
+      totalFetched += prompts.length;
+      if (page % 50 === 1) console.log(`[github-sync] NanoBanana page ${page}, fetched so far: ${totalFetched}`);
+
+      // Upsert this page immediately — no data lost on mid-sync failure
+      for (const item of prompts) {
+        const id = String(item.id);
+        const promptText = item.translatedContent || item.content || '';
+        const previewImage = item.mediaThumbnails?.[0] || item.media?.[0] || '';
+        const record = {
+          title: (item.title || '').substring(0, 200),
+          prompt: promptText.substring(0, 10000),
+          description: (item.description || promptText.substring(0, 300)).substring(0, 500),
+          model: 'nanobanana',
+          useCase: extractUseCase(item.title || ''),
+          style: extractStyle(item.title || '', promptText),
+          subject: extractSubject(item.title || '', promptText),
+          tags: (() => {
+            const t = new Set(['nanobanana-pro']);
+            const uc = extractUseCase(item.title || '');
+            const st = extractStyle(item.title || '', promptText);
+            const sb = extractSubject(item.title || '', promptText);
+            if (uc !== 'other') t.add(uc);
+            if (st !== 'other') t.add(st);
+            if (sb !== 'other') t.add(sb);
+            return Array.from(t);
+          })(),
+          previewImage,
+          sourceAuthor: item.author?.name || '',
+          sourceUrl: item.sourceLink || item.author?.link || '',
+          sourcePlatform: item.sourcePlatform || 'twitter',
+          dataSource: 'nano-banana-pro',
+          sourceId: `nanobanana-ym-${id}`,
+          isFeatured: item.featured === true,
+        };
+        try {
+          const result = await GalleryPrompt.findOneAndUpdate(
+            { sourceId: record.sourceId },
+            { $set: record },
+            { upsert: true, new: true, rawResult: true }
+          );
+          if (result.lastErrorObject?.updatedExisting) updatedCount++;
+          else newCount++;
+        } catch (err) {
+          if (err.code === 11000) skippedCount++;
+          else { errorCount++; errors.push(err.message.substring(0, 200)); }
+        }
+      }
+
+      hasMore = data.hasMore === true;
+      page++;
+      if (hasMore) await new Promise(r => setTimeout(r, 300));
     }
 
     const totalAfter = await GalleryPrompt.countDocuments({ dataSource: 'nano-banana-pro' });
     await DataSyncLog.findByIdAndUpdate(log._id, {
       status: errorCount > 0 ? 'partial' : 'success',
       completedAt: new Date(), newCount, updatedCount, skippedCount, errorCount, totalAfter, errorMessages: errors,
-      meta: { apiUrl: YOUMIND_NB_API_URL, fetched: prompts.length },
+      meta: { apiUrl: YOUMIND_NB_API_URL, fetched: totalFetched },
     });
     console.log(`[github-sync] NanoBanana done: +${newCount} ~${updatedCount} skip${skippedCount} err${errorCount} total${totalAfter}`);
     return { newCount, updatedCount, skippedCount, errorCount };
   } catch (err) {
+    // Save partial progress to log
+    const totalAfter = await GalleryPrompt.countDocuments({ dataSource: 'nano-banana-pro' });
     errors.push(err.message.substring(0, 500));
     await DataSyncLog.findByIdAndUpdate(log._id, {
-      status: 'error', completedAt: new Date(), errorCount: 1, errorMessages: errors,
+      status: newCount + updatedCount > 0 ? 'partial' : 'error',
+      completedAt: new Date(), newCount, updatedCount, skippedCount, errorCount: errorCount + 1,
+      totalAfter, errorMessages: errors,
     });
+    console.error(`[github-sync] NanoBanana failed at page ${page}: ${err.message}. Saved ${newCount + updatedCount} records.`);
     throw err;
   }
 }

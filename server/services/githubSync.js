@@ -385,7 +385,7 @@ async function syncNanoBanana() {
       for (const item of prompts) {
         const id = String(item.id);
         const promptText = item.translatedContent || item.content || '';
-        const previewImage = item.mediaThumbnails?.[0] || item.media?.[0] || '';
+        const previewImage = item.media?.[0] || item.mediaThumbnails?.[0] || '';
         const record = {
           title: (item.title || '').substring(0, 200),
           prompt: promptText.substring(0, 10000),
@@ -406,7 +406,7 @@ async function syncNanoBanana() {
           })(),
           previewImage,
           sourceAuthor: item.author?.name || '',
-          sourceUrl: item.sourceLink || item.author?.link || '',
+          sourceUrl: 'https://youmind.com/nano-banana-pro-prompts',
           sourcePlatform: item.sourcePlatform || 'twitter',
           dataSource: 'nano-banana-pro',
           sourceId: `nanobanana-ym-${id}`,

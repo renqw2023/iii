@@ -78,6 +78,10 @@ const galleryPromptSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  images: {
+    type: [String],
+    default: [],
+  },
 
   // 来源信息
   sourceAuthor: {

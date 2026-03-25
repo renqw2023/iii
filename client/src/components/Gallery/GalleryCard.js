@@ -142,6 +142,25 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
                     </div>
                 )}
 
+                {/* 多图角标 */}
+                {prompt.images?.length > 1 && (
+                    <div style={{
+                        position: 'absolute', bottom: 6, right: 6,
+                        background: 'rgba(0,0,0,0.55)',
+                        backdropFilter: 'blur(4px)',
+                        color: '#fff',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '2px 7px',
+                        borderRadius: 20,
+                        lineHeight: 1.5,
+                        pointerEvents: 'none',
+                        zIndex: 2,
+                    }}>
+                        1/{prompt.images.length}
+                    </div>
+                )}
+
                 {/* 全卡渐变遮罩 + 底部 action-bar */}
                 {imageLoaded && (
                     <div className="gallery-card-overlay">

@@ -355,7 +355,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
         })
             .sort({ views: -1 })
             .limit(6)
-            .select('title previewImage model tags views copyCount')
+            .select('title previewImage images model tags views copyCount')
             .lean();
 
         res.json({ prompt, related });

@@ -27,6 +27,7 @@ const GalleryModal = () => {
     const { setPrefill } = useGeneration();
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [translatedPrompt, setTranslatedPrompt] = useState(null);
+    const [imgIndex, setImgIndex] = useState(0);
 
     const handleClose = () => {
         const returnTo = searchParams.get('returnTo') || location.state?.returnTo;
@@ -60,6 +61,14 @@ const GalleryModal = () => {
     );
 
     const prompt = data?.data?.prompt;
+
+    // 多图轮播：切换 prompt 时重置索引
+    useEffect(() => { setImgIndex(0); }, [prompt?._id]);
+
+    const images = prompt?.images?.length > 0
+        ? prompt.images
+        : (prompt?.previewImage ? [prompt.previewImage] : []);
+    const currentImage = images[imgIndex] || '';
 
     const { addToHistory } = useBrowsingHistory();
     useEffect(() => {
@@ -115,10 +124,10 @@ const GalleryModal = () => {
             )}
 
             {/* Lightbox */}
-            {lightboxOpen && prompt?.previewImage && (
+            {lightboxOpen && currentImage && (
                 <div className="dmodal-lightbox" onClick={() => setLightboxOpen(false)}>
                     <motion.img
-                        src={prompt.previewImage}
+                        src={currentImage}
                         alt={prompt.title}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -151,29 +160,82 @@ const GalleryModal = () => {
                     transition={{ duration: 0.2 }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* ── Left: image（点击放大）── */}
+                    {/* ── Left: image 轮播（点击放大）── */}
                     <div
                         className="dmodal-left"
-                        style={{ cursor: prompt?.previewImage ? 'zoom-in' : 'default' }}
-                        onClick={() => prompt?.previewImage && setLightboxOpen(true)}
-                        title={prompt?.previewImage ? 'Click to zoom' : undefined}
+                        style={{ cursor: currentImage ? 'zoom-in' : 'default' }}
+                        onClick={() => currentImage && setLightboxOpen(true)}
+                        title={currentImage ? 'Click to zoom' : undefined}
                     >
                         {isLoading ? (
                             <div className="dmodal-loading">
                                 <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid #333', borderTopColor: '#6366f1', borderRadius: '50%' }} />
                             </div>
-                        ) : prompt?.previewImage ? (
+                        ) : currentImage ? (
                             <>
-                                <img src={prompt.previewImage} alt={prompt.title} style={{ pointerEvents: 'none' }} />
-                                {/* zoom hint */}
-                                <div style={{
-                                    position: 'absolute', bottom: 12, right: 12,
-                                    background: 'rgba(0,0,0,0.55)', borderRadius: 8,
-                                    padding: '0.3rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem',
-                                    color: 'rgba(255,255,255,0.75)', fontSize: '0.72rem', pointerEvents: 'none',
-                                }}>
-                                    <ZoomIn size={12} /> Zoom
-                                </div>
+                                <img src={currentImage} alt={prompt.title} style={{ pointerEvents: 'none' }} />
+
+                                {/* 左箭头 */}
+                                {images.length > 1 && imgIndex > 0 && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setImgIndex(i => i - 1); }}
+                                        style={{
+                                            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                                            background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%',
+                                            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer', color: '#fff', fontSize: 20, zIndex: 2,
+                                        }}
+                                    >‹</button>
+                                )}
+
+                                {/* 右箭头 */}
+                                {images.length > 1 && imgIndex < images.length - 1 && (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setImgIndex(i => i + 1); }}
+                                        style={{
+                                            position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                                            background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%',
+                                            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer', color: '#fff', fontSize: 20, zIndex: 2,
+                                        }}
+                                    >›</button>
+                                )}
+
+                                {/* 底部圆点指示器 */}
+                                {images.length > 1 && (
+                                    <div
+                                        onClick={(e) => e.stopPropagation()}
+                                        style={{
+                                            position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
+                                            display: 'flex', gap: 5, zIndex: 2,
+                                        }}
+                                    >
+                                        {images.map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setImgIndex(i)}
+                                                style={{
+                                                    width: i === imgIndex ? 16 : 6, height: 6, borderRadius: 3,
+                                                    background: i === imgIndex ? '#fff' : 'rgba(255,255,255,0.4)',
+                                                    border: 'none', padding: 0, cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* zoom hint（仅单图时显示，多图时底部已有圆点） */}
+                                {images.length <= 1 && (
+                                    <div style={{
+                                        position: 'absolute', bottom: 12, right: 12,
+                                        background: 'rgba(0,0,0,0.55)', borderRadius: 8,
+                                        padding: '0.3rem 0.55rem', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                        color: 'rgba(255,255,255,0.75)', fontSize: '0.72rem', pointerEvents: 'none',
+                                    }}>
+                                        <ZoomIn size={12} /> Zoom
+                                    </div>
+                                )}
                             </>
                         ) : (
                             <div className="dmodal-left-placeholder">
@@ -283,10 +345,10 @@ const GalleryModal = () => {
                                     <Copy size={16} />
                                     {t('gallery.detail.copyPrompt')}
                                 </button>
-                                {prompt.previewImage && (
+                                {currentImage && (
                                     <button
                                         className="dmodal-btn-primary"
-                                        onClick={() => { setPrefill({ referenceImageUrl: prompt.previewImage }); handleClose(); }}
+                                        onClick={() => { setPrefill({ referenceImageUrl: currentImage }); handleClose(); }}
                                     >
                                         <ImagePlus size={16} />
                                         {t('gallery.detail.useAsReference')}

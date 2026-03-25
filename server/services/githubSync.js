@@ -638,19 +638,23 @@ async function syncGithubTrending() {
         const id = String(item.id || '');
         if (!id || !item.prompt) { skippedCount++; continue; }
 
-        // Mirror images — skip entries whose images all fail
+        // Mirror images — collect all local URLs
         const imageUrls = Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []);
         let localPreview = '';
+        const localImages = [];
         for (let i = 0; i < imageUrls.length; i++) {
           const src = imageUrls[i];
           if (!src) continue;
           const filename = `${id}_${i}.jpg`;
           const localPath = path.join(outputDir, filename);
           const ok = await downloadImage(src, localPath);
-          if (ok && !localPreview) {
-            localPreview = `${serverBase}/output/gallery-trending/${filename}`;
+          if (ok) {
+            const url = `${serverBase}/output/gallery-trending/${filename}`;
+            localImages.push(url);
+            if (!localPreview) localPreview = url;
+          } else {
+            errorCount++;
           }
-          if (!ok) errorCount++;
         }
 
         const { style, subject, useCase } = mapTrendingCategories(item.categories);
@@ -666,6 +670,7 @@ async function syncGithubTrending() {
           useCase,
           tags:           buildTrendingTags(item),
           previewImage:   localPreview,
+          images:         localImages,
           sourceAuthor:   (item.author_name || item.author || '').substring(0, 100),
           sourceUrl:      item.source_url || '',
           sourcePlatform: 'twitter',

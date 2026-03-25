@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useGeneration } from '../contexts/GenerationContext';
 import { generationHistoryAPI } from '../services/generationHistoryApi';
+import { generateAPI } from '../services/generateApi';
 import GenerationCard from '../components/UI/GenerationCard';
 
 /* ── Date grouping ── */
@@ -76,8 +77,8 @@ const SkeletonCard = () => (
 );
 
 const GenerateHistory = () => {
-  const { isAuthenticated, openLoginModal } = useAuth();
-  const { activeGenerations, updateGeneration, removeGeneration, setPrefill } = useGeneration();
+  const { isAuthenticated, openLoginModal, updateUser } = useAuth();
+  const { activeGenerations, addGeneration, updateGeneration, removeGeneration, setPrefill } = useGeneration();
   const navigate = useNavigate();
 
   const [records, setRecords] = useState([]);
@@ -174,10 +175,57 @@ const GenerateHistory = () => {
     toast.success('URL copied');
   };
 
-  const handleRetry = (job) => {
+  const handleRetry = useCallback((job) => {
+    // Remove failed card
     removeGeneration(job.id);
-    toast('Please go back to the Generate panel to retry', { icon: '💡' });
-  };
+
+    const newJobId = Date.now().toString();
+    const isVideo = job.mediaType === 'video';
+
+    if (isVideo) {
+      addGeneration({
+        id: newJobId, status: 'loading', progress: 8,
+        prompt: job.prompt, modelId: job.modelId, modelName: job.modelName,
+        aspectRatio: job.aspectRatio || '16:9', mediaType: 'video',
+        generateAudio: job.generateAudio || false,
+        result: null, errorMessage: '', startedAt: new Date(),
+      });
+      generateAPI.generateVideo({
+        prompt: job.prompt,
+        modelKey: job.modelId,
+        duration: job.duration || 5,
+        resolution: job.resolution || '720p',
+        ratio: job.aspectRatio || '16:9',
+        generateAudio: job.generateAudio || false,
+      }).then(data => {
+        updateGeneration(newJobId, { status: 'success', progress: 100, result: { videoUrl: data.videoUrl }, videoUrl: data.videoUrl });
+        if (data.creditsLeft !== undefined) updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
+      }).catch(err => {
+        updateGeneration(newJobId, { status: 'error', errorMessage: err.response?.data?.message || 'Video generation failed' });
+      });
+      return;
+    }
+
+    // Image retry
+    addGeneration({
+      id: newJobId, status: 'loading', progress: 8,
+      prompt: job.prompt, modelId: job.modelId, modelName: job.modelName,
+      aspectRatio: job.aspectRatio || '1:1', resolution: job.resolution || '2K',
+      mediaType: 'image', result: null, errorMessage: '', startedAt: new Date(),
+    });
+    generateAPI.generateImage({
+      modelId: job.modelId,
+      prompt: job.prompt,
+      aspectRatio: job.aspectRatio || '1:1',
+      resolution: job.resolution || '2K',
+      ...(job.referenceImageUrl ? { referenceImageUrl: job.referenceImageUrl } : {}),
+    }).then(data => {
+      updateGeneration(newJobId, { status: 'success', progress: 100, result: data });
+      if (data.creditsLeft !== undefined) updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
+    }).catch(err => {
+      updateGeneration(newJobId, { status: 'error', errorMessage: err.response?.data?.message || 'Generation failed. Please try again.' });
+    });
+  }, [addGeneration, updateGeneration, removeGeneration, updateUser]);
 
   const handleUseIdea = (rec) => {
     setPrefill({

@@ -4,7 +4,7 @@ const DataSyncLogSchema = new mongoose.Schema({
   source: {
     type: String,
     required: true,
-    enum: ['sref', 'nanobanana', 'seedance-github', 'seedance-youmind'],
+    enum: ['sref', 'nanobanana', 'seedance-github', 'seedance-youmind', 'github-trending'],
     index: true,
   },
   status: {

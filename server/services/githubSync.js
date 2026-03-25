@@ -538,4 +538,178 @@ async function syncSeedanceGithub() {
   }
 }
 
-module.exports = { syncNanoBanana, syncSeedanceGithub };
+// ─── GitHub Trending Prompts sync ─────────────────────────────
+
+const fs   = require('fs');
+const path = require('path');
+const https = require('https');
+
+const RAW_GITHUB_TRENDING = 'https://raw.githubusercontent.com/jau123/nanobanana-trending-prompts/main/prompts/prompts.json';
+
+// Map GitHub repo categories → our GalleryPrompt taxonomy
+// Multiple categories: highest-priority non-Other wins; 'JSON' only adds a tag
+const TRENDING_CATEGORY_RULES = [
+  { match: 'photography',      style: 'photography' },
+  { match: 'illustration & 3d', style: 'illustration' },
+  { match: 'product & brand',  subject: 'product',          useCase: 'product-marketing' },
+  { match: 'food & drink',     subject: 'food-drink' },
+  { match: 'girl',             subject: 'influencer-model' },
+  { match: 'app',              useCase: 'app-web-design' },
+];
+
+function mapTrendingCategories(categories) {
+  const lc = (categories || []).map(c => c.toLowerCase());
+  let style = 'other', subject = 'other', useCase = 'other';
+  for (const rule of TRENDING_CATEGORY_RULES) {
+    if (lc.includes(rule.match)) {
+      if (rule.style)   style   = rule.style;
+      if (rule.subject) subject = rule.subject;
+      if (rule.useCase) useCase = rule.useCase;
+    }
+  }
+  return { style, subject, useCase };
+}
+
+function buildTrendingTitle(prompt) {
+  if (!prompt) return 'Trending Prompt';
+  const trimmed = prompt.trim().replace(/\s+/g, ' ');
+  if (trimmed.length <= 60) return trimmed;
+  const cut = trimmed.substring(0, 60);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 30 ? cut.substring(0, lastSpace) : cut) + '…';
+}
+
+function buildTrendingTags(item) {
+  const cats = (item.categories || [])
+    .map(c => c.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
+    .filter(c => c && c !== 'other');
+  return [...new Set([...cats, 'trending', 'curated'])];
+}
+
+// Download a single image URL to localPath; resolves true on success, false on skip/error
+function downloadImage(url, localPath) {
+  return new Promise((resolve) => {
+    if (fs.existsSync(localPath)) return resolve(true); // already cached
+    const dir = path.dirname(localPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const tmp = localPath + '.tmp';
+    const file = fs.createWriteStream(tmp);
+    const req = https.get(url, { timeout: 20000 }, (res) => {
+      if (res.statusCode !== 200) {
+        file.destroy();
+        fs.unlink(tmp, () => {});
+        return resolve(false);
+      }
+      res.pipe(file);
+      file.on('finish', () => {
+        file.close(() => {
+          fs.rename(tmp, localPath, (err) => resolve(!err));
+        });
+      });
+    });
+    req.on('error', () => { file.destroy(); fs.unlink(tmp, () => {}); resolve(false); });
+    req.on('timeout', () => { req.destroy(); file.destroy(); fs.unlink(tmp, () => {}); resolve(false); });
+  });
+}
+
+async function syncGithubTrending() {
+  const log = await DataSyncLog.create({ source: 'github-trending', status: 'running', startedAt: new Date() });
+  const errors = [];
+  let newCount = 0, updatedCount = 0, skippedCount = 0, errorCount = 0;
+
+  const outputDir = process.env.GITHUB_TRENDING_OUTPUT_DIR
+    || path.join(__dirname, '../../output/gallery-trending');
+  const serverBase = (process.env.SERVER_PUBLIC_URL || 'http://localhost:5500').replace(/\/$/, '');
+
+  try {
+    console.log('[github-trending] Fetching prompts.json from GitHub...');
+    const res = await axios.get(RAW_GITHUB_TRENDING, {
+      timeout: 30000,
+      responseType: 'json',
+      headers: { 'User-Agent': 'pm01-server/1.0' },
+    });
+    const entries = Array.isArray(res.data) ? res.data : [];
+    console.log(`[github-trending] Got ${entries.length} entries, starting image mirror + upsert...`);
+
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+    for (const item of entries) {
+      try {
+        const id = String(item.id || '');
+        if (!id || !item.prompt) { skippedCount++; continue; }
+
+        // Mirror images — skip entries whose images all fail
+        const imageUrls = Array.isArray(item.images) ? item.images : (item.image ? [item.image] : []);
+        let localPreview = '';
+        for (let i = 0; i < imageUrls.length; i++) {
+          const src = imageUrls[i];
+          if (!src) continue;
+          const filename = `${id}_${i}.jpg`;
+          const localPath = path.join(outputDir, filename);
+          const ok = await downloadImage(src, localPath);
+          if (ok && !localPreview) {
+            localPreview = `${serverBase}/output/gallery-trending/${filename}`;
+          }
+          if (!ok) errorCount++;
+        }
+
+        const { style, subject, useCase } = mapTrendingCategories(item.categories);
+        const modelVal = item.model === 'gptimage' ? 'gptimage' : 'nanobanana';
+
+        const record = {
+          title:          buildTrendingTitle(item.prompt),
+          prompt:         item.prompt.substring(0, 10000),
+          description:    '',
+          model:          modelVal,
+          style,
+          subject,
+          useCase,
+          tags:           buildTrendingTags(item),
+          previewImage:   localPreview,
+          sourceAuthor:   (item.author_name || item.author || '').substring(0, 100),
+          sourceUrl:      item.source_url || '',
+          sourcePlatform: 'twitter',
+          dataSource:     modelVal === 'nanobanana' ? 'nano-banana-pro' : 'other',
+          sourceId:       `github-trending-${id}`,
+          isFeatured:     (item.likes || 0) >= 1000,
+          isPublic:       true,
+          isActive:       true,
+        };
+
+        const existing = await GalleryPrompt.findOne({ sourceId: record.sourceId }).lean();
+        await GalleryPrompt.findOneAndUpdate(
+          { sourceId: record.sourceId },
+          { $set: record },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        if (existing) updatedCount++; else newCount++;
+
+      } catch (err) {
+        errorCount++;
+        errors.push(`id=${item.id}: ${err.message.substring(0, 200)}`);
+      }
+    }
+
+    const totalAfter = await GalleryPrompt.countDocuments({ sourceId: /^github-trending-/ });
+    await DataSyncLog.findByIdAndUpdate(log._id, {
+      status: errorCount > 0 && newCount + updatedCount === 0 ? 'error' : errorCount > 0 ? 'partial' : 'success',
+      completedAt: new Date(), newCount, updatedCount, skippedCount, errorCount, totalAfter,
+      errorMessages: errors.slice(0, 50),
+      meta: { rawUrl: RAW_GITHUB_TRENDING, outputDir },
+    });
+    console.log(`[github-trending] Done: +${newCount} ~${updatedCount} skip${skippedCount} err${errorCount} total${totalAfter}`);
+    return { newCount, updatedCount, skippedCount, errorCount };
+
+  } catch (err) {
+    errors.push(err.message.substring(0, 500));
+    await DataSyncLog.findByIdAndUpdate(log._id, {
+      status: newCount + updatedCount > 0 ? 'partial' : 'error',
+      completedAt: new Date(), newCount, updatedCount, skippedCount,
+      errorCount: errorCount + 1, errorMessages: errors,
+    });
+    console.error(`[github-trending] Failed: ${err.message}`);
+    throw err;
+  }
+}
+
+module.exports = { syncNanoBanana, syncSeedanceGithub, syncGithubTrending };

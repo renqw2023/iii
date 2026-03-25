@@ -44,6 +44,16 @@ function startCronJobs() {
     }
   }, { timezone: 'UTC' });
 
+  // GitHub Trending Prompts: every Monday 03:30 UTC
+  cron.schedule('30 3 * * 1', async () => {
+    console.log('[cron] Starting GitHub Trending sync...');
+    try {
+      await runSync('github-trending');
+    } catch (err) {
+      console.error('[cron] GitHub Trending error:', err.message);
+    }
+  }, { timezone: 'UTC' });
+
   // Link health check: Sunday 05:00 UTC
   cron.schedule('0 5 * * 0', async () => {
     console.log('[cron] Starting link health check...');
@@ -61,7 +71,7 @@ function startCronJobs() {
     }
   }, { timezone: 'UTC' });
 
-  console.log('[cron] Scheduled jobs: NanoBanana@02:00 | Seedance-GH@02:30 | Seedance-YM@03:00 | LinkHealth@Sun05:00 (UTC)');
+  console.log('[cron] Scheduled jobs: NanoBanana@02:00 | Seedance-GH@02:30 | Seedance-YM@03:00 | GH-Trending@Mon03:30 | LinkHealth@Sun05:00 (UTC)');
 }
 
 module.exports = { startCronJobs };

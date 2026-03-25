@@ -96,6 +96,14 @@ const docsContent = {
               'Anyone who wants to generate high-quality images without a subscription lock-in',
             ],
           },
+          {
+            id: 'acknowledgements',
+            title: 'Open Source Acknowledgements',
+            paragraphs: [
+              'Portions of the Gallery prompt data are sourced from the NanoBanana Trending Prompts dataset — a curated collection of over 1,300 trending AI image prompts gathered from X/Twitter, ranked by community engagement.',
+              'This dataset is published under the Creative Commons Attribution 4.0 International license (CC BY 4.0). We gratefully thank the contributors and curators of this open dataset for making high-quality prompt data freely available to the community.',
+            ],
+          },
         ],
       },
       {
@@ -508,6 +516,14 @@ const docsContent = {
               '希望按需付费生成高质量图像、不想被订阅制锁定的用户',
             ],
           },
+          {
+            id: 'acknowledgements',
+            title: '开源致谢',
+            paragraphs: [
+              'Gallery 部分提示词数据来源于 NanoBanana Trending Prompts 数据集——一个从 X/Twitter 精心整理的 1,300+ 条热门 AI 图像提示词集合，按社区互动量排名。',
+              '该数据集以 CC BY 4.0（知识共享署名 4.0 国际）许可证发布。我们衷心感谢该开源数据集的贡献者与维护者，让高质量提示词数据向社区免费开放。',
+            ],
+          },
         ],
       },
       {
@@ -897,6 +913,14 @@ const docsContent = {
               '生成ツールの隣に参考ライブラリが必要な AI 画像クリエイター',
               'Midjourney や AI スタイルの個人ライブラリを構築しているプロンプトコレクター',
               'サブスクリプションに縛られず高品質な画像を従量制で生成したいユーザー',
+            ],
+          },
+          {
+            id: 'acknowledgements',
+            title: 'オープンソース謝辞',
+            paragraphs: [
+              'Gallery のプロンプトデータの一部は、NanoBanana Trending Prompts データセットを出典としています。これは X/Twitter からキュレーションされた 1,300 件以上のトレンド AI 画像プロンプトのコレクションで、コミュニティのエンゲージメント数でランク付けされています。',
+              'このデータセットは CC BY 4.0（クリエイティブ・コモンズ 表示 4.0 国際）ライセンスのもとで公開されています。高品質なプロンプトデータをコミュニティに無償で提供してくださった貢献者とキュレーターの皆様に深く感謝します。',
             ],
           },
         ],

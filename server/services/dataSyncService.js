@@ -6,7 +6,7 @@
  */
 
 const DataSyncLog = require('../models/DataSyncLog');
-const { syncNanoBanana, syncSeedanceGithub } = require('./githubSync');
+const { syncNanoBanana, syncSeedanceGithub, syncGithubTrending } = require('./githubSync');
 const { syncSeedanceYouMind } = require('./youmindSync');
 const { startCrawl, stopCrawl, getCrawlStatus } = require('./srefScraper');
 
@@ -15,6 +15,7 @@ const _running = {
   nanobanana: false,
   'seedance-github': false,
   'seedance-youmind': false,
+  'github-trending': false,
 };
 
 const SOURCES = {
@@ -31,6 +32,11 @@ const SOURCES = {
   'seedance-youmind': {
     label: 'Seedance (YouMind CSV)',
     fn: syncSeedanceYouMind,
+    manual: false,
+  },
+  'github-trending': {
+    label: 'Gallery (GitHub Trending)',
+    fn: syncGithubTrending,
     manual: false,
   },
   sref: {

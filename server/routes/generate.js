@@ -592,6 +592,12 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
       return res.status(504).json({ message: t(req, '生成超时，请尝试更简短的描述或切换至更快的模型', 'Generation timed out. Try a shorter prompt or switch to a faster model.') });
     }
+    // 网络层错误（DNS 失败、连接被拒、TCP 重置等）
+    const msg = error?.message || '';
+    const causeCode = error?.cause?.code || '';
+    if (msg === 'fetch failed' || causeCode === 'ECONNRESET' || causeCode === 'ENOTFOUND' || causeCode === 'ECONNREFUSED') {
+      return res.status(502).json({ message: t(req, 'AI 服务暂时不可用，请稍后重试', 'AI service temporarily unavailable. Please try again later.') });
+    }
     res.status(500).json({ message: t(req, '生成失败，请稍后重试', 'Generation failed. Please try again later.') });
   }
 });

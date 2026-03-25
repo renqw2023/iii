@@ -2,6 +2,33 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, ArrowDownToLine, Maximize2, Play, RefreshCw, RotateCcw, Share2, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
+// Expected generation durations per model (ms) — used to drive animated progress
+const MODEL_DURATION = {
+  'gemini3-pro':    180000,
+  'gemini3-flash':  120000,
+  'gemini25-flash':  60000,
+  'imagen4-pro':     60000,
+  'imagen4-fast':    40000,
+  'seedream-5-0':    90000,
+  'seedance-1-5-pro':300000,
+};
+const DEFAULT_DURATION = 90000;
+
+// Messages shown at different progress stages
+const STAGE_MESSAGES = [
+  { pct: 0,  msg: 'Generating…' },
+  { pct: 20, msg: 'Processing your prompt…' },
+  { pct: 40, msg: 'Creating artwork…' },
+  { pct: 65, msg: 'Refining details…' },
+  { pct: 80, msg: 'High demand — taking a little longer…' },
+  { pct: 92, msg: 'Almost there, hang tight…' },
+];
+const getStageMsg = (pct) => {
+  let msg = STAGE_MESSAGES[0].msg;
+  for (const s of STAGE_MESSAGES) { if (pct >= s.pct) msg = s.msg; }
+  return msg;
+};
+
 const ASPECT_RATIO_MAP = {
   '1:1': [1, 1],
   '4:3': [4, 3],
@@ -25,6 +52,27 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
   // Videos generated with audio start unmuted; plain videos start muted
   const [muted, setMuted] = useState(!job.generateAudio);
   const videoRef = useRef(null);
+
+  // Animated progress for loading state
+  const [animPct, setAnimPct] = useState(job.progress || 8);
+  const animRef = useRef(null);
+  useEffect(() => {
+    if (job.status !== 'loading') { setAnimPct(job.progress || 0); return; }
+    const duration = MODEL_DURATION[job.modelId] || DEFAULT_DURATION;
+    const startTime = Date.now();
+    const startPct = job.progress || 8;
+    const tick = () => {
+      const elapsed = Date.now() - startTime;
+      // Ease-out curve: advances quickly at first, slows near 92%
+      const raw = elapsed / duration;
+      const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2);
+      const target = startPct + (92 - startPct) * eased;
+      setAnimPct(Math.min(Math.round(target), 92));
+      animRef.current = requestAnimationFrame(tick);
+    };
+    animRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [job.status, job.modelId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ESC 关闭 lightbox
   useEffect(() => {
@@ -86,9 +134,10 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
 
   /* ── Loading ── */
   if (job.status === 'loading') {
-    const progress = job.progress || 0;
+    const progress = job.status === 'success' ? 100 : animPct;
     const circumference = 2 * Math.PI * 45;
     const dashArray = `${Math.max(progress, 2) * (circumference / 100)} ${circumference}`;
+    const stageMsg = getStageMsg(progress);
 
     return (
       <div style={cardStyle}>
@@ -99,6 +148,17 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
             backgroundSize: '200% 200%',
             animation: 'shimmer 2s ease infinite',
           }}>
+            {/* Model name badge */}
+            {job.modelName && (
+              <span style={{
+                position: 'absolute', top: 10, left: 10,
+                fontSize: 10, fontWeight: 600, color: '#6b7280',
+                backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 5, padding: '2px 7px',
+              }}>
+                {job.modelName}
+              </span>
+            )}
+
             <div style={{ position: 'relative', width: 56, height: 56, marginBottom: 10 }}>
               <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%' }} fill="none">
                 <circle cx="50" cy="50" r="45" stroke="rgba(0,0,0,0.08)" strokeWidth="3" />
@@ -108,7 +168,7 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
                   strokeLinecap="round"
                   strokeDasharray={dashArray}
                   transform="rotate(-90 50 50)"
-                  style={{ transition: 'stroke-dasharray 0.7s ease' }}
+                  style={{ transition: 'stroke-dasharray 0.4s ease' }}
                 />
               </svg>
               <span style={{
@@ -119,11 +179,28 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
                 {progress}%
               </span>
             </div>
+
+            {/* Stage message with animated dots */}
             <p style={{ fontSize: 12, color: '#6b7280', margin: 0, textAlign: 'center', padding: '0 12px' }}>
-              {progress >= 80 ? '高峰时段，需要更长时间…' : 'Generating…'}
+              {stageMsg}
             </p>
+
+            {/* Animated ticker dots */}
+            <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+              {[0, 1, 2].map(i => (
+                <span
+                  key={i}
+                  style={{
+                    width: 5, height: 5, borderRadius: '50%',
+                    backgroundColor: '#9ca3af',
+                    animation: `pulseDot 1.4s ease-in-out ${i * 0.2}s infinite`,
+                  }}
+                />
+              ))}
+            </div>
+
             <p style={{
-              fontSize: 11, color: '#9ca3af', margin: '6px 12px 0',
+              fontSize: 11, color: '#9ca3af', margin: '10px 12px 0',
               textAlign: 'center',
               overflow: 'hidden', display: '-webkit-box',
               WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',

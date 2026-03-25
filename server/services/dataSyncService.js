@@ -20,28 +20,33 @@ const _running = {
 
 const SOURCES = {
   nanobanana: {
-    label: 'Gallery (NanoBanana)',
+    label: 'Gallery · NanaBanana Pro',
+    description: 'YouMind API → GalleryPrompt · model:nanobanana · 增量 upsert · 每日自动',
     fn: syncNanoBanana,
     manual: false,
   },
   'seedance-github': {
-    label: 'Seedance (GitHub)',
+    label: 'Seedance · GitHub README',
+    description: 'jau123 仓库 README 解析 → SeedancePrompt · 增量 upsert · 每日自动',
     fn: syncSeedanceGithub,
     manual: false,
   },
   'seedance-youmind': {
-    label: 'Seedance (YouMind CSV)',
+    label: 'Seedance · YouMind CSV',
+    description: 'YouMind CSV 导出 → SeedancePrompt · 字段级别合并（保留更长 prompt）· 每日自动',
     fn: syncSeedanceYouMind,
     manual: false,
   },
   'github-trending': {
-    label: 'Gallery (GitHub Trending)',
+    label: 'Gallery · GitHub Trending',
+    description: 'jau123/nanobanana-trending-prompts → GalleryPrompt · model:nanobanana/gptimage 按 JSON 自动区分 · 每图仅存首张预览 · 增量 upsert · 每日自动',
     fn: syncGithubTrending,
     manual: false,
   },
   sref: {
-    label: 'Explore (Sref)',
-    manual: true, // admin-only manual trigger
+    label: 'Explore · Sref (MJ)',
+    description: 'promptsref.com 爬虫 → SrefStyle · Midjourney --sref 风格码 · 手动触发 · 增量模式遇连续已知页自动停止',
+    manual: true,
   },
 };
 
@@ -87,6 +92,7 @@ async function getStatus() {
   return latestLogs.map(({ source, label, log }) => ({
     source,
     label,
+    description: SOURCES[source].description || '',
     manual: SOURCES[source].manual || false,
     running: source === 'sref' ? srefStatus.running : (_running[source] || false),
     lastLog: log ? {

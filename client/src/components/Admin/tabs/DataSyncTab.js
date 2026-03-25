@@ -142,9 +142,15 @@ function SourceCard({ src, srefProgress, onTrigger, onStop }) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{src.label}</p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-            {isSref ? (srefMode === 'incremental' ? 'Incremental · stops when no new entries' : 'Full scan · all 34 pages · ~8h') : 'Auto-synced daily'}
-          </p>
+          {isSref ? (
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+              {srefMode === 'incremental' ? 'Incremental · stops when no new entries' : 'Full scan · all 34 pages · ~8h'}
+            </p>
+          ) : src.description ? (
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+              {src.description}
+            </p>
+          ) : null}
         </div>
         <StatusBadge status={log?.status} running={isRunning} />
       </div>

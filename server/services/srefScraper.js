@@ -302,7 +302,7 @@ async function startCrawl(opts = {}) {
   } = opts;
 
   const outputDir = process.env.SREF_OUTPUT_DIR
-    || path.join(__dirname, '../../../output');
+    || path.join(__dirname, '../../output'); // server/services/../../output = project_root/output
 
   // Create log entry
   const log = await DataSyncLog.create({

@@ -406,7 +406,7 @@ async function syncNanoBanana() {
           })(),
           previewImage,
           sourceAuthor: item.author?.name || '',
-          sourceUrl: 'https://youmind.com/nano-banana-pro-prompts',
+          sourceUrl: item.sourceLink || item.author?.link || `https://youmind.com/zh-CN/nano-banana-pro-prompts?id=${id}`,
           sourcePlatform: item.sourcePlatform || 'twitter',
           dataSource: 'nano-banana-pro',
           sourceId: `nanobanana-ym-${id}`,

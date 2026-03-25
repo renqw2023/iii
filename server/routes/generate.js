@@ -252,7 +252,11 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
 
     const filename = `gen_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.png`;
     const filePath = path.join(genDir, filename);
-    const imageUrl = `/uploads/generated/${filename}`;
+
+    // 构建绝对 URL（生产环境 Vercel 前端无法访问相对路径）
+    // 优先使用 SERVER_PUBLIC_URL 环境变量；回退到请求 host（本地开发适用）
+    const serverBase = (process.env.SERVER_PUBLIC_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+    const imageUrl = `${serverBase}/uploads/generated/${filename}`;
 
     // ── Gemini 3 Pro / 3.1 Flash（generateContent，IMAGE 输出）──
     if (modelId === 'gemini3-pro' || modelId === 'gemini3-flash' || modelId === 'gemini25-flash') {
@@ -524,7 +528,7 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
         if (!cdnRes.ok) throw new Error(`4K download failed: ${cdnRes.status}`);
         fs.writeFileSync(filePath4k, Buffer.from(await cdnRes.arrayBuffer()));
 
-        finalImageUrl = `/uploads/generated/${filename4k}`;
+        finalImageUrl = `${serverBase}/uploads/generated/${filename4k}`;
       } catch (upscaleErr) {
         console.error('Upscale failed, falling back to original:', upscaleErr.message);
         resolution = '2K';

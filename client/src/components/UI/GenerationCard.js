@@ -260,7 +260,13 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
 
   /* ── Success ── */
   const isVideo   = job.mediaType === 'video';
-  const imageUrl  = job.result?.imageUrl || job.imageUrl;
+  // Resolve relative URLs → absolute (handles old DB records stored before SERVER_PUBLIC_URL fix)
+  const _resolveUrl = (url) => {
+    if (!url || url.startsWith('http')) return url;
+    const base = (process.env.REACT_APP_API_URL || '/api').replace(/\/api\/?$/, '');
+    return base + url;
+  };
+  const imageUrl  = _resolveUrl(job.result?.imageUrl || job.imageUrl);
   const videoUrl  = job.result?.videoUrl || job.videoUrl;
   return (
     <div

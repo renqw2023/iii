@@ -16,7 +16,6 @@ import Layout from './components/Layout/Layout';
 import HomeLayout from './components/Layout/HomeLayout';
 import DocsLayout from './components/Layout/DocsLayout';
 import Home from './pages/Home';
-import Login from './pages/Login';
 import Register from './pages/Register';
 import EmailVerification from './pages/EmailVerification';
 import ForgotPassword from './pages/ForgotPassword';
@@ -58,6 +57,13 @@ const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
 const GlobalLoginModal = () => {
   const { isLoginModalOpen, closeLoginModal } = useAuth();
   return <LoginModal isOpen={isLoginModalOpen} onClose={closeLoginModal} />;
+};
+
+// /login 重定向组件：跳回首页并打开 LoginModal
+const LoginRedirect = () => {
+  const { openLoginModal } = useAuth();
+  useEffect(() => { openLoginModal(); }, [openLoginModal]);
+  return <Navigate to="/" replace />;
 };
 
 // 全局 SearchModal 挂载
@@ -105,7 +111,7 @@ function App() {
                       {/* 首页 + 认证页 — 无全局侧边栏，顶部 Header */}
                       <Route path="/" element={<HomeLayout />}>
                         <Route index element={<Home />} />
-                        <Route path="login" element={<Login />} />
+                        <Route path="login" element={<LoginRedirect />} />
                         <Route path="register" element={<Register />} />
                         <Route path="verify-email" element={<EmailVerification />} />
                         <Route path="forgot-password" element={<ForgotPassword />} />

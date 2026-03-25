@@ -33,6 +33,7 @@ const authReducer = (state, action) => {
       return {
         ...state,
         isAuthenticated: false,
+        loading: false,
         user: null,
         token: null,
         error: null
@@ -53,7 +54,8 @@ const initialState = {
   isAuthenticated: false,
   user: null,
   token: localStorage.getItem('token'),
-  loading: false,
+  // 有 token 时初始为 true，等待 checkAuthStatus 验证完成再放行路由
+  loading: !!localStorage.getItem('token'),
   error: null
 };
 

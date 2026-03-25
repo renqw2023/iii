@@ -7,7 +7,7 @@ import MeshBackground from '../UI/MeshBackground';
 const HomeLayout = () => {
   return (
     <div className="relative isolate min-h-screen">
-      <MeshBackground />
+      <MeshBackground enabled />
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <Header />

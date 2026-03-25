@@ -1,263 +1,73 @@
 /* ==========================================================
-   MeshBackground - dynamic mesh gradient background
+   MeshBackground — MeiGen.ai 精确复刻
+   白色底 + 2光球浮动 + mix-blend-mode: normal
+   keyframes 为 MeiGen 实测精确值
    ========================================================== */
 
+/* ── 光球1：正向浮动路径，16s ── */
 @keyframes mesh-orbit {
-    0% {
-        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-    }
-
-    25% {
-        transform: translate3d(-8%, 5%, 0) rotate(5deg) scale(1.06);
-    }
-
-    50% {
-        transform: translate3d(6%, -8%, 0) rotate(-4deg) scale(0.94);
-    }
-
-    75% {
-        transform: translate3d(-4%, 6%, 0) rotate(3deg) scale(1.03);
-    }
-
-    100% {
-        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-    }
+    0%   { transform: translate(0) rotate(0deg) scale(1); }
+    10%  { transform: translate(8%, -12%) rotate(2deg) scale(1.02); }
+    20%  { transform: translate(20%, -8%) rotate(4deg) scale(1.05); }
+    30%  { transform: translate(25%, 5%) rotate(3deg) scale(1.03); }
+    40%  { transform: translate(15%, 18%) rotate(0deg) scale(0.98); }
+    50%  { transform: translate(-5%, 22%) rotate(-3deg) scale(0.95); }
+    60%  { transform: translate(-18%, 12%) rotate(-5deg) scale(0.97); }
+    70%  { transform: translate(-22%, -5%) rotate(-3deg) scale(1.02); }
+    80%  { transform: translate(-12%, -15%) rotate(0deg) scale(1.04); }
+    90%  { transform: translate(2%, -18%) rotate(2deg) scale(1.01); }
+    100% { transform: translate(0) rotate(0deg) scale(1); }
 }
 
+/* ── 光球2：反向浮动路径，20s ── */
 @keyframes mesh-orbit-reverse {
-    0% {
-        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-    }
-
-    25% {
-        transform: translate3d(7%, -4%, 0) rotate(-4deg) scale(0.95);
-    }
-
-    50% {
-        transform: translate3d(-6%, 8%, 0) rotate(5deg) scale(1.07);
-    }
-
-    75% {
-        transform: translate3d(4%, -7%, 0) rotate(-3deg) scale(0.97);
-    }
-
-    100% {
-        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-    }
+    0%   { transform: translate(0) rotate(0deg) scale(1); }
+    12%  { transform: translate(-10%, -8%) rotate(-2deg) scale(0.97); }
+    25%  { transform: translate(-20%, 5%) rotate(-4deg) scale(0.94); }
+    37%  { transform: translate(-12%, 18%) rotate(-2deg) scale(0.98); }
+    50%  { transform: translate(8%, 20%) rotate(2deg) scale(1.03); }
+    62%  { transform: translate(22%, 8%) rotate(4deg) scale(1.06); }
+    75%  { transform: translate(18%, -10%) rotate(3deg) scale(1.02); }
+    87%  { transform: translate(5%, -12%) rotate(1deg) scale(0.99); }
+    100% { transform: translate(0) rotate(0deg) scale(1); }
 }
 
-@keyframes mesh-pulse {
-    0% {
-        transform: translate3d(0, 0, 0) scale(1);
-        opacity: 0.42;
-    }
-
-    50% {
-        transform: translate3d(3%, -4%, 0) scale(1.12);
-        opacity: 0.60;
-    }
-
-    100% {
-        transform: translate3d(0, 0, 0) scale(1);
-        opacity: 0.42;
-    }
-}
-
-@keyframes mesh-veil-shift {
-    0% {
-        transform: translate3d(0, 0, 0) scale(1);
-    }
-
-    50% {
-        transform: translate3d(-3%, 2%, 0) scale(1.06);
-    }
-
-    100% {
-        transform: translate3d(0, 0, 0) scale(1);
-    }
-}
-
-@keyframes mesh-wave-drift {
-    0% {
-        background-position: 0% 0%, 0% 0%, 0% 0%;
-        transform: translate3d(0, 0, 0) scale(1);
-    }
-
-    50% {
-        background-position: 100% 40%, 20% 100%, 80% 20%;
-        transform: translate3d(1.5%, -1%, 0) scale(1.04);
-    }
-
-    100% {
-        background-position: 0% 0%, 0% 0%, 0% 0%;
-        transform: translate3d(0, 0, 0) scale(1);
-    }
-}
-
-@keyframes mesh-shimmer {
-    0% {
-        opacity: 0.22;
-        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-    }
-
-    50% {
-        opacity: 0.42;
-        transform: translate3d(-2%, 2%, 0) rotate(8deg) scale(1.08);
-    }
-
-    100% {
-        opacity: 0.22;
-        transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-    }
-}
-
+/* ── 容器 ── */
 .mesh-bg-container {
     position: fixed;
     inset: 0;
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
-    isolation: isolate;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.6s ease;
 }
 
 .mesh-bg-container--enabled {
     opacity: 1;
 }
 
-.mesh-bg-veil {
-    position: absolute;
-    inset: -12%;
-    opacity: 0.95;
-    background:
-        radial-gradient(circle at 18% 18%, rgba(56, 189, 248, 0.18) 0%, transparent 34%),
-        radial-gradient(circle at 82% 16%, rgba(168, 85, 247, 0.18) 0%, transparent 32%),
-        radial-gradient(circle at 72% 72%, rgba(244, 114, 182, 0.16) 0%, transparent 30%),
-        radial-gradient(circle at 28% 78%, rgba(251, 191, 36, 0.12) 0%, transparent 28%);
-    filter: blur(80px);
-    animation: mesh-veil-shift 18s ease-in-out infinite;
-}
-
-.mesh-bg-wave {
-    position: absolute;
-    inset: -20%;
-    opacity: 0.8;
-    background:
-        radial-gradient(28% 24% at 18% 24%, rgba(59, 130, 246, 0.34) 0%, transparent 68%),
-        radial-gradient(24% 22% at 78% 18%, rgba(168, 85, 247, 0.30) 0%, transparent 70%),
-        radial-gradient(26% 24% at 58% 78%, rgba(244, 114, 182, 0.28) 0%, transparent 68%);
-    filter: blur(22px);
-    animation: mesh-wave-drift 8s ease-in-out infinite;
-}
-
-.mesh-bg-wave::after {
-    content: "";
-    position: absolute;
-    inset: 6%;
-    background:
-        radial-gradient(18% 18% at 24% 30%, rgba(255, 255, 255, 0.16) 0%, transparent 72%),
-        radial-gradient(16% 16% at 74% 26%, rgba(96, 165, 250, 0.24) 0%, transparent 72%),
-        radial-gradient(16% 16% at 60% 68%, rgba(251, 146, 60, 0.20) 0%, transparent 72%);
-    filter: blur(14px);
-    animation: mesh-shimmer 7s ease-in-out infinite;
-}
-
+/* ── 光球基础样式（颜色/inset/filter 由 inline style 传入） ── */
 .mesh-bg-orb {
     position: absolute;
-    border-radius: 50%;
-    will-change: transform;
-    mix-blend-mode: screen;
+    mix-blend-mode: normal;
+    will-change: filter;
 }
 
+/* ── 光球1：mesh-orbit 16s ── */
 .mesh-bg-orb--primary {
-    width: 132vmax;
-    height: 132vmax;
-    top: -48vmax;
-    left: -40vmax;
-    filter: blur(42px);
-    opacity: 0.84;
-    animation: mesh-orbit 10s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    background:
-        radial-gradient(circle at 12% 18%, rgba(41, 130, 255, 0.62) 0%, transparent 24%),
-        radial-gradient(circle at 88% 24%, rgba(184, 112, 255, 0.58) 0%, transparent 26%),
-        radial-gradient(circle at 34% 68%, rgba(255, 166, 77, 0.50) 0%, transparent 24%),
-        radial-gradient(circle at 54% 50%, rgba(247, 247, 247, 0.34) 0%, transparent 30%);
+    animation: mesh-orbit 16s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* ── 光球2：mesh-orbit-reverse 20s ── */
 .mesh-bg-orb--secondary {
-    width: 124vmax;
-    height: 124vmax;
-    top: -26vmax;
-    right: -34vmax;
-    filter: blur(52px);
-    opacity: 0.68;
-    animation: mesh-orbit-reverse 13s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    background:
-        radial-gradient(circle at 80% 10%, rgba(76, 166, 255, 0.34) 0%, transparent 24%),
-        radial-gradient(circle at 20% 90%, rgba(216, 148, 249, 0.30) 0%, transparent 24%),
-        radial-gradient(circle at 64% 54%, rgba(255, 102, 146, 0.24) 0%, transparent 20%);
+    animation: mesh-orbit-reverse 20s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.mesh-bg-orb--tertiary {
-    width: 92vmax;
-    height: 92vmax;
-    left: 18%;
-    bottom: -42vmax;
-    filter: blur(56px);
-    opacity: 0.56;
-    animation: mesh-pulse 9s ease-in-out infinite;
-    background:
-        radial-gradient(circle at 50% 42%, rgba(96, 165, 250, 0.38) 0%, transparent 24%),
-        radial-gradient(circle at 38% 70%, rgba(244, 114, 182, 0.32) 0%, transparent 22%),
-        radial-gradient(circle at 68% 66%, rgba(250, 204, 21, 0.26) 0%, transparent 20%);
-}
-
-:root .mesh-bg-orb--primary {
-    opacity: 0.72;
-}
-
-:root .mesh-bg-orb--secondary {
-    opacity: 0.56;
-}
-
-:root .mesh-bg-orb--tertiary {
-    opacity: 0.46;
-}
-
-:root .mesh-bg-veil {
-    opacity: 0.82;
-}
-
-:root .mesh-bg-wave {
-    opacity: 0.86;
-}
-
-.dark .mesh-bg-orb--primary {
-    opacity: 0.78;
-}
-
-.dark .mesh-bg-orb--secondary {
-    opacity: 0.62;
-}
-
-.dark .mesh-bg-orb--tertiary {
-    opacity: 0.50;
-}
-
-.dark .mesh-bg-veil {
-    opacity: 1;
-}
-
-.dark .mesh-bg-wave {
-    opacity: 1;
-}
-
+/* ── 无障碍：减少动效模式下放慢速度 ── */
 @media (prefers-reduced-motion: reduce) {
-    .mesh-bg-veil,
-    .mesh-bg-wave,
     .mesh-bg-orb {
-        animation-duration: 28s !important;
+        animation-duration: 60s !important;
         animation-timing-function: linear !important;
     }
 }

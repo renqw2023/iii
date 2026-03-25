@@ -34,7 +34,7 @@ const Layout = () => {
   return (
     <div className="flex min-h-screen" style={{ position: 'relative' }}>
       {/* Dynamic mesh gradient background */}
-      <MeshBackground />
+      <MeshBackground enabled />
 
       {/* Desktop sidebar: sticky, hidden on mobile */}
       <div

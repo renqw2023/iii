@@ -14,8 +14,8 @@
 .gallery-stage {
   width: 100%;
   background: var(--stage-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(48px);
+  -webkit-backdrop-filter: blur(48px);
   border-radius: 20px;
   border: 1px solid var(--stage-border);
   box-shadow: var(--stage-shadow);

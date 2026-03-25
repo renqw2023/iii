@@ -252,8 +252,10 @@ const Sidebar = ({ onCreditsClick, onInviteClick }) => {
       className="flex flex-col h-full overflow-visible"
       style={{
         width: collapsed ? 64 : 264,
-        background: 'rgba(255, 255, 255, 0.5)',
-        borderRight: '1px solid var(--border-color)',
+        background: 'rgba(255, 255, 255, 0.80)',
+        backdropFilter: 'blur(48px)',
+        WebkitBackdropFilter: 'blur(48px)',
+        borderRight: '1px solid rgb(229, 231, 235)',
         transition: 'width 0.25s ease',
       }}
     >

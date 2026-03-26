@@ -353,16 +353,16 @@ async function syncNanoBanana() {
       for (let attempt = 1; attempt <= 5; attempt++) {
         try {
           const res = await axios.post(YOUMIND_NB_API_URL,
-            { model: 'nano-banana-pro', page, limit: 18, locale: 'zh-CN', campaign: 'nano-banana-pro-prompts', filterMode: 'imageCategories' },
+            { model: 'nano-banana-pro', page, limit: 18, locale: 'en-US', campaign: 'nano-banana-pro-prompts', filterMode: 'imageCategories' },
             {
               timeout: 60000,
               headers: {
                 'Content-Type': 'application/json',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
                 'Origin': 'https://youmind.com',
-                'Referer': 'https://youmind.com/zh-CN/nano-banana-pro-prompts',
+                'Referer': 'https://youmind.com/en-US/nano-banana-pro-prompts',
                 'Accept': '*/*',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Accept-Language': 'en-US,en;q=0.9',
               },
             }
           );
@@ -406,7 +406,7 @@ async function syncNanoBanana() {
           })(),
           previewImage,
           sourceAuthor: item.author?.name || '',
-          sourceUrl: item.sourceLink || item.author?.link || `https://youmind.com/zh-CN/nano-banana-pro-prompts?id=${id}`,
+          sourceUrl: item.sourceLink || item.author?.link || `https://youmind.com/en-US/nano-banana-pro-prompts?id=${id}`,
           sourcePlatform: item.sourcePlatform || 'twitter',
           dataSource: 'nano-banana-pro',
           sourceId: `nanobanana-ym-${id}`,

@@ -87,15 +87,7 @@ const SEOHead = ({
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:locale" content={currentLang} />
-      
-      {/* 添加其他语言的og:locale:alternate */}
-      {supportedLanguages
-        .filter(lang => lang !== currentLang)
-        .map(lang => (
-          <meta key={lang} property="og:locale:alternate" content={lang} />
-        ))
-      }
-      
+
       {/* Twitter Card标签 */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />

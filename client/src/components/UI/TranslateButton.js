@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Languages, Loader2 } from 'lucide-react';
-import { translateToZh } from '../../services/translateApi';
+import { translateToEn } from '../../services/translateApi';
 import toast from 'react-hot-toast';
 
 /**
- * TranslateButton
+ * TranslateButton — translates Chinese source text to English for EU/US users.
  * Props:
- *   text       - 原始英文文本
- *   onTranslated(translated) - 翻译完成回调（可选）
+ *   text                     - source text (may be Chinese)
+ *   onTranslated(translated) - callback with translated text, or null to restore original
  */
 const TranslateButton = ({ text, onTranslated }) => {
   const [loading, setLoading] = useState(false);
@@ -16,13 +16,11 @@ const TranslateButton = ({ text, onTranslated }) => {
 
   const handleClick = async () => {
     if (showTranslated) {
-      // 切换回原文
       setShowTranslated(false);
       onTranslated?.(null);
       return;
     }
     if (translated) {
-      // 已有译文，直接显示
       setShowTranslated(true);
       onTranslated?.(translated);
       return;
@@ -30,12 +28,12 @@ const TranslateButton = ({ text, onTranslated }) => {
     if (!text?.trim()) return;
     setLoading(true);
     try {
-      const result = await translateToZh(text);
+      const result = await translateToEn(text);
       setTranslated(result);
       setShowTranslated(true);
       onTranslated?.(result);
     } catch {
-      toast.error('翻译失败，请稍后重试');
+      toast.error('Translation failed, please try again');
     } finally {
       setLoading(false);
     }
@@ -52,10 +50,10 @@ const TranslateButton = ({ text, onTranslated }) => {
         border: '1px solid var(--border-color)',
         opacity: loading ? 0.7 : 1,
       }}
-      title={showTranslated ? '显示原文' : '翻译为中文'}
+      title={showTranslated ? 'Show original' : 'Translate to English'}
     >
       {loading ? <Loader2 size={12} className="animate-spin" /> : <Languages size={12} />}
-      {showTranslated ? '原文' : '翻译'}
+      {showTranslated ? 'Original' : 'Translate'}
     </button>
   );
 };

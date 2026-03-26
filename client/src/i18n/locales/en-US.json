@@ -153,7 +153,23 @@
       "forgot": "Forgot password?",
       "submit": "Sign In",
       "noAccount": "Don't have an account?",
-      "signUp": "Sign up now"
+      "signUp": "Sign up",
+      "or": "or",
+      "tabPassword": "Password",
+      "tabMagic": "Magic Link",
+      "emailAndPasswordRequired": "Please enter your email and password",
+      "googleFailed": "Google sign-in failed",
+      "googleCancelled": "Google sign-in was cancelled or failed, please try again",
+      "magicEmailRequired": "Please enter your email address",
+      "sendFailed": "Send failed, please try again",
+      "signInWithEmail": "Sign in with Email",
+      "signingIn": "Signing in…",
+      "magicSent": "Email sent!",
+      "magicSentDesc": "Check {{email}} for a login link. The link expires in 15 minutes.",
+      "resend": "Resend",
+      "magicDesc": "Enter your email and we'll send you a one-time login link. No password needed.",
+      "sending": "Sending…",
+      "sendLoginLink": "Send Login Link"
     },
     "register": {
       "title": "Register",
@@ -191,6 +207,23 @@
       "message": "We have sent a verification link to your email",
       "resend": "Resend",
       "success": "Email verified successfully"
+    },
+    "toast": {
+      "loginSuccess": "Welcome back!",
+      "loginFailed": "Login failed, please try again",
+      "invalidCredentials": "Incorrect email or password, please check and retry",
+      "accountLocked": "Account has been locked, please contact support",
+      "emailNotVerified": "Email not verified, please verify your email first",
+      "resendVerification": "Resend verification email",
+      "networkError": "Network connection failed, please check and retry",
+      "retry": "Retry",
+      "registerSuccess": "Registration successful!",
+      "registerSuccessVerify": "Registration successful, please check your email for the verification code",
+      "registerFailed": "Registration failed",
+      "logoutSuccess": "Signed out",
+      "googleLoginSuccess": "Signed in with Google!",
+      "googleLoginFailed": "Google sign-in failed",
+      "verifySuccess": "Email verified, welcome!"
     }
   },
   "post": {
@@ -717,7 +750,12 @@
     "login": {
       "text": "Already have an account?",
       "link": "Sign In Now"
-    }
+    },
+    "googleNote": "Google sign-up inherits your invite code. Invite rewards unlock after your first generation.",
+    "orEmail": "or sign up with email",
+    "inviteCode": "Invite Code",
+    "inviteCodeDesc": "optional — you get 200 credits, they get 50 after your first generation",
+    "inviteCodePlaceholder": "8-char code (e.g. AB3D5E7F)"
   },
   "emailVerification": {
     "title": "Verify Email",
@@ -756,25 +794,6 @@
       "create": "Create Work",
       "dashboard": "Dashboard",
       "health": "System Status"
-    }
-  },
-  "auth": {
-    "toast": {
-      "loginSuccess": "Welcome back!",
-      "loginFailed": "Login failed, please try again",
-      "invalidCredentials": "Incorrect email or password, please check and retry",
-      "accountLocked": "Account has been locked, please contact support",
-      "emailNotVerified": "Email not verified, please verify your email first",
-      "resendVerification": "Resend verification email",
-      "networkError": "Network connection failed, please check and retry",
-      "retry": "Retry",
-      "registerSuccess": "Registration successful!",
-      "registerSuccessVerify": "Registration successful, please check your email for the verification code",
-      "registerFailed": "Registration failed",
-      "logoutSuccess": "Signed out",
-      "googleLoginSuccess": "Signed in with Google!",
-      "googleLoginFailed": "Google sign-in failed",
-      "verifySuccess": "Email verified, welcome!"
     }
   },
   "img2prompt": {

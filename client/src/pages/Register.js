@@ -364,7 +364,7 @@ const FireworkCore = () => (
 ═══════════════════════════════════════════════════════════ */
 const Register = () => {
   useRegisterSEO();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   /* ── Form state (unchanged) ── */
   const [formData, setFormData] = useState({
@@ -741,18 +741,18 @@ const Register = () => {
                 theme="outline"
                 size="large"
                 text="signup_with"
-                locale="en-US"
+                locale={i18n.language === 'zh-CN' ? 'zh-CN' : 'en-US'}
                 width="280"
               />
               <p style={{ marginTop: 10, fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                Google sign-up inherits your invite code. Invite rewards unlock after your first generation.
+                {t('register.googleNote')}
               </p>
             </div>
 
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>or sign up with email</span>
+              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{t('register.orEmail')}</span>
               <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
             </div>
 
@@ -922,9 +922,9 @@ const Register = () => {
               {/* Invite code */}
               <div>
                 <label htmlFor="inviteCode" className="block text-sm font-medium text-slate-700 mb-2">
-                  Invite Code{' '}
+                  {t('register.inviteCode')}{' '}
                   <span className="text-slate-400 font-normal">
-                    (optional — you get 200 credits, they get 50 after your first generation)
+                    ({t('register.inviteCodeDesc')})
                   </span>
                 </label>
                 <div className="relative">
@@ -936,7 +936,7 @@ const Register = () => {
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     className="input pl-10 uppercase tracking-widest"
-                    placeholder="8-char code (e.g. AB3D5E7F)"
+                    placeholder={t('register.inviteCodePlaceholder')}
                     maxLength={8}
                   />
                 </div>

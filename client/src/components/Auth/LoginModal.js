@@ -4,11 +4,13 @@ import { GoogleLogin } from '@react-oauth/google';
 import { X, Mail, Lock, Eye, EyeOff, LogIn, Zap, Send, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 const LoginModal = ({ isOpen, onClose }) => {
+  const { t, i18n } = useTranslation();
   const { login, loginWithGoogle, loading } = useAuth();
   const [tab, setTab] = useState('password'); // 'password' | 'magic'
   const [form, setForm] = useState({ email: '', password: '' });
@@ -50,14 +52,14 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password) {
-      setError('Please enter your email and password');
+      setError(t('auth.login.emailAndPasswordRequired'));
       return;
     }
     const result = await login({ email: form.email, password: form.password });
     if (result.success) {
       onClose();
     } else {
-      setError(result.message || 'Login failed, please try again');
+      setError(result.message || t('auth.loginFailed'));
     }
   };
 
@@ -70,24 +72,24 @@ const LoginModal = ({ isOpen, onClose }) => {
     if (result.success) {
       onClose();
     } else {
-      setError(result.message || 'Google sign-in failed');
+      setError(result.message || t('auth.login.googleFailed'));
     }
   };
 
   const handleGoogleError = () => {
-    setError('Google sign-in was cancelled or failed, please try again');
+    setError(t('auth.login.googleCancelled'));
   };
 
   const handleMagicLinkSend = async (e) => {
     e.preventDefault();
-    if (!magicEmail) { setError('Please enter your email address'); return; }
+    if (!magicEmail) { setError(t('auth.login.magicEmailRequired')); return; }
     setError('');
     setMagicLoading(true);
     try {
       await axios.post('/api/auth/magic-link/request', { email: magicEmail });
       setMagicSent(true);
     } catch (err) {
-      setError(err.response?.data?.message || 'Send failed, please try again');
+      setError(err.response?.data?.message || t('auth.login.sendFailed'));
     } finally {
       setMagicLoading(false);
     }
@@ -129,8 +131,8 @@ const LoginModal = ({ isOpen, onClose }) => {
             </button>
 
             <div className="mb-5 text-center">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Welcome back</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Sign in to your account</p>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{t('auth.welcomeBack')}</h2>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('auth.login.subtitle')}</p>
             </div>
 
             {/* Google Login */}
@@ -143,13 +145,13 @@ const LoginModal = ({ isOpen, onClose }) => {
                     theme="outline"
                     size="large"
                     text="continue_with"
-                    locale="en-US"
+                    locale={i18n.language === 'zh-CN' ? 'zh-CN' : 'en-US'}
                     width="280"
                   />
                 </div>
                 <div className="flex items-center gap-3 my-4">
                   <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>or</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('auth.login.or')}</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
                 </div>
               </>
@@ -158,8 +160,8 @@ const LoginModal = ({ isOpen, onClose }) => {
             {/* Tabs */}
             <div className="flex rounded-xl overflow-hidden mb-4" style={{ border: '1px solid var(--border-color)' }}>
               {[
-                { id: 'password', label: 'Password', icon: Lock },
-                { id: 'magic', label: 'Magic Link', icon: Zap },
+                { id: 'password', label: t('auth.login.tabPassword'), icon: Lock },
+                { id: 'magic', label: t('auth.login.tabMagic'), icon: Zap },
               ].map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -184,7 +186,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                   <input
                     type="email"
                     name="email"
-                    placeholder="Email address"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={form.email}
                     onChange={handleChange}
                     autoComplete="email"
@@ -197,7 +199,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
-                    placeholder="Password"
+                    placeholder={t('auth.passwordPlaceholder')}
                     value={form.password}
                     onChange={handleChange}
                     autoComplete="current-password"
@@ -224,7 +226,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                   style={{ backgroundColor: 'var(--accent-primary)', color: '#fff', opacity: loading ? 0.7 : 1 }}
                 >
                   <LogIn size={15} />
-                  {loading ? 'Signing in…' : 'Sign in with Email'}
+                  {loading ? t('auth.login.signingIn') : t('auth.login.signInWithEmail')}
                 </button>
               </form>
             )}
@@ -235,28 +237,28 @@ const LoginModal = ({ isOpen, onClose }) => {
                 {magicSent ? (
                   <div className="text-center py-4">
                     <CheckCircle size={40} className="mx-auto mb-3" style={{ color: 'var(--accent-primary)' }} />
-                    <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Email sent!</p>
+                    <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('auth.login.magicSent')}</p>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      Check <strong>{magicEmail}</strong> for a login link. The link expires in 15 minutes.
+                      {t('auth.login.magicSentDesc', { email: magicEmail })}
                     </p>
                     <button
                       onClick={() => setMagicSent(false)}
                       className="mt-4 text-xs underline"
                       style={{ color: 'var(--text-tertiary)' }}
                     >
-                      Resend
+                      {t('auth.login.resend')}
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleMagicLinkSend} className="space-y-3">
                     <p className="text-xs text-center mb-2" style={{ color: 'var(--text-secondary)' }}>
-                      Enter your email and we'll send you a one-time login link. No password needed.
+                      {t('auth.login.magicDesc')}
                     </p>
                     <div className="relative">
                       <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
                       <input
                         type="email"
-                        placeholder="Email address"
+                        placeholder={t('auth.emailPlaceholder')}
                         value={magicEmail}
                         onChange={(e) => { setMagicEmail(e.target.value); setError(''); }}
                         autoComplete="email"
@@ -272,7 +274,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                       style={{ backgroundColor: 'var(--accent-primary)', color: '#fff', opacity: magicLoading ? 0.7 : 1 }}
                     >
                       <Send size={15} />
-                      {magicLoading ? 'Sending…' : 'Send Login Link'}
+                      {magicLoading ? t('auth.login.sending') : t('auth.login.sendLoginLink')}
                     </button>
                   </form>
                 )}
@@ -282,13 +284,13 @@ const LoginModal = ({ isOpen, onClose }) => {
             <div className="mt-4 text-center space-y-1">
               {tab === 'password' && (
                 <Link to="/forgot-password" onClick={onClose} className="text-xs block transition-colors" style={{ color: 'var(--text-tertiary)' }}>
-                  Forgot password?
+                  {t('auth.login.forgot')}
                 </Link>
               )}
               <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                Don't have an account?{' '}
+                {t('auth.login.noAccount')}{' '}
                 <Link to="/register" onClick={onClose} style={{ color: 'var(--accent-primary)' }}>
-                  Sign up
+                  {t('auth.login.signUp')}
                 </Link>
               </p>
             </div>

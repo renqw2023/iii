@@ -27,7 +27,7 @@ export const generateSEOConfig = (options = {}) => {
   const baseTitle = 'III.PICS — AI Art Gallery & Midjourney Style Reference';
   const baseDescription = 'Browse Midjourney sref style codes, AI-generated images, and creative prompts. Free AI art inspiration for every creator.';
   const baseKeywords = 'midjourney sref, AI art gallery, AI image generator, midjourney prompts, text to image AI, AI art styles, midjourney style reference, III.PICS';
-  const baseImage = `${config.app.baseUrl}/images/og-default.jpg`;
+  const baseImage = `${config.app.baseUrl}/og-default.jpg`;
 
   const finalTitle = title
     ? (title.includes('III.PICS') ? title : `${title} | ${baseTitle}`)
@@ -243,37 +243,18 @@ export const generateBreadcrumbStructuredData = (breadcrumbs) => {
 
 /**
  * 生成多语言链接
+ * 注意：当前路由不含语言前缀（/explore, /gallery 而非 /zh-CN/explore）
+ * 因此只生成 x-default canonical，避免 Google 抓取不存在的语言 URL
  * @param {string} currentPath - 当前路径
- * @param {string} currentLang - 当前语言
+ * @param {string} _currentLang - 当前语言（保留参数，暂未使用）
  * @returns {Array} 多语言链接数组
  */
 export const generateHrefLangLinks = (currentPath, _currentLang) => {
-  const languages = {
-    'zh-CN': 'zh-CN',
-    'en-US': 'en-US',
-    'ja-JP': 'ja-JP'
-  };
+  const canonicalUrl = `${config.app.baseUrl}${currentPath}`;
 
-  const links = [];
-
-  // 为每种语言生成链接
-  Object.entries(languages).forEach(([lang, hreflang]) => {
-    const url = `${config.app.baseUrl}/${lang}${currentPath}`;
-    links.push({
-      rel: 'alternate',
-      hreflang,
-      href: url
-    });
-  });
-
-  // 添加默认语言链接
-  links.push({
-    rel: 'alternate',
-    hreflang: 'x-default',
-    href: `${config.app.baseUrl}${currentPath}`
-  });
-
-  return links;
+  return [
+    { rel: 'alternate', hreflang: 'x-default', href: canonicalUrl },
+  ];
 };
 
 /**

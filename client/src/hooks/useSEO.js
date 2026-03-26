@@ -86,7 +86,15 @@ export const useExploreSEO = () => {
     title: 'Explore Midjourney Sref Styles — III.PICS Style Gallery',
     description: 'Browse 1,300+ Midjourney --sref style reference codes with visual previews. Find the perfect AI art style for your next prompt — updated daily.',
     keywords: 'midjourney sref, midjourney style reference, sref codes, midjourney --sref, AI art styles, midjourney style gallery, midjourney prompts, III.PICS explore',
-    type: 'website'
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Midjourney Sref Style Gallery — III.PICS',
+      description: 'Browse 1,300+ Midjourney --sref style reference codes with visual previews.',
+      url: 'https://iii.pics/explore',
+      provider: { '@type': 'Organization', name: 'III.PICS', url: 'https://iii.pics' },
+    }
   });
 };
 
@@ -221,7 +229,15 @@ export const useGallerySEO = () => {
     title: 'AI Prompt Gallery — III.PICS | Trending AI Image Prompts',
     description: 'Browse the best AI image prompts for NanoBanana Pro, GPT Image, and more. One-click copy — no prompt engineering needed. Updated daily with trending AI art.',
     keywords: 'AI image prompts, AI art prompts, GPT image prompts, NanoBanana prompts, text to image prompts, AI art generator, best AI prompts, III.PICS gallery',
-    type: 'website'
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'AI Prompt Gallery — III.PICS',
+      description: 'Browse the best AI image prompts for NanoBanana Pro, GPT Image, and more.',
+      url: 'https://iii.pics/gallery',
+      provider: { '@type': 'Organization', name: 'III.PICS', url: 'https://iii.pics' },
+    }
   });
 };
 

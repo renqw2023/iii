@@ -116,10 +116,31 @@ const GalleryModal = () => {
         <>
             {prompt && (
                 <Helmet>
-                    <title>{prompt.title} - III.PICS Gallery</title>
-                    <meta name="description" content={prompt.prompt?.substring(0, 160) || 'AI image prompt — browse more on III.PICS Gallery.'} />
-                    {prompt.previewImage && <meta property="og:image" content={prompt.previewImage} />}
+                    <title>{`${prompt.title || prompt.prompt?.substring(0, 50) || 'AI Prompt'} — III.PICS Gallery`}</title>
+                    <meta name="description" content={prompt.description || prompt.prompt?.substring(0, 155) || 'AI image prompt — browse more on III.PICS Gallery.'} />
+                    <link rel="canonical" href={`https://iii.pics/gallery/${prompt._id}`} />
+                    <meta property="og:title" content={`${prompt.title || 'AI Gallery Prompt'} — III.PICS`} />
+                    <meta property="og:description" content={prompt.description || prompt.prompt?.substring(0, 155) || 'AI image prompt on III.PICS Gallery.'} />
+                    <meta property="og:type" content="article" />
                     <meta property="og:url" content={`https://iii.pics/gallery/${prompt._id}`} />
+                    {prompt.previewImage && <meta property="og:image" content={prompt.previewImage} />}
+                    <meta property="og:image:width" content="1200" />
+                    <meta property="og:image:height" content="900" />
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta name="twitter:site" content="@iii_pics" />
+                    <meta name="twitter:title" content={`${prompt.title || 'AI Prompt'} — III.PICS`} />
+                    <meta name="twitter:description" content={prompt.description || prompt.prompt?.substring(0, 155) || 'AI image prompt on III.PICS Gallery.'} />
+                    {prompt.previewImage && <meta name="twitter:image" content={prompt.previewImage} />}
+                    <script type="application/ld+json">{JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'ImageObject',
+                        name: prompt.title || prompt.prompt?.substring(0, 60) || 'AI Gallery Prompt',
+                        description: prompt.description || prompt.prompt?.substring(0, 200) || '',
+                        contentUrl: prompt.previewImage || '',
+                        url: `https://iii.pics/gallery/${prompt._id}`,
+                        keywords: prompt.tags?.join(', ') || '',
+                        creator: { '@type': 'Organization', name: 'III.PICS' },
+                    })}</script>
                 </Helmet>
             )}
 

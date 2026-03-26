@@ -31,7 +31,7 @@ const SEOHead = ({
   // 基础配置
   const baseUrl = process.env.REACT_APP_BASE_URL || 'https://iii.pics';
   const siteName = 'III.PICS';
-  const defaultImage = `${baseUrl}/images/og-default.jpg`;
+  const defaultImage = `${baseUrl}/og-default.jpg`;
   
   // 当前页面URL
   const currentUrl = canonicalUrl || `${baseUrl}${location.pathname}`;
@@ -42,25 +42,11 @@ const SEOHead = ({
   if (nofollow) robotsContent.push('nofollow');
   if (robotsContent.length === 0) robotsContent.push('index', 'follow');
   
-  // 生成hreflang链接
-  const hreflangs = [];
-  const supportedLanguages = ['zh-CN', 'en-US', 'ja-JP'];
-  
-  supportedLanguages.forEach(lang => {
-    const url = alternateUrls[lang] || currentUrl.replace(`/${currentLang}/`, `/${lang}/`);
-    hreflangs.push({
-      rel: 'alternate',
-      hreflang: lang,
-      href: url
-    });
-  });
-  
-  // 添加x-default
-  hreflangs.push({
-    rel: 'alternate',
-    hreflang: 'x-default',
-    href: alternateUrls['x-default'] || currentUrl.replace(`/${currentLang}/`, '/zh-CN/')
-  });
+  // hreflang: 当前路由不含语言前缀，只生成 x-default 指向 canonical URL
+  // 待实现真正多语言路由（/zh-CN/explore 等）后再补充各语言链接
+  const hreflangs = [
+    { rel: 'alternate', hreflang: 'x-default', href: alternateUrls['x-default'] || currentUrl }
+  ];
   
   return (
     <Helmet>

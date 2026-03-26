@@ -127,6 +127,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
                         src={prompt.previewImage}
                         alt={prompt.title}
                         loading="lazy"
+                        decoding="async"
                         onLoad={handleImageLoad}
                         style={{
                             width: '100%',

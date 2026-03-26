@@ -106,6 +106,7 @@ const SrefCard = ({ sref }) => {
             src={sref.previewImage}
             alt={`--sref ${sref.srefCode}`}
             loading="lazy"
+            decoding="async"
             onLoad={handleImageLoad}
             style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.4s ease-in' }}
           />

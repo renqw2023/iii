@@ -8,4 +8,12 @@
     <loc>https://iii.pics/sitemap-images.xml</loc>
     <lastmod>2026-03-25</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>https://iii.pics/sitemap-sref.xml</loc>
+    <lastmod>2026-03-25</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://iii.pics/sitemap-gallery.xml</loc>
+    <lastmod>2026-03-25</lastmod>
+  </sitemap>
 </sitemapindex>

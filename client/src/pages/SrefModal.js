@@ -137,10 +137,31 @@ const SrefModal = () => {
         <>
             {sref && (
                 <Helmet>
-                    <title>--sref {sref.srefCode} - III.PICS Style Gallery</title>
-                    <meta name="description" content={sref.description || sref.title || `Midjourney --sref ${sref.srefCode} style reference. Browse more sref codes on III.PICS.`} />
-                    {sref.previewImage && <meta property="og:image" content={sref.previewImage} />}
+                    <title>{`--sref ${sref.srefCode}${sref.title ? ` · ${sref.title}` : ''} — III.PICS Style Gallery`}</title>
+                    <meta name="description" content={sref.description || `Midjourney --sref ${sref.srefCode} style reference.${sref.tags?.length ? ` Tags: ${sref.tags.slice(0, 3).join(', ')}.` : ''} Browse sref codes on III.PICS.`} />
+                    <link rel="canonical" href={`https://iii.pics/explore/${sref._id}`} />
+                    <meta property="og:title" content={`--sref ${sref.srefCode} — III.PICS Style Gallery`} />
+                    <meta property="og:description" content={sref.description || `Midjourney --sref ${sref.srefCode} style reference. Browse more sref codes on III.PICS.`} />
+                    <meta property="og:type" content="article" />
                     <meta property="og:url" content={`https://iii.pics/explore/${sref._id}`} />
+                    {sref.previewImage && <meta property="og:image" content={`https://iii.pics${sref.previewImage}`} />}
+                    <meta property="og:image:width" content="1200" />
+                    <meta property="og:image:height" content="900" />
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta name="twitter:site" content="@iii_pics" />
+                    <meta name="twitter:title" content={`--sref ${sref.srefCode} — III.PICS`} />
+                    <meta name="twitter:description" content={sref.description || `Midjourney --sref ${sref.srefCode} style reference.`} />
+                    {sref.previewImage && <meta name="twitter:image" content={`https://iii.pics${sref.previewImage}`} />}
+                    <script type="application/ld+json">{JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'ImageObject',
+                        name: `--sref ${sref.srefCode}`,
+                        description: sref.description || sref.title || `Midjourney --sref ${sref.srefCode} style reference`,
+                        contentUrl: sref.previewImage ? `https://iii.pics${sref.previewImage}` : '',
+                        url: `https://iii.pics/explore/${sref._id}`,
+                        keywords: sref.tags?.join(', ') || '',
+                        creator: { '@type': 'Organization', name: 'III.PICS' },
+                    })}</script>
                 </Helmet>
             )}
 

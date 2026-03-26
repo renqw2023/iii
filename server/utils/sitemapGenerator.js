@@ -5,6 +5,7 @@ const Post = require('../models/Post');
 const User = require('../models/User');
 const GalleryPrompt = require('../models/GalleryPrompt');
 const SeedancePrompt = require('../models/SeedancePrompt');
+const SrefStyle = require('../models/SrefStyle');
 
 /**
  * 网站地图生成器
@@ -39,10 +40,10 @@ class SitemapGenerator {
    */
   async generateSitemapIndex() {
     const lastmod = new Date().toISOString();
-    
+
     let xml = this.generateXMLHeader();
     xml += '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
-    
+
     // 为每种语言生成sitemap
     this.languages.forEach(lang => {
       xml += `  <sitemap>\n`;
@@ -50,21 +51,33 @@ class SitemapGenerator {
       xml += `    <lastmod>${lastmod}</lastmod>\n`;
       xml += `  </sitemap>\n`;
     });
-    
+
     // 图片sitemap
     xml += `  <sitemap>\n`;
     xml += `    <loc>${this.baseUrl}/sitemap-images.xml</loc>\n`;
     xml += `    <lastmod>${lastmod}</lastmod>\n`;
     xml += `  </sitemap>\n`;
-    
+
     // 视频sitemap
     xml += `  <sitemap>\n`;
     xml += `    <loc>${this.baseUrl}/sitemap-videos.xml</loc>\n`;
     xml += `    <lastmod>${lastmod}</lastmod>\n`;
     xml += `  </sitemap>\n`;
-    
+
+    // Sref style codes sitemap
+    xml += `  <sitemap>\n`;
+    xml += `    <loc>${this.baseUrl}/sitemap-sref.xml</loc>\n`;
+    xml += `    <lastmod>${lastmod}</lastmod>\n`;
+    xml += `  </sitemap>\n`;
+
+    // Gallery prompts sitemap
+    xml += `  <sitemap>\n`;
+    xml += `    <loc>${this.baseUrl}/sitemap-gallery.xml</loc>\n`;
+    xml += `    <lastmod>${lastmod}</lastmod>\n`;
+    xml += `  </sitemap>\n`;
+
     xml += '</sitemapindex>';
-    
+
     return xml;
   }
 
@@ -84,6 +97,7 @@ class SitemapGenerator {
     xml += await this.generatePostURLs(lang);
     xml += await this.generateUserURLs(lang);
     xml += await this.generatePromptURLs(lang);
+    xml += await this.generateSrefURLs();
     xml += await this.generateGalleryURLs();
     xml += await this.generateSeedanceURLs();
 
@@ -379,19 +393,19 @@ Crawl-delay: 2
   }
 
   /**
-   * 生成 Gallery 内容 URLs
+   * 生成 Gallery 内容 URLs（用于语言 sitemap 内嵌）
    */
   async generateGalleryURLs() {
     let xml = '';
     try {
-      const items = await GalleryPrompt.find({})
+      const items = await GalleryPrompt.find({ isActive: true })
         .select('_id createdAt updatedAt')
         .sort({ createdAt: -1 })
-        .limit(5000);
+        .limit(50000);
       for (const item of items) {
         const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
         xml += `  <url>\n`;
-        xml += `    <loc>${this.baseUrl}/gallery?id=${item._id}</loc>\n`;
+        xml += `    <loc>${this.baseUrl}/gallery/${item._id}</loc>\n`;
         xml += `    <lastmod>${lastmod}</lastmod>\n`;
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.7</priority>\n`;
@@ -400,6 +414,122 @@ Crawl-delay: 2
     } catch (error) {
       console.error('Error generating gallery URLs:', error);
     }
+    return xml;
+  }
+
+  /**
+   * 生成 Sref style code URLs（用于语言 sitemap 内嵌）
+   */
+  async generateSrefURLs() {
+    let xml = '';
+    try {
+      const items = await SrefStyle.find({ isActive: true })
+        .select('_id createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(50000);
+      for (const item of items) {
+        const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
+        xml += `  <url>\n`;
+        xml += `    <loc>${this.baseUrl}/explore/${item._id}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+        xml += `  </url>\n`;
+      }
+    } catch (error) {
+      console.error('Error generating sref URLs:', error);
+    }
+    return xml;
+  }
+
+  /**
+   * 生成专用 Sref sitemap（含 image:image 条目）
+   */
+  async generateSrefSitemap() {
+    let xml = this.generateXMLHeader();
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
+
+    try {
+      const items = await SrefStyle.find({ isActive: true })
+        .select('_id srefCode title description tags images createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(50000);
+
+      for (const item of items) {
+        const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
+        const pageUrl = `${this.baseUrl}/explore/${item._id}`;
+        const label = item.title || `--sref ${item.srefCode}`;
+
+        xml += `  <url>\n`;
+        xml += `    <loc>${pageUrl}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.8</priority>\n`;
+
+        // 添加预览图片
+        if (item.images && item.images.length > 0) {
+          const imgPath = `${this.baseUrl}/output/sref_${item.srefCode}/images/${item.images[0]}`;
+          xml += `    <image:image>\n`;
+          xml += `      <image:loc>${imgPath}</image:loc>\n`;
+          xml += `      <image:title>${this.escapeXML(label)}</image:title>\n`;
+          if (item.description) {
+            xml += `      <image:caption>${this.escapeXML(item.description)}</image:caption>\n`;
+          }
+          xml += `    </image:image>\n`;
+        }
+
+        xml += `  </url>\n`;
+      }
+    } catch (error) {
+      console.error('Error generating sref sitemap:', error);
+    }
+
+    xml += '</urlset>';
+    return xml;
+  }
+
+  /**
+   * 生成专用 Gallery sitemap（含 image:image 条目）
+   */
+  async generateGallerySitemap() {
+    let xml = this.generateXMLHeader();
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
+
+    try {
+      const items = await GalleryPrompt.find({ isActive: true })
+        .select('_id title prompt description previewImage tags createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(50000);
+
+      for (const item of items) {
+        const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
+        const pageUrl = `${this.baseUrl}/gallery/${item._id}`;
+        const label = item.title || item.prompt?.substring(0, 60) || 'AI Gallery';
+
+        xml += `  <url>\n`;
+        xml += `    <loc>${pageUrl}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.7</priority>\n`;
+
+        // 添加预览图片
+        if (item.previewImage) {
+          xml += `    <image:image>\n`;
+          xml += `      <image:loc>${this.escapeXML(item.previewImage)}</image:loc>\n`;
+          xml += `      <image:title>${this.escapeXML(label)}</image:title>\n`;
+          if (item.description) {
+            xml += `      <image:caption>${this.escapeXML(item.description)}</image:caption>\n`;
+          }
+          xml += `    </image:image>\n`;
+        }
+
+        xml += `  </url>\n`;
+      }
+    } catch (error) {
+      console.error('Error generating gallery sitemap:', error);
+    }
+
+    xml += '</urlset>';
     return xml;
   }
 
@@ -495,11 +625,19 @@ Crawl-delay: 2
       // 生成视频sitemap
       const videoSitemap = await this.generateVideoSitemap();
       await this.saveSitemap('sitemap-videos.xml', videoSitemap);
-      
+
+      // 生成 sref sitemap
+      const srefSitemap = await this.generateSrefSitemap();
+      await this.saveSitemap('sitemap-sref.xml', srefSitemap);
+
+      // 生成 gallery sitemap
+      const gallerySitemap = await this.generateGallerySitemap();
+      await this.saveSitemap('sitemap-gallery.xml', gallerySitemap);
+
       // 生成robots.txt
       const robotsTxt = this.generateRobotsTxt();
       await this.saveSitemap('robots.txt', robotsTxt);
-      
+
       console.log('All sitemaps generated successfully!');
     } catch (error) {
       console.error('Error generating sitemaps:', error);

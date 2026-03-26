@@ -4,11 +4,46 @@ const SitemapGenerator = require('../utils/sitemapGenerator');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const config = require('../config');
+const SrefStyle = require('../models/SrefStyle');
+const GalleryPrompt = require('../models/GalleryPrompt');
+const SeedancePrompt = require('../models/SeedancePrompt');
+const Generation = require('../models/Generation');
 
 /**
  * SEO相关路由
  * 提供sitemap生成、robots.txt和其他SEO功能
  */
+
+// 24h in-memory cache for site stats
+let _statsCache = null;
+let _statsCacheTime = 0;
+const STATS_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+/**
+ * GET /api/seo/stats
+ * Returns site-wide content counts for the Hero stats section.
+ * Results are cached in memory for 24 hours.
+ */
+router.get('/stats', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (_statsCache && now - _statsCacheTime < STATS_TTL) {
+      return res.json(_statsCache);
+    }
+    const [srefCount, galleryCount, seedanceCount, generationCount] = await Promise.all([
+      SrefStyle.countDocuments({ isActive: true }),
+      GalleryPrompt.countDocuments(),
+      SeedancePrompt.countDocuments(),
+      Generation.countDocuments(),
+    ]);
+    _statsCache = { srefCount, galleryCount, seedanceCount, generationCount, cachedAt: new Date().toISOString() };
+    _statsCacheTime = now;
+    res.json(_statsCache);
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
 
 /**
  * GET /api/seo/sitemap/generate

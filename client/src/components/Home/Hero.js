@@ -2,10 +2,27 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, ArrowRight, Wand2, Banana, ImageIcon, Shuffle, X } from 'lucide-react';
+import { Sparkles, ArrowRight, Wand2, Banana, ImageIcon, Shuffle, X, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 import { galleryAPI } from '../../services/galleryApi';
 import { srefAPI } from '../../services/srefApi';
+
+const STATS_CACHE_KEY = 'heroStatsCache';
+const STATS_TTL = 24 * 60 * 60 * 1000;
+
+async function fetchStats() {
+  const cached = localStorage.getItem(STATS_CACHE_KEY);
+  if (cached) {
+    try {
+      const { data, ts } = JSON.parse(cached);
+      if (Date.now() - ts < STATS_TTL) return data;
+    } catch (_) {}
+  }
+  const { data } = await axios.get('/api/seo/stats');
+  localStorage.setItem(STATS_CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+  return data;
+}
 
 // Count-up hook with ease-out cubic
 const useCountUp = (target, duration = 1800) => {
@@ -36,11 +53,16 @@ const Hero = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [randomWork, setRandomWork] = useState(null);
   const [isRandomLoading, setIsRandomLoading] = useState(false);
+  const [statTargets, setStatTargets] = useState({ srefCount: 1300, galleryCount: 13000, seedanceCount: 1000, generationCount: 0 });
 
-  // count-up targets — real data: sref=1306, nanobanana=100, gptimage=328
-  const mjCount = useCountUp(1306);
-  const nbCount = useCountUp(100);
-  const gpCount = useCountUp(328);
+  useEffect(() => {
+    fetchStats().then(setStatTargets).catch(() => {});
+  }, []);
+
+  const mjCount = useCountUp(statTargets.srefCount);
+  const nbCount = useCountUp(statTargets.galleryCount);
+  const sdCount = useCountUp(statTargets.seedanceCount);
+  const gpCount = useCountUp(statTargets.generationCount);
 
   // 页面可见性API处理
   useEffect(() => {
@@ -644,7 +666,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-4xl mx-auto"
+            className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto"
           >
             <div className="text-center">
               <div className="flex justify-center mb-3">
@@ -664,6 +686,16 @@ const Hero = () => {
               </div>
               <div className="text-3xl font-bold text-slate-900 mb-2">{formatCount(nbCount)}</div>
               <div className="text-slate-600">{t('home.hero.stats.nanobanana')}</div>
+            </div>
+
+            <div className="text-center">
+              <div className="flex justify-center mb-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                  <Video className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-slate-900 mb-2">{formatCount(sdCount)}</div>
+              <div className="text-slate-600">{t('home.hero.stats.seedance')}</div>
             </div>
 
             <div className="text-center">

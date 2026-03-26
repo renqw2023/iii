@@ -12,7 +12,8 @@ export const home = {
       stats: {
         midjourney: "Midjourney 风格",
         nanobanana: "NanoBanana Pro",
-        gptimage: "GPT Image"
+        seedance: "Seedance 2.0",
+        gptimage: "GPT Image 生成"
       }
     },
     featured: {
@@ -115,6 +116,7 @@ export const home = {
       stats: {
         midjourney: "Midjourney Styles",
         nanobanana: "NanoBanana Pro",
+        seedance: "Seedance 2.0",
         gptimage: "GPT Image"
       }
     },
@@ -218,6 +220,7 @@ export const home = {
       stats: {
         midjourney: "Midjourney スタイル",
         nanobanana: "NanoBanana Pro",
+        seedance: "Seedance 2.0",
         gptimage: "GPT Image"
       }
     },

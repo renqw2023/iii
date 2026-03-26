@@ -20,6 +20,7 @@ const SeedanceModal = () => {
     const [showTranslated, setShowTranslated] = useState(false);
     const [translatedText, setTranslatedText] = useState('');
     const [isTranslating, setIsTranslating] = useState(false);
+    const [videoLoading, setVideoLoading] = useState(true);
 
     const handleClose = () => {
         if (location.state?.fromList) navigate(-1);
@@ -121,14 +122,25 @@ const SeedanceModal = () => {
                                 <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid #333', borderTopColor: '#f97316', borderRadius: '50%' }} />
                             </div>
                         ) : prompt?.videoUrl ? (
-                            <video
-                                src={getVideoSrc(prompt.videoUrl)}
-                                controls
-                                autoPlay
-                                loop
-                                playsInline
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            />
+                            <>
+                                <video
+                                    src={getVideoSrc(prompt.videoUrl)}
+                                    controls
+                                    autoPlay
+                                    loop
+                                    playsInline
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    onLoadStart={() => setVideoLoading(true)}
+                                    onCanPlay={() => setVideoLoading(false)}
+                                    onWaiting={() => setVideoLoading(true)}
+                                    onPlaying={() => setVideoLoading(false)}
+                                />
+                                {videoLoading && (
+                                    <div className="dmodal-video-loading">
+                                        <div className="dmodal-video-spinner" />
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="dmodal-left-placeholder">
                                 <Film size={48} style={{ opacity: 0.3 }} />

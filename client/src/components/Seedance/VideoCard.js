@@ -11,6 +11,7 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
     const navigate = useNavigate();
     const { t } = useTranslation();
     const videoRef = useRef(null);
+    const preloadedRef = useRef(false);
     const [isHovering, setIsHovering] = useState(false);
     const [isInView, setIsInView] = useState(false);
     const [thumbLoaded, setThumbLoaded] = useState(false);
@@ -97,6 +98,22 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
         handleMouseLeaveHalo();
     };
 
+    const handleMouseEnter = () => {
+        setIsHovering(true);
+        // Inject <link rel="preload" as="video"> on first hover so the browser
+        // starts fetching the video before the modal opens.
+        if (videoSrc && !preloadedRef.current) {
+            preloadedRef.current = true;
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'video';
+            link.href = videoSrc;
+            document.head.appendChild(link);
+            // Remove after 5 min to avoid unbounded <head> growth
+            setTimeout(() => link.parentNode?.removeChild(link), 5 * 60 * 1000);
+        }
+    };
+
     return (
         <motion.div
             ref={containerRef}
@@ -110,7 +127,7 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
             onDragStart={handleDragStart}
             className="video-card group cursor-pointer"
             onClick={() => navigate(`/seedance/${prompt._id}`, { state: { fromList: true } })}
-            onMouseEnter={() => setIsHovering(true)}
+            onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
             {/* 视频预览 */}

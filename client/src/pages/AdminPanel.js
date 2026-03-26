@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, CreditCard, DollarSign, Gift, Database,
-  ArrowLeft, Shield, RefreshCw, Circle
+  ArrowLeft, Shield, RefreshCw, Circle, Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { adminAPI } from '../services/api';
@@ -12,6 +12,7 @@ import TransactionsTab from '../components/Admin/tabs/TransactionsTab';
 import RevenueTab from '../components/Admin/tabs/RevenueTab';
 import GiftCodesTab from '../components/Admin/tabs/GiftCodesTab';
 import DataSyncTab from '../components/Admin/tabs/DataSyncTab';
+import SEOTab from '../components/Admin/tabs/SEOTab';
 
 const NAV = [
   { id: 'overview',     label: 'Overview',      icon: LayoutDashboard, desc: 'Platform KPIs' },
@@ -20,6 +21,7 @@ const NAV = [
   { id: 'revenue',      label: 'Revenue',       icon: DollarSign,      desc: 'USD income analytics' },
   { id: 'giftcodes',    label: 'Gift Codes',    icon: Gift,            desc: 'Generate & manage codes' },
   { id: 'datasync',     label: 'Data Sync',     icon: Database,        desc: 'Content sync scheduler' },
+  { id: 'seo',          label: 'SEO',           icon: Globe,           desc: 'Sitemap & search engines' },
 ];
 
 /* ─── Toast ─────────────────────────────────────────────────── */
@@ -228,6 +230,9 @@ export default function AdminPanel() {
           )}
           {activeTab === 'datasync' && (
             <DataSyncTab key={`ds-${refreshKey}`} />
+          )}
+          {activeTab === 'seo' && (
+            <SEOTab key={`seo-${refreshKey}`} />
           )}
         </main>
       </div>

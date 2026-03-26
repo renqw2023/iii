@@ -52,7 +52,9 @@ i18n
     },
 
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
+      // Only respect an explicit user choice stored in localStorage.
+      // New visitors get fallbackLng (en-US) regardless of browser language.
+      order: ['localStorage'],
       caches: ['localStorage'],
     },
 

@@ -741,18 +741,18 @@ const Register = () => {
                 theme="outline"
                 size="large"
                 text="signup_with"
-                locale="zh-CN"
+                locale="en-US"
                 width="280"
               />
               <p style={{ marginTop: 10, fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                Google 首次注册会继承当前邀请码，首次成功生成后解锁邀请奖励
+                Google sign-up inherits your invite code. Invite rewards unlock after your first generation.
               </p>
             </div>
 
             {/* Divider */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>或使用邮箱注册</span>
+              <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>or sign up with email</span>
               <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
             </div>
 
@@ -922,9 +922,9 @@ const Register = () => {
               {/* Invite code */}
               <div>
                 <label htmlFor="inviteCode" className="block text-sm font-medium text-slate-700 mb-2">
-                  邀请码{' '}
+                  Invite Code{' '}
                   <span className="text-slate-400 font-normal">
-                    （选填，对方首次生成后你得 200，他得 50）
+                    (optional — you get 200 credits, they get 50 after your first generation)
                   </span>
                 </label>
                 <div className="relative">
@@ -936,7 +936,7 @@ const Register = () => {
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                     className="input pl-10 uppercase tracking-widest"
-                    placeholder="8位邀请码（如：AB3D5E7F）"
+                    placeholder="8-char code (e.g. AB3D5E7F)"
                     maxLength={8}
                   />
                 </div>

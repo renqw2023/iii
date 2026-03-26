@@ -50,14 +50,14 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleEmailLogin = async (e) => {
     e.preventDefault();
     if (!form.email || !form.password) {
-      setError('请输入邮箱和密码');
+      setError('Please enter your email and password');
       return;
     }
     const result = await login({ email: form.email, password: form.password });
     if (result.success) {
       onClose();
     } else {
-      setError(result.message || '登录失败，请重试');
+      setError(result.message || 'Login failed, please try again');
     }
   };
 
@@ -70,24 +70,24 @@ const LoginModal = ({ isOpen, onClose }) => {
     if (result.success) {
       onClose();
     } else {
-      setError(result.message || 'Google 登录失败');
+      setError(result.message || 'Google sign-in failed');
     }
   };
 
   const handleGoogleError = () => {
-    setError('Google 登录被取消或失败，请重试');
+    setError('Google sign-in was cancelled or failed, please try again');
   };
 
   const handleMagicLinkSend = async (e) => {
     e.preventDefault();
-    if (!magicEmail) { setError('请输入邮箱地址'); return; }
+    if (!magicEmail) { setError('Please enter your email address'); return; }
     setError('');
     setMagicLoading(true);
     try {
       await axios.post('/api/auth/magic-link/request', { email: magicEmail });
       setMagicSent(true);
     } catch (err) {
-      setError(err.response?.data?.message || '发送失败，请稍后重试');
+      setError(err.response?.data?.message || 'Send failed, please try again');
     } finally {
       setMagicLoading(false);
     }
@@ -123,14 +123,14 @@ const LoginModal = ({ isOpen, onClose }) => {
               onClick={onClose}
               className="absolute top-4 right-4 p-1 rounded-lg transition-colors"
               style={{ color: 'var(--text-secondary)' }}
-              aria-label="关闭"
+              aria-label="Close"
             >
               <X size={18} />
             </button>
 
             <div className="mb-5 text-center">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>欢迎回来</h2>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>登录以访问您的账户</p>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Welcome back</h2>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Sign in to your account</p>
             </div>
 
             {/* Google Login */}
@@ -143,13 +143,13 @@ const LoginModal = ({ isOpen, onClose }) => {
                     theme="outline"
                     size="large"
                     text="continue_with"
-                    locale="zh-CN"
+                    locale="en-US"
                     width="280"
                   />
                 </div>
                 <div className="flex items-center gap-3 my-4">
                   <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>或</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>or</span>
                   <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-color)' }} />
                 </div>
               </>
@@ -158,7 +158,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             {/* Tabs */}
             <div className="flex rounded-xl overflow-hidden mb-4" style={{ border: '1px solid var(--border-color)' }}>
               {[
-                { id: 'password', label: '密码登录', icon: Lock },
+                { id: 'password', label: 'Password', icon: Lock },
                 { id: 'magic', label: 'Magic Link', icon: Zap },
               ].map(({ id, label, icon: Icon }) => (
                 <button
@@ -184,7 +184,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                   <input
                     type="email"
                     name="email"
-                    placeholder="邮箱地址"
+                    placeholder="Email address"
                     value={form.email}
                     onChange={handleChange}
                     autoComplete="email"
@@ -197,7 +197,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="password"
-                    placeholder="密码"
+                    placeholder="Password"
                     value={form.password}
                     onChange={handleChange}
                     autoComplete="current-password"
@@ -224,7 +224,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                   style={{ backgroundColor: 'var(--accent-primary)', color: '#fff', opacity: loading ? 0.7 : 1 }}
                 >
                   <LogIn size={15} />
-                  {loading ? '登录中...' : '使用邮箱登录'}
+                  {loading ? 'Signing in…' : 'Sign in with Email'}
                 </button>
               </form>
             )}
@@ -235,28 +235,28 @@ const LoginModal = ({ isOpen, onClose }) => {
                 {magicSent ? (
                   <div className="text-center py-4">
                     <CheckCircle size={40} className="mx-auto mb-3" style={{ color: 'var(--accent-primary)' }} />
-                    <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>邮件已发送！</p>
+                    <p className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Email sent!</p>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      请查收 <strong>{magicEmail}</strong> 的邮件，点击链接即可登录。链接 15 分钟内有效。
+                      Check <strong>{magicEmail}</strong> for a login link. The link expires in 15 minutes.
                     </p>
                     <button
                       onClick={() => setMagicSent(false)}
                       className="mt-4 text-xs underline"
                       style={{ color: 'var(--text-tertiary)' }}
                     >
-                      重新发送
+                      Resend
                     </button>
                   </div>
                 ) : (
                   <form onSubmit={handleMagicLinkSend} className="space-y-3">
                     <p className="text-xs text-center mb-2" style={{ color: 'var(--text-secondary)' }}>
-                      输入邮箱，我们将发送一次性登录链接，无需密码。
+                      Enter your email and we'll send you a one-time login link. No password needed.
                     </p>
                     <div className="relative">
                       <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
                       <input
                         type="email"
-                        placeholder="邮箱地址"
+                        placeholder="Email address"
                         value={magicEmail}
                         onChange={(e) => { setMagicEmail(e.target.value); setError(''); }}
                         autoComplete="email"
@@ -272,7 +272,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                       style={{ backgroundColor: 'var(--accent-primary)', color: '#fff', opacity: magicLoading ? 0.7 : 1 }}
                     >
                       <Send size={15} />
-                      {magicLoading ? '发送中...' : '发送登录链接'}
+                      {magicLoading ? 'Sending…' : 'Send Login Link'}
                     </button>
                   </form>
                 )}
@@ -282,13 +282,13 @@ const LoginModal = ({ isOpen, onClose }) => {
             <div className="mt-4 text-center space-y-1">
               {tab === 'password' && (
                 <Link to="/forgot-password" onClick={onClose} className="text-xs block transition-colors" style={{ color: 'var(--text-tertiary)' }}>
-                  忘记密码？
+                  Forgot password?
                 </Link>
               )}
               <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                没有账号？{' '}
+                Don't have an account?{' '}
                 <Link to="/register" onClick={onClose} style={{ color: 'var(--accent-primary)' }}>
-                  立即注册
+                  Sign up
                 </Link>
               </p>
             </div>

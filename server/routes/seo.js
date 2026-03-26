@@ -7,7 +7,6 @@ const config = require('../config');
 const SrefStyle = require('../models/SrefStyle');
 const GalleryPrompt = require('../models/GalleryPrompt');
 const SeedancePrompt = require('../models/SeedancePrompt');
-const Generation = require('../models/Generation');
 
 /**
  * SEO相关路由
@@ -32,9 +31,9 @@ router.get('/stats', async (req, res) => {
     }
     const [srefCount, galleryCount, seedanceCount, generationCount] = await Promise.all([
       SrefStyle.countDocuments({ isActive: true }),
-      GalleryPrompt.countDocuments(),
+      GalleryPrompt.countDocuments({ model: 'nanobanana' }),
       SeedancePrompt.countDocuments(),
-      Generation.countDocuments(),
+      GalleryPrompt.countDocuments({ model: 'gptimage' }),
     ]);
     _statsCache = { srefCount, galleryCount, seedanceCount, generationCount, cachedAt: new Date().toISOString() };
     _statsCacheTime = now;

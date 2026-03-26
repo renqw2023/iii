@@ -171,11 +171,20 @@ async function syncGptImages() {
     console.log('[GPT-Image-Sync] 🔄 开始同步 meigen.ai GPT Image 数据...');
 
     try {
-        // 1. 抓取 API 数据
+        // 0. 加载已有 sourceId 集合，实现增量同步
+        const GalleryPromptModel = require('../models/GalleryPrompt');
+        const existingIds = new Set(
+            await GalleryPromptModel.find({ model: 'gptimage' }).distinct('sourceId')
+        );
+        console.log(`[GPT-Image-Sync]   📦 DB 已有 ${existingIds.size} 条记录，仅同步新增`);
+
+        // 1. 抓取 API 数据（增量：连续 2 页全已知则停止）
         const allItems = [];
         let offset = 0;
         let hasMore = true;
         let pageNum = 0;
+        let consecutiveKnownPages = 0;
+        const EARLY_STOP_PAGES = 2;
 
         while (hasMore) {
             const url = `${API_BASE}?offset=${offset}&limit=${PAGE_SIZE}&sort=newest`;
@@ -184,9 +193,23 @@ async function syncGptImages() {
                 const data = await fetchJson(url);
                 const images = data.images || [];
                 const gptImages = images.filter(img => img.model === TARGET_MODEL);
-                allItems.push(...gptImages);
+                const newItems = gptImages.filter(img => !existingIds.has(`meigen-gptimage-${img.id}`));
+
+                allItems.push(...newItems);
                 hasMore = data.hasMore === true && images.length > 0;
                 offset += PAGE_SIZE;
+
+                // 增量提前停止：当前页有 GPT Image 但全部已知，计数
+                if (gptImages.length > 0 && newItems.length === 0) {
+                    consecutiveKnownPages++;
+                    if (consecutiveKnownPages >= EARLY_STOP_PAGES) {
+                        console.log(`[GPT-Image-Sync]   ⏹ 连续 ${EARLY_STOP_PAGES} 页均已同步，提前停止（共 ${pageNum} 页）`);
+                        break;
+                    }
+                } else {
+                    consecutiveKnownPages = 0;
+                }
+
                 if (hasMore) await sleep(DELAY_MS);
             } catch (err) {
                 console.error(`[GPT-Image-Sync]   ❌ 第 ${pageNum} 页请求失败:`, err.message);
@@ -195,7 +218,7 @@ async function syncGptImages() {
             }
         }
 
-        console.log(`[GPT-Image-Sync]   📊 共抓取 ${allItems.length} 条 GPT Image 数据 (${pageNum} 页)`);
+        console.log(`[GPT-Image-Sync]   📊 新增 ${allItems.length} 条 GPT Image 数据 (共请求 ${pageNum} 页)`);
 
         if (allItems.length === 0) {
             console.log('[GPT-Image-Sync]   ⚠️ 未抓取到数据，跳过本次同步');
@@ -225,13 +248,12 @@ async function syncGptImages() {
         }
 
         // 3. 导入数据库
-        const GalleryPrompt = require('../models/GalleryPrompt');
         const records = allItems.map(transformToGalleryPrompt);
         let imported = 0, updated = 0, dbErrors = 0;
 
         for (const record of records) {
             try {
-                const result = await GalleryPrompt.findOneAndUpdate(
+                const result = await GalleryPromptModel.findOneAndUpdate(
                     { sourceId: record.sourceId },
                     { $set: record },
                     { upsert: true, new: true, rawResult: true }

@@ -25,6 +25,7 @@ const generateRoutes = require('./routes/generate');
 const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
 const syncRoutes = require('./routes/sync');
 const { startCronJobs } = require('./cron/index');
+const visitTracker = require('./middleware/visitTracker');
 
 const app = express();
 // 信任代理设置
@@ -36,6 +37,9 @@ app.use(cors(config.cors));
 // 限流
 const limiter = rateLimit(config.rateLimit);
 app.use(limiter);
+
+// 访客流量统计（非阻塞，批量写入 MongoDB）
+app.use(visitTracker);
 
 // Stripe webhook 需要 raw body，在 express.json() 之前注册
 app.use((req, res, next) => {

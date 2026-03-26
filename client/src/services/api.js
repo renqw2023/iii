@@ -148,6 +148,9 @@ export const adminAPI = {
   // 收入数据
   getRevenue: (params) => api.get('/admin/revenue', { params }),
 
+  // 访客流量
+  getTraffic: (params) => api.get('/admin/traffic', { params }),
+
   // 数据同步
   getSyncStatus: () => api.get('/admin/sync/status'),
   triggerSync: (source, opts) => api.post(`/admin/sync/trigger/${source}`, opts || {}),

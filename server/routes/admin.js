@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const PromptPost = require('../models/PromptPost');
 const CreditTransaction = require('../models/CreditTransaction');
+const VisitLog = require('../models/VisitLog');
 const { adminAuth } = require('../middleware/auth');
 const adminCache = require('../services/adminCache');
 
@@ -1131,6 +1132,72 @@ router.get('/transactions', adminAuth, async (req, res) => {
   } catch (error) {
     console.error('获取积分流水错误:', error);
     res.status(500).json({ message: '获取积分流水失败' });
+  }
+});
+
+// 访客流量统计
+const trafficCache = new Map(); // period → { data, ts }
+const TRAFFIC_TTL = 5 * 60 * 1000;
+
+router.get('/traffic', adminAuth, async (req, res) => {
+  try {
+    const { period = '7d' } = req.query;
+    const cached = trafficCache.get(period);
+    if (cached && Date.now() - cached.ts < TRAFFIC_TTL) {
+      return res.json({ success: true, data: cached.data });
+    }
+
+    const days = period === '30d' ? 30 : 7;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const [chartData, topPages, topIPs] = await Promise.all([
+      VisitLog.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%m-%d', date: '$createdAt' } },
+            pv: { $sum: 1 },
+            uv: { $addToSet: '$ip' },
+          },
+        },
+        { $project: { _id: 0, date: '$_id', pv: 1, uv: { $size: '$uv' } } },
+        { $sort: { date: 1 } },
+      ]),
+
+      VisitLog.aggregate([
+        { $match: { createdAt: { $gte: since }, method: 'GET' } },
+        { $group: { _id: '$path', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, path: '$_id', count: 1 } },
+      ]),
+
+      VisitLog.aggregate([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: '$ip', count: { $sum: 1 }, lastSeen: { $max: '$createdAt' } } },
+        { $sort: { count: -1 } },
+        { $limit: 10 },
+        { $project: { _id: 0, ip: '$_id', count: 1, lastSeen: 1 } },
+      ]),
+    ]);
+
+    // Derive today/week summary from chartData — no extra DB queries needed
+    const todayKey = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }).replace('/', '-');
+    const today = chartData.find(d => d.date === todayKey);
+    const weekDays = chartData.slice(-7);
+    const summary = {
+      todayPV: today?.pv ?? 0,
+      todayUV: today?.uv ?? 0,
+      weekPV:  weekDays.reduce((s, d) => s + d.pv, 0),
+      weekUV:  weekDays.reduce((s, d) => s + d.uv, 0),
+    };
+
+    const data = { summary, chart: chartData, topPages, topIPs };
+    trafficCache.set(period, { data, ts: Date.now() });
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('获取流量数据失败:', error);
+    res.status(500).json({ success: false, message: '获取流量数据失败' });
   }
 });
 

@@ -49,7 +49,7 @@ class Config {
           process.env.TRUSTED_PROXIES.split(',').map(ip => ip.trim()) : 
           ['127.0.0.1', '::1']; // 默认只信任本地代理
       } else {
-        trustProxy = true; // 开发环境可以信任所有代理
+        trustProxy = 1; // 开发环境信任一跳代理（express-rate-limit 不接受 boolean true）
       }
     }
     

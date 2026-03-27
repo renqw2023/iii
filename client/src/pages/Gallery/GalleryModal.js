@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn, ImagePlus } from 'lucide-react';
+import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn, ImagePlus, ArrowLeft } from 'lucide-react';
 import TranslateButton from '../../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { galleryAPI } from '../../services/galleryApi';
@@ -176,12 +176,23 @@ const GalleryModal = () => {
             <div className="dmodal-container">
                 <motion.div
                     className="dmodal-panel"
+                    style={{ flexDirection: 'column' } /* mobile forces column via CSS */}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     onClick={(e) => e.stopPropagation()}
                 >
+                    {/* ── Mobile top bar: back + share (hidden on desktop via CSS) ── */}
+                    <div className="dmodal-mobile-topbar">
+                        <button className="dmodal-mobile-back-btn" onClick={handleClose}>
+                            <ArrowLeft size={22} />
+                        </button>
+                        <button className="dmodal-mobile-share-btn" onClick={handleShare}>
+                            <Share2 size={20} />
+                        </button>
+                    </div>
+
                     {/* ── Left: image 轮播（点击放大）── */}
                     <div
                         className="dmodal-left"

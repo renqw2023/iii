@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import MobileDock from '../UI/MobileDock';
+import MobileProfileSheet from '../UI/MobileProfileSheet';
 import DesktopDock from '../UI/DesktopDock';
 import CreditsModal from '../UI/CreditsModal';
 import Img2PromptPanel from '../UI/Img2PromptPanel';
@@ -17,6 +18,7 @@ const Layout = () => {
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [img2promptOpen, setImg2promptOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
 
   // Called by GenerateTab on generate — navigate and keep panel open (MeiGen style)
   const handleStartGeneration = useCallback(() => {
@@ -56,7 +58,10 @@ const Layout = () => {
       </div>
 
       {/* Mobile bottom dock */}
-      <MobileDock />
+      <MobileDock onMeClick={() => setProfileSheetOpen(true)} />
+
+      {/* Mobile profile bottom sheet */}
+      <MobileProfileSheet open={profileSheetOpen} onClose={() => setProfileSheetOpen(false)} />
 
       {/* Desktop floating dock (bottom-center, md+ only) */}
       <DesktopDock onImg2PromptClick={() => setImg2promptOpen(v => !v)} />

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus, Share2 } from 'lucide-react';
+import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus, Share2, ArrowLeft } from 'lucide-react';
 import TranslateButton from '../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
@@ -222,6 +222,15 @@ const SrefModal = () => {
                     transition={{ duration: 0.2 }}
                     onClick={(e) => e.stopPropagation()}
                 >
+                    {/* Mobile top bar: back + share */}
+                    <div className="dmodal-mobile-topbar">
+                        <button className="dmodal-mobile-back-btn" onClick={handleClose}>
+                            <ArrowLeft size={22} />
+                        </button>
+                        <button className="dmodal-mobile-share-btn" onClick={() => setShowShareCard(true)}>
+                            <Share2 size={20} />
+                        </button>
+                    </div>
                     {/* ── Left: media viewer ── */}
                     <div className="dmodal-left" ref={mediaLeftRef} style={{ position: 'relative' }}>
                         {isLoading ? (

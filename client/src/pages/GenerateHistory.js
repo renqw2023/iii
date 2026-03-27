@@ -85,6 +85,8 @@ const GenerateHistory = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [mediaFilter, setMediaFilter] = useState('all'); // 'all' | 'image' | 'video'
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   // Fetch history; if completedJobs provided, remove those that are now confirmed in DB.
   // This prevents duplication: once a job is saved to DB it moves from active→history section.
   const fetchHistory = useCallback(async (completedJobs) => {
@@ -274,7 +276,7 @@ const GenerateHistory = () => {
       {/* Floating white card */}
       <div style={{
         margin: 16,
-        marginRight: 'calc(320px + 32px)',
+        marginRight: isMobile ? 16 : 'calc(320px + 32px)',
         borderRadius: 22,
         backgroundColor: 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(48px)',
@@ -340,7 +342,7 @@ const GenerateHistory = () => {
           {filteredActive.length > 0 && (
             <section>
               <GroupHeader label="Generating" />
-              <CardGrid minCardWidth={filteredActive.every(j => j.mediaType === 'video') ? 340 : 220}>
+              <CardGrid minCardWidth={filteredActive.every(j => j.mediaType === 'video') ? (isMobile ? 320 : 340) : (isMobile ? 160 : 220)}>
                 {filteredActive.map(job => (
                   <GenerationCard
                     key={job.id}
@@ -360,7 +362,7 @@ const GenerateHistory = () => {
           {groupedRecords.map(({ label, items }) => (
             <section key={label}>
               <GroupHeader label={label} />
-              <CardGrid minCardWidth={items.every(r => r.mediaType === 'video') ? 340 : 220}>
+              <CardGrid minCardWidth={items.every(r => r.mediaType === 'video') ? (isMobile ? 320 : 340) : (isMobile ? 160 : 220)}>
                 {items.map(rec => (
                   <GenerationCard
                     key={rec._id}

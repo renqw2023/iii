@@ -179,3 +179,12 @@
   pointer-events: none;
   z-index: 2;
 }
+
+
+/* Mobile: card overlay always visible (touch has no hover) */
+@media (max-width: 767px) {
+  .liblib-card-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

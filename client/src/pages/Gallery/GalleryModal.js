@@ -7,10 +7,12 @@ import { Copy, Heart, Bookmark, X, ExternalLink, Eye, Share2, ZoomIn, ImagePlus,
 import TranslateButton from '../../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { galleryAPI } from '../../services/galleryApi';
+import { favoritesAPI } from '../../services/favoritesApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../../hooks/useBrowsingHistory';
 import { useGeneration } from '../../contexts/GenerationContext';
+import { useAuth } from '../../contexts/AuthContext';
 import ShareCardModal from '../../components/ShareCard/ShareCardModal';
 
 const MODEL_LABELS = {
@@ -26,10 +28,12 @@ const GalleryModal = () => {
     const [searchParams] = useSearchParams();
     const { t } = useTranslation();
     const { setPrefill } = useGeneration();
+    const { isAuthenticated, openLoginModal } = useAuth();
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [showShareCard, setShowShareCard] = useState(false);
     const [translatedPrompt, setTranslatedPrompt] = useState(null);
     const [imgIndex, setImgIndex] = useState(0);
+    const [localFavorited, setLocalFavorited] = useState(false);
 
     const handleClose = () => {
         const returnTo = searchParams.get('returnTo') || location.state?.returnTo;
@@ -67,6 +71,9 @@ const GalleryModal = () => {
     // 多图轮播：切换 prompt 时重置索引
     useEffect(() => { setImgIndex(0); }, [prompt?._id]);
 
+    // 同步服务端收藏状态到本地
+    useEffect(() => { if (prompt) setLocalFavorited(!!localFavorited); }, [prompt]);
+
     const images = prompt?.images?.length > 0
         ? prompt.images
         : (prompt?.previewImage ? [prompt.previewImage] : []);
@@ -102,8 +109,18 @@ const GalleryModal = () => {
     };
 
     const handleFavorite = async () => {
-        try { await galleryAPI.toggleFavorite(id); }
-        catch { toast.error(t('gallery.actions.loginRequired')); }
+        if (!isAuthenticated) { openLoginModal(); return; }
+        const prev = localFavorited;
+        setLocalFavorited(!prev);
+        try {
+            if (prev) {
+                await favoritesAPI.remove('gallery', id);
+                toast.success('已取消收藏');
+            } else {
+                await favoritesAPI.add('gallery', id);
+                toast.success('收藏成功 ❤️');
+            }
+        } catch { setLocalFavorited(prev); toast.error('操作失败'); }
     };
 
     const handleShare = () => setShowShareCard(true);
@@ -394,11 +411,11 @@ const GalleryModal = () => {
                                     <Heart size={18} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                                 </button>
                                 <button
-                                    className={`dmodal-btn-icon ${prompt.isFavorited ? 'favorited' : ''}`}
+                                    className={`dmodal-btn-icon ${localFavorited ? 'favorited' : ''}`}
                                     onClick={handleFavorite}
-                                    title={prompt.isFavorited ? t('gallery.actions.favorited') : t('gallery.actions.favorite')}
+                                    title={localFavorited ? t('gallery.actions.favorited') : t('gallery.actions.favorite')}
                                 >
-                                    <Bookmark size={18} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
+                                    <Bookmark size={18} fill={localFavorited ? 'currentColor' : 'none'} />
                                 </button>
                                 <button className="dmodal-btn-icon" onClick={handleShare} title="Share">
                                     <Share2 size={18} />

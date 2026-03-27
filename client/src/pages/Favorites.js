@@ -50,7 +50,7 @@ const FavCard = ({ item, onRemove, navigate }) => {
           event.stopPropagation();
           onRemove(item);
         }}
-        className="absolute right-3 top-3 rounded-full p-2 opacity-0 transition-opacity group-hover:opacity-100"
+        className="fav-remove-btn absolute right-3 top-3 rounded-full p-2 opacity-0 transition-opacity group-hover:opacity-100"
         style={{ backgroundColor: 'rgba(15,23,42,0.72)', color: '#fff' }}
         title="Remove favorite"
       >

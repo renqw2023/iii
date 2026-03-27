@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus, Share2, ArrowLeft } from 'lucide-react';
+import { Copy, Heart, Bookmark, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus, Share2, ArrowLeft } from 'lucide-react';
 import TranslateButton from '../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
+import { favoritesAPI } from '../services/favoritesApi';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
 import { useGeneration } from '../contexts/GenerationContext';
@@ -18,8 +20,10 @@ const SrefModal = () => {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const { setPrefill } = useGeneration();
+    const { isAuthenticated, openLoginModal } = useAuth();
     const [copied, setCopied] = useState(false);
     const [showShareCard, setShowShareCard] = useState(false);
+    const [localFavorited, setLocalFavorited] = useState(false);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [activeIdx, setActiveIdx] = useState(0);
     const [srefTranslated, setSrefTranslated] = useState(null);
@@ -63,6 +67,24 @@ const SrefModal = () => {
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sref?._id]);
+
+    // 同步服务端收藏状态到本地
+    useEffect(() => { if (sref) setLocalFavorited(!!sref.isFavorited); }, [sref]);
+
+    const handleFavorite = async () => {
+        if (!isAuthenticated) { openLoginModal(); return; }
+        const prev = localFavorited;
+        setLocalFavorited(!prev);
+        try {
+            if (prev) {
+                await favoritesAPI.remove('sref', id);
+                toast.success('已取消收藏');
+            } else {
+                await favoritesAPI.add('sref', id);
+                toast.success('收藏成功 ❤️');
+            }
+        } catch { setLocalFavorited(prev); toast.error('操作失败'); }
+    };
 
     // 图片在前，视频在后
     const mediaItems = [
@@ -448,6 +470,13 @@ const SrefModal = () => {
                                     title={sref.isLiked ? 'Liked' : 'Like'}
                                 >
                                     <Heart size={18} fill={sref.isLiked ? 'currentColor' : 'none'} />
+                                </button>
+                                <button
+                                    className={`dmodal-btn-icon ${localFavorited ? 'favorited' : ''}`}
+                                    onClick={handleFavorite}
+                                    title={localFavorited ? '取消收藏' : '收藏'}
+                                >
+                                    <Bookmark size={18} fill={localFavorited ? 'currentColor' : 'none'} />
                                 </button>
                                 <button
                                     className="dmodal-btn-icon"

@@ -9,7 +9,7 @@ import '../Post/LiblibStyleCard.css';
 const ROW_HEIGHT = 8;
 const ROW_GAP = 8;
 
-const SrefCard = ({ sref }) => {
+const SrefCard = ({ sref, initialFavorited = false }) => {
   const navigate = useNavigate();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -140,6 +140,7 @@ const SrefCard = ({ sref }) => {
                   <FavoriteButton
                     targetType="sref"
                     targetId={sref._id}
+                    initialFavorited={initialFavorited}
                     className="liblib-action-btn"
                     size={13}
                   />

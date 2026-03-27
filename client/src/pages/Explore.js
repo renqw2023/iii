@@ -1,19 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery } from 'react-query';
 import { Loader2 } from 'lucide-react';
 import { useExploreSEO } from '../hooks/useSEO';
 import { useSearchParams, useLocation, Outlet } from 'react-router-dom';
 import SrefCard from '../components/Sref/SrefCard';
 import { srefAPI } from '../services/srefApi';
+import { favoritesAPI } from '../services/favoritesApi';
+import { useAuth } from '../contexts/AuthContext';
 import { useSidebarPanel } from '../contexts/SidebarContext';
 import ExplorePanel from '../components/Sidebar/ExplorePanel';
 
 const Explore = () => {
   useSidebarPanel(ExplorePanel);
   useExploreSEO();
+  const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const sentinelRef = useRef(null);
+  const [favoritedSet, setFavoritedSet] = useState(new Set());
 
   const isListActive = location.pathname === '/explore';
 
@@ -47,6 +51,19 @@ const Explore = () => {
 
   const srefs = data?.pages?.flatMap(p => p?.data?.posts || []) || [];
   const total = data?.pages?.[0]?.data?.pagination?.total || 0;
+
+  // 批量 check 已收藏状态，用于 initialFavorited
+  useEffect(() => {
+    if (!isAuthenticated || !srefs.length) return;
+    const ids = srefs.map(s => s._id);
+    favoritesAPI.check('sref', ids)
+      .then(res => {
+        const map = res.data?.data || {};
+        setFavoritedSet(new Set(Object.keys(map).filter(k => map[k])));
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [srefs.length, isAuthenticated]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -87,7 +104,7 @@ const Explore = () => {
         ) : (
           <div className="gallery-grid gallery-stage-grid">
             {srefs.map((sref) => (
-              <SrefCard key={sref._id} sref={sref} />
+              <SrefCard key={sref._id} sref={sref} initialFavorited={favoritedSet.has(sref._id)} />
             ))}
           </div>
         )}

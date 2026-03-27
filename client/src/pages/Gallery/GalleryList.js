@@ -1,21 +1,25 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams, Outlet } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
 import { Loader2 } from 'lucide-react';
 import { useGallerySEO } from '../../hooks/useSEO';
 import GalleryCard from '../../components/Gallery/GalleryCard';
 import { galleryAPI } from '../../services/galleryApi';
+import { favoritesAPI } from '../../services/favoritesApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useSidebarPanel } from '../../contexts/SidebarContext';
 import GalleryPanel from '../../components/Sidebar/GalleryPanel';
+import { useAuth } from '../../contexts/AuthContext';
 
 const GalleryList = () => {
     useSidebarPanel(GalleryPanel);
     useGallerySEO();
     const { t } = useTranslation();
+    const { isAuthenticated } = useAuth();
     const [searchParams] = useSearchParams();
     const sentinelRef = useRef(null);
+    const [favoritedSet, setFavoritedSet] = useState(new Set());
 
     // 直接从 URL searchParams 读取 filter 状态（Sidebar 负责写入）
     const model       = searchParams.get('model')  || 'all';
@@ -59,6 +63,19 @@ const GalleryList = () => {
 
     const prompts = data?.pages?.flatMap(p => p?.data?.prompts || []) || [];
     const total = data?.pages?.[0]?.data?.pagination?.total || 0;
+
+    // 批量 check 已收藏状态，用于 initialFavorited
+    useEffect(() => {
+        if (!isAuthenticated || !prompts.length) return;
+        const ids = prompts.map(p => p._id);
+        favoritesAPI.check('gallery', ids)
+            .then(res => {
+                const map = res.data?.data || {};
+                setFavoritedSet(new Set(Object.keys(map).filter(k => map[k])));
+            })
+            .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [prompts.length, isAuthenticated]);
 
     useEffect(() => {
         const el = sentinelRef.current;
@@ -114,6 +131,7 @@ const GalleryList = () => {
                             <GalleryCard
                                 key={prompt._id}
                                 prompt={prompt}
+                                initialFavorited={favoritedSet.has(prompt._id)}
                                 onLike={handleLike}
                                 onFavorite={handleFavorite}
                             />

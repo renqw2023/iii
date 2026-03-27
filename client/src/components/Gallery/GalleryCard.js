@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 const ROW_HEIGHT = 8; // must match grid-auto-rows in gallery.css
 const ROW_GAP = 8;    // card bottom spacing accounted into span
 
-const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
+const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _onFavorite }) => {
     const navigate = useNavigate();
     const { setPrefill } = useGeneration();
     const { t } = useTranslation();
@@ -194,6 +194,7 @@ const GalleryCard = ({ prompt, onLike, onFavorite: _onFavorite }) => {
                                 <FavoriteButton
                                     targetType="gallery"
                                     targetId={prompt._id}
+                                    initialFavorited={initialFavorited}
                                     className="gallery-action-btn"
                                     size={13}
                                     iconType="bookmark"

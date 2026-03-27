@@ -2508,4 +2508,15 @@
     max-height: none;
     overflow: visible;
   }
+
+  /* Card overlays: always visible on touch (no hover state) */
+  .gallery-card-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Favorites page remove button: always visible on mobile */
+  .fav-remove-btn {
+    opacity: 1 !important;
+  }
 }

@@ -175,4 +175,48 @@ router.post(
   }
 );
 
+// Image proxy — lets html2canvas capture cross-origin images without CORS errors.
+// Serves local /output/ files directly; fetches external URLs server-side.
+// No auth required (images are already public); rate-limited by the global limiter.
+router.get('/proxy-image', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).send('Missing url');
+
+  // Block requests to private/internal addresses
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname;
+    if (/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hostname)) {
+      return res.status(403).send('Forbidden');
+    }
+  } catch {
+    return res.status(400).send('Invalid url');
+  }
+
+  // Try to serve from local filesystem first (same-origin /output/ etc.)
+  const localPath = !url.startsWith('http') ? resolveLocalFile(url) : null;
+  if (localPath && fs.existsSync(localPath)) {
+    return res.sendFile(localPath);
+  }
+
+  // Fetch external URL and pipe through
+  try {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; iii-pics-proxy/1.0)' },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return res.status(response.status).send('Upstream error');
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    if (!contentType.startsWith('image/')) return res.status(400).send('Not an image');
+
+    res.set('Content-Type', contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    res.status(502).send('Proxy fetch failed');
+  }
+});
+
 module.exports = router;

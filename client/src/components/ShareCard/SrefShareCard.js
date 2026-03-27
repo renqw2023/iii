@@ -182,8 +182,8 @@ const SrefShareCard = React.forwardRef(({ sref }, ref) => {
           {/* QR */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ color: '#52525b', fontSize: 10, marginBottom: 2 }}>扫码查看详情</div>
-              <div style={{ color: '#3f3f46', fontSize: 10 }}>复制 sref 代码</div>
+              <div style={{ color: '#52525b', fontSize: 10, marginBottom: 2 }}>Scan for details</div>
+              <div style={{ color: '#3f3f46', fontSize: 10 }}>Copy sref code</div>
             </div>
             <div
               style={{

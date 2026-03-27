@@ -6,7 +6,11 @@ const H = 1000;
 const STRIP_H = 96; // bottom brand strip height
 
 const GalleryShareCard = React.forwardRef(({ prompt }, ref) => {
-  const imgSrc = prompt.previewImage || (prompt.images && prompt.images[0]) || '';
+  const rawSrc = prompt.previewImage || (prompt.images && prompt.images[0]) || '';
+  // Route through server proxy so html2canvas can read cross-origin CDN images
+  const imgSrc = rawSrc
+    ? `/api/tools/proxy-image?url=${encodeURIComponent(rawSrc)}`
+    : '';
   const shareUrl = `https://iii.pics/gallery/${prompt._id}`;
 
   return (
@@ -28,7 +32,6 @@ const GalleryShareCard = React.forwardRef(({ prompt }, ref) => {
       {imgSrc ? (
         <img
           src={imgSrc}
-          crossOrigin="anonymous"
           alt=""
           style={{
             position: 'absolute',
@@ -111,7 +114,7 @@ const GalleryShareCard = React.forwardRef(({ prompt }, ref) => {
         {/* QR Code */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ color: '#71717a', fontSize: 10, marginBottom: 2 }}>扫码查看原图</div>
+            <div style={{ color: '#71717a', fontSize: 10, marginBottom: 2 }}>Scan to view original</div>
             <div style={{ color: '#52525b', fontSize: 10 }}>iii.pics</div>
           </div>
           <div

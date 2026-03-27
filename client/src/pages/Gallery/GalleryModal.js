@@ -71,8 +71,13 @@ const GalleryModal = () => {
     // 多图轮播：切换 prompt 时重置索引
     useEffect(() => { setImgIndex(0); }, [prompt?._id]);
 
-    // 同步服务端收藏状态到本地
-    useEffect(() => { if (prompt) setLocalFavorited(!!localFavorited); }, [prompt]);
+    // 从 Favorites 集合查询真实收藏状态（旧嵌入数组 prompt.isFavorited 可能不同步）
+    useEffect(() => {
+        if (!isAuthenticated || !id) return;
+        favoritesAPI.check('gallery', [id])
+            .then(res => { setLocalFavorited(!!(res.data?.data?.[id])); })
+            .catch(() => {});
+    }, [id, isAuthenticated]);
 
     const images = prompt?.images?.length > 0
         ? prompt.images
@@ -120,7 +125,14 @@ const GalleryModal = () => {
                 await favoritesAPI.add('gallery', id);
                 toast.success('收藏成功 ❤️');
             }
-        } catch { setLocalFavorited(prev); toast.error('操作失败'); }
+        } catch (err) {
+            if (err?.response?.status === 409) {
+                setLocalFavorited(true); // 已收藏，同步状态
+            } else {
+                setLocalFavorited(prev);
+                toast.error('操作失败');
+            }
+        }
     };
 
     const handleShare = () => setShowShareCard(true);

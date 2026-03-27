@@ -68,8 +68,13 @@ const SrefModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sref?._id]);
 
-    // 同步服务端收藏状态到本地
-    useEffect(() => { if (sref) setLocalFavorited(!!sref.isFavorited); }, [sref]);
+    // 从 Favorites 集合查询真实收藏状态
+    useEffect(() => {
+        if (!isAuthenticated || !id) return;
+        favoritesAPI.check('sref', [id])
+            .then(res => { setLocalFavorited(!!(res.data?.data?.[id])); })
+            .catch(() => {});
+    }, [id, isAuthenticated]);
 
     const handleFavorite = async () => {
         if (!isAuthenticated) { openLoginModal(); return; }
@@ -83,7 +88,14 @@ const SrefModal = () => {
                 await favoritesAPI.add('sref', id);
                 toast.success('收藏成功 ❤️');
             }
-        } catch { setLocalFavorited(prev); toast.error('操作失败'); }
+        } catch (err) {
+            if (err?.response?.status === 409) {
+                setLocalFavorited(true);
+            } else {
+                setLocalFavorited(prev);
+                toast.error('操作失败');
+            }
+        }
     };
 
     // 图片在前，视频在后

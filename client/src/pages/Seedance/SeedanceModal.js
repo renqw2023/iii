@@ -6,9 +6,11 @@ import { motion } from 'framer-motion';
 import { Copy, Heart, Bookmark, X, Eye, Share2, Film, ExternalLink, User, Languages, Loader2, Wand2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
+import { favoritesAPI } from '../../services/favoritesApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useGeneration } from '../../contexts/GenerationContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SeedanceModal = () => {
     const { id } = useParams();
@@ -16,6 +18,8 @@ const SeedanceModal = () => {
     const location = useLocation();
     const { t, i18n } = useTranslation();
     const { setPrefill } = useGeneration();
+    const { isAuthenticated, openLoginModal } = useAuth();
+    const [localFavorited, setLocalFavorited] = useState(false);
 
     const [showTranslated, setShowTranslated] = useState(false);
     const [translatedText, setTranslatedText] = useState('');
@@ -47,6 +51,14 @@ const SeedanceModal = () => {
 
     const prompt = data?.data?.prompt;
 
+    // 从 Favorites 集合查询真实收藏状态
+    useEffect(() => {
+        if (!isAuthenticated || !id) return;
+        favoritesAPI.check('seedance', [id])
+            .then(res => { setLocalFavorited(!!(res.data?.data?.[id])); })
+            .catch(() => {});
+    }, [id, isAuthenticated]);
+
     const handleCopy = async () => {
         try {
             const textToCopy = showTranslated && translatedText ? translatedText : prompt.prompt;
@@ -64,8 +76,25 @@ const SeedanceModal = () => {
     };
 
     const handleFavorite = async () => {
-        try { await seedanceAPI.toggleFavorite(id); }
-        catch { toast.error(t('seedance.actions.loginRequired')); }
+        if (!isAuthenticated) { openLoginModal(); return; }
+        const prev = localFavorited;
+        setLocalFavorited(!prev);
+        try {
+            if (prev) {
+                await favoritesAPI.remove('seedance', id);
+                toast.success('已取消收藏');
+            } else {
+                await favoritesAPI.add('seedance', id);
+                toast.success('收藏成功 ❤️');
+            }
+        } catch (err) {
+            if (err?.response?.status === 409) {
+                setLocalFavorited(true);
+            } else {
+                setLocalFavorited(prev);
+                toast.error('操作失败');
+            }
+        }
     };
 
     const handleShare = async () => {
@@ -284,11 +313,11 @@ const SeedanceModal = () => {
                                     <Heart size={18} fill={prompt.isLiked ? 'currentColor' : 'none'} />
                                 </button>
                                 <button
-                                    className={`dmodal-btn-icon ${prompt.isFavorited ? 'favorited' : ''}`}
+                                    className={`dmodal-btn-icon ${localFavorited ? 'favorited' : ''}`}
                                     onClick={handleFavorite}
-                                    title={prompt.isFavorited ? t('seedance.actions.favorited') : t('seedance.actions.favorite')}
+                                    title={localFavorited ? t('seedance.actions.favorited') : t('seedance.actions.favorite')}
                                 >
-                                    <Bookmark size={18} fill={prompt.isFavorited ? 'currentColor' : 'none'} />
+                                    <Bookmark size={18} fill={localFavorited ? 'currentColor' : 'none'} />
                                 </button>
                                 <button className="dmodal-btn-icon" onClick={handleShare} title="Share">
                                     <Share2 size={18} />

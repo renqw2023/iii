@@ -120,17 +120,17 @@ const GalleryModal = () => {
         try {
             if (prev) {
                 await favoritesAPI.remove('gallery', id);
-                toast.success('已取消收藏');
+                toast.success(t('gallery.actions.unfavoriteSuccess'));
             } else {
                 await favoritesAPI.add('gallery', id);
-                toast.success('收藏成功 ❤️');
+                toast.success(t('gallery.actions.favoriteSuccess'));
             }
         } catch (err) {
             if (err?.response?.status === 409) {
-                setLocalFavorited(true); // 已收藏，同步状态
+                setLocalFavorited(true);
             } else {
                 setLocalFavorited(prev);
-                toast.error('操作失败');
+                toast.error(t('gallery.actions.favoriteFailed'));
             }
         }
     };

@@ -3,6 +3,7 @@ import { Heart, Bookmark } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 /**
  * FavoriteButton — 通用收藏按钮
@@ -21,6 +22,7 @@ const FavoriteButton = ({
   iconType = 'heart',
 }) => {
   const { isAuthenticated, openLoginModal } = useAuth();
+  const { t } = useTranslation();
   const [favorited, setFavorited] = useState(initialFavorited);
   const [loading, setLoading] = useState(false);
 
@@ -42,32 +44,28 @@ const FavoriteButton = ({
 
     try {
       if (prev) {
-        // 取消收藏
         await axios.delete(`/api/favorites/${targetType}/${targetId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        toast.success('已取消收藏');
+        toast.success(t('favorites.actions.unfavoriteSuccess'));
       } else {
-        // 添加收藏
         await axios.post('/api/favorites', { targetType, targetId }, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        toast.success('收藏成功 ❤️');
+        toast.success(t('favorites.actions.favoriteSuccess'));
       }
     } catch (err) {
-      // 回滚
       setFavorited(prev);
-      const msg = err.response?.data?.message || '操作失败，请重试';
       if (err.response?.status === 409) {
         // 已收藏，状态同步一下
         setFavorited(true);
       } else {
-        toast.error(msg);
+        toast.error(t('favorites.actions.favoriteFailed'));
       }
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, openLoginModal, loading, favorited, targetType, targetId]);
+  }, [isAuthenticated, openLoginModal, loading, favorited, targetType, targetId, t]);
 
   return (
     <button
@@ -78,8 +76,8 @@ const FavoriteButton = ({
         opacity: loading ? 0.6 : 1,
         cursor: loading ? 'wait' : 'pointer',
       }}
-      aria-label={favorited ? '取消收藏' : '收藏'}
-      title={favorited ? '取消收藏' : '收藏'}
+      aria-label={favorited ? t('favorites.actions.unfavorite') : t('favorites.actions.favorite')}
+      title={favorited ? t('favorites.actions.unfavorite') : t('favorites.actions.favorite')}
     >
       {iconType === 'bookmark' ? (
         <Bookmark

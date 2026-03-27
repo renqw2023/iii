@@ -9,6 +9,7 @@ import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
 import { favoritesAPI } from '../services/favoritesApi';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
 import { useGeneration } from '../contexts/GenerationContext';
@@ -21,6 +22,7 @@ const SrefModal = () => {
     const [searchParams] = useSearchParams();
     const { setPrefill } = useGeneration();
     const { isAuthenticated, openLoginModal } = useAuth();
+    const { t } = useTranslation();
     const [copied, setCopied] = useState(false);
     const [showShareCard, setShowShareCard] = useState(false);
     const [localFavorited, setLocalFavorited] = useState(false);
@@ -83,17 +85,17 @@ const SrefModal = () => {
         try {
             if (prev) {
                 await favoritesAPI.remove('sref', id);
-                toast.success('已取消收藏');
+                toast.success(t('gallery.actions.unfavoriteSuccess'));
             } else {
                 await favoritesAPI.add('sref', id);
-                toast.success('收藏成功 ❤️');
+                toast.success(t('gallery.actions.favoriteSuccess'));
             }
         } catch (err) {
             if (err?.response?.status === 409) {
                 setLocalFavorited(true);
             } else {
                 setLocalFavorited(prev);
-                toast.error('操作失败');
+                toast.error(t('gallery.actions.favoriteFailed'));
             }
         }
     };

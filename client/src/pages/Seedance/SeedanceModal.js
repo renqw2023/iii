@@ -82,17 +82,17 @@ const SeedanceModal = () => {
         try {
             if (prev) {
                 await favoritesAPI.remove('seedance', id);
-                toast.success('已取消收藏');
+                toast.success(t('seedance.actions.unfavoriteSuccess'));
             } else {
                 await favoritesAPI.add('seedance', id);
-                toast.success('收藏成功 ❤️');
+                toast.success(t('seedance.actions.favoriteSuccess'));
             }
         } catch (err) {
             if (err?.response?.status === 409) {
                 setLocalFavorited(true);
             } else {
                 setLocalFavorited(prev);
-                toast.error('操作失败');
+                toast.error(t('seedance.actions.favoriteFailed'));
             }
         }
     };

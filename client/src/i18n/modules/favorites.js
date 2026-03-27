@@ -18,7 +18,12 @@ export const favorites = {
       cancelSelection: '取消选择',
       selectAll: '全选',
       share: '分享',
-      remove: '移除'
+      remove: '移除',
+      favorite: '收藏',
+      unfavorite: '取消收藏',
+      favoriteSuccess: '收藏成功',
+      unfavoriteSuccess: '已取消收藏',
+      favoriteFailed: '操作失败',
     },
     empty: {
       title: '还没有收藏任何作品',
@@ -49,7 +54,12 @@ export const favorites = {
       cancelSelection: 'Cancel Selection',
       selectAll: 'Select All',
       share: 'Share',
-      remove: 'Remove'
+      remove: 'Remove',
+      favorite: 'Save to favorites',
+      unfavorite: 'Remove from favorites',
+      favoriteSuccess: 'Saved to favorites',
+      unfavoriteSuccess: 'Removed from favorites',
+      favoriteFailed: 'Action failed',
     },
     empty: {
       title: 'No favorites yet',
@@ -80,7 +90,12 @@ export const favorites = {
       cancelSelection: '選択解除',
       selectAll: '全選択',
       share: '共有',
-      remove: '削除'
+      remove: '削除',
+      favorite: 'お気に入りに追加',
+      unfavorite: 'お気に入りを解除',
+      favoriteSuccess: 'お気に入りに追加しました',
+      unfavoriteSuccess: 'お気に入りを解除しました',
+      favoriteFailed: '操作に失敗しました',
     },
     empty: {
       title: 'まだお気に入りがありません',

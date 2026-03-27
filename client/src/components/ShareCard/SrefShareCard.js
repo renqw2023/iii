@@ -6,9 +6,7 @@ const H = 1000;
 const GRID_H = 520; // top image grid height
 
 const SrefShareCard = React.forwardRef(({ sref }, ref) => {
-  // Always show 4 slots; pad with nulls so the 2×2 grid is always complete
-  const rawImgs = (sref.imageUrls || []).slice(0, 4);
-  const imgs = [...rawImgs, null, null, null, null].slice(0, 4);
+  const imgs = (sref.imageUrls || []).slice(0, 4);
   const shareUrl = `https://iii.pics/explore/${sref._id}`;
   const tags = (sref.tags || []).slice(0, 4);
 
@@ -36,39 +34,27 @@ const SrefShareCard = React.forwardRef(({ sref }, ref) => {
           width: W,
           height: GRID_H,
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gridTemplateRows: '1fr 1fr',
+          gridTemplateColumns: `${(W - 3) / 2}px ${(W - 3) / 2}px`,
+          gridTemplateRows: `${(GRID_H - 3) / 2}px ${(GRID_H - 3) / 2}px`,
           gap: 3,
           background: '#0f0f0f',
         }}
       >
-        {imgs.map((url, i) =>
-          url ? (
-            <img
-              key={i}
-              src={url}
-              crossOrigin="anonymous"
-              alt=""
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'center',
-                display: 'block',
-              }}
-            />
-          ) : (
-            /* Empty slot — dark placeholder to keep 2×2 shape */
-            <div
-              key={i}
-              style={{
-                width: '100%',
-                height: '100%',
-                background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 100%)',
-              }}
-            />
-          )
-        )}
+        {imgs.map((url, i) => (
+          <img
+            key={i}
+            src={url}
+            crossOrigin="anonymous"
+            alt=""
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              display: 'block',
+            }}
+          />
+        ))}
       </div>
 
       {/* Gradient fade from grid into info section */}

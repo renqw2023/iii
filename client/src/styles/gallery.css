@@ -2442,12 +2442,19 @@
     display: none;
   }
 
-  /* Scrollable body fills remaining height */
+  /* Scrollable body: block layout so flex-shrink can't clip prompt text */
   .dmodal-right-body {
     flex: 1;
+    min-height: 0;
     padding: 1rem;
     overflow-y: auto;
     overflow-x: hidden;
+    display: block; /* override flex-column so children are normal block height */
+    gap: 0;
+  }
+  /* Restore spacing between block children */
+  .dmodal-right-body > * + * {
+    margin-top: 1rem;
   }
 
   /* Footer: sticky, 1 primary btn + icon buttons */

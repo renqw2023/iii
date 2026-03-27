@@ -48,7 +48,7 @@ function visitTracker(req, res, next) {
       '';
 
     buffer.push({
-      ip: ip.replace(/(\d+)$/, 'x'),  // mask last octet for privacy
+      ip,
       path: path.length > 200 ? path.slice(0, 200) : path,
       method: req.method,
       status: res.statusCode,

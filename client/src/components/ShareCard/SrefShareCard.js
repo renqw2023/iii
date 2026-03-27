@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 
 const W = 800;
 const H = 1000;
-const GRID_H = 520; // top image grid height
+const GRID_H = 650; // top image grid height (65% of card)
 
 const SrefShareCard = React.forwardRef(({ sref }, ref) => {
   const imgs = (sref.imageUrls || []).slice(0, 4);
@@ -82,7 +82,7 @@ const SrefShareCard = React.forwardRef(({ sref }, ref) => {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          padding: '28px 40px 28px',
+          padding: '22px 40px 24px',
           boxSizing: 'border-box',
         }}
       >

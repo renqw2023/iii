@@ -172,7 +172,7 @@ export default function ShareCardModal({ type, data, onClose }) {
             ) : (
               /* Sref skeleton: 2×2 grid + text lines */
               <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ flex: '0 0 55%', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 2, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ flex: '0 0 65%', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 2, position: 'relative', overflow: 'hidden' }}>
                   {[0,1,2,3].map(i => (
                     <div key={i} style={{ background: '#111', position: 'relative', overflow: 'hidden' }}>
                       <div className="shimmer-sweep" style={{ animationDelay: `${i * 0.15}s` }} />

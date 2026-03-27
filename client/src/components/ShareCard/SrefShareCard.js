@@ -6,7 +6,9 @@ const H = 1000;
 const GRID_H = 520; // top image grid height
 
 const SrefShareCard = React.forwardRef(({ sref }, ref) => {
-  const imgs = (sref.imageUrls || []).slice(0, 4);
+  // Always show 4 slots; pad with nulls so the 2×2 grid is always complete
+  const rawImgs = (sref.imageUrls || []).slice(0, 4);
+  const imgs = [...rawImgs, null, null, null, null].slice(0, 4);
   const shareUrl = `https://iii.pics/explore/${sref._id}`;
   const tags = (sref.tags || []).slice(0, 4);
 
@@ -35,13 +37,13 @@ const SrefShareCard = React.forwardRef(({ sref }, ref) => {
           height: GRID_H,
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gridTemplateRows: imgs.length <= 2 ? '1fr' : '1fr 1fr',
+          gridTemplateRows: '1fr 1fr',
           gap: 3,
           background: '#0f0f0f',
         }}
       >
-        {imgs.length > 0 ? (
-          imgs.map((url, i) => (
+        {imgs.map((url, i) =>
+          url ? (
             <img
               key={i}
               src={url}
@@ -55,16 +57,17 @@ const SrefShareCard = React.forwardRef(({ sref }, ref) => {
                 display: 'block',
               }}
             />
-          ))
-        ) : (
-          /* Fallback gradient when no images */
-          <div
-            style={{
-              gridColumn: '1 / -1',
-              gridRow: '1 / -1',
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-            }}
-          />
+          ) : (
+            /* Empty slot — dark placeholder to keep 2×2 shape */
+            <div
+              key={i}
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f0f 100%)',
+              }}
+            />
+          )
         )}
       </div>
 

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../../hooks/useBrowsingHistory';
 import { useGeneration } from '../../contexts/GenerationContext';
+import ShareCardModal from '../../components/ShareCard/ShareCardModal';
 
 const MODEL_LABELS = {
     nanobanana: 'NanoBanana Pro',
@@ -26,6 +27,7 @@ const GalleryModal = () => {
     const { t } = useTranslation();
     const { setPrefill } = useGeneration();
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [showShareCard, setShowShareCard] = useState(false);
     const [translatedPrompt, setTranslatedPrompt] = useState(null);
     const [imgIndex, setImgIndex] = useState(0);
 
@@ -104,15 +106,14 @@ const GalleryModal = () => {
         catch { toast.error(t('gallery.actions.loginRequired')); }
     };
 
-    const handleShare = async () => {
-        try { await navigator.share({ title: prompt.title, url: window.location.href }); }
-        catch {
-            navigator.clipboard.writeText(window.location.href);
-            toast.success(t('gallery.actions.linkCopied'));
-        }
-    };
+    const handleShare = () => setShowShareCard(true);
 
-    return createPortal(
+    return (
+      <>
+        {showShareCard && prompt && (
+          <ShareCardModal type="gallery" data={prompt} onClose={() => setShowShareCard(false)} />
+        )}
+        {createPortal(
         <>
             {prompt && (
                 <Helmet>
@@ -399,6 +400,8 @@ const GalleryModal = () => {
             </div>
         </>,
         document.body
+        )}
+      </>
     );
 };
 

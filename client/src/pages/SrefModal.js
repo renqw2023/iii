@@ -3,13 +3,14 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
-import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react';
+import { Copy, Heart, X, Eye, Check, Loader2, Play, ZoomIn, ChevronLeft, ChevronRight, ImagePlus, Share2 } from 'lucide-react';
 import TranslateButton from '../components/UI/TranslateButton';
 import { Helmet } from 'react-helmet-async';
 import { srefAPI } from '../services/srefApi';
 import toast from 'react-hot-toast';
 import { useBrowsingHistory } from '../hooks/useBrowsingHistory';
 import { useGeneration } from '../contexts/GenerationContext';
+import ShareCardModal from '../components/ShareCard/ShareCardModal';
 
 const SrefModal = () => {
     const { id } = useParams();
@@ -18,6 +19,7 @@ const SrefModal = () => {
     const [searchParams] = useSearchParams();
     const { setPrefill } = useGeneration();
     const [copied, setCopied] = useState(false);
+    const [showShareCard, setShowShareCard] = useState(false);
     const [lightboxSrc, setLightboxSrc] = useState(null);
     const [activeIdx, setActiveIdx] = useState(0);
     const [srefTranslated, setSrefTranslated] = useState(null);
@@ -133,7 +135,12 @@ const SrefModal = () => {
         catch { toast.error('Please log in to like'); }
     };
 
-    return createPortal(
+    return (
+      <>
+        {showShareCard && sref && (
+          <ShareCardModal type="sref" data={sref} onClose={() => setShowShareCard(false)} />
+        )}
+        {createPortal(
         <>
             {sref && (
                 <Helmet>
@@ -432,6 +439,13 @@ const SrefModal = () => {
                                 >
                                     <Heart size={18} fill={sref.isLiked ? 'currentColor' : 'none'} />
                                 </button>
+                                <button
+                                    className="dmodal-btn-icon"
+                                    onClick={() => setShowShareCard(true)}
+                                    title="生成分享卡片"
+                                >
+                                    <Share2 size={18} />
+                                </button>
                             </div>
                         )}
                     </div>
@@ -439,6 +453,8 @@ const SrefModal = () => {
             </div>
         </>,
         document.body
+        )}
+      </>
     );
 };
 

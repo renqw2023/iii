@@ -222,17 +222,17 @@ const SrefModal = () => {
                     transition={{ duration: 0.2 }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Mobile top bar: back + share */}
-                    <div className="dmodal-mobile-topbar">
-                        <button className="dmodal-mobile-back-btn" onClick={handleClose}>
-                            <ArrowLeft size={22} />
-                        </button>
-                        <button className="dmodal-mobile-share-btn" onClick={() => setShowShareCard(true)}>
-                            <Share2 size={20} />
-                        </button>
-                    </div>
                     {/* ── Left: media viewer ── */}
                     <div className="dmodal-left" ref={mediaLeftRef} style={{ position: 'relative' }}>
+                        {/* Mobile floating back + share buttons over image */}
+                        <div className="dmodal-mobile-float">
+                            <button className="dmodal-float-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
+                                <ArrowLeft size={20} />
+                            </button>
+                            <button className="dmodal-float-btn" onClick={(e) => { e.stopPropagation(); setShowShareCard(true); }}>
+                                <Share2 size={18} />
+                            </button>
+                        </div>
                         {isLoading ? (
                             <div className="dmodal-loading">
                                 <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid #333', borderTopColor: '#8b5cf6', borderRadius: '50%' }} />
@@ -434,11 +434,12 @@ const SrefModal = () => {
                                 </button>
                                 {active?.type === 'image' && (
                                     <button
-                                        className="dmodal-btn-primary"
+                                        className="dmodal-btn-primary dmodal-btn-ref"
                                         onClick={() => { setPrefill({ referenceImageUrl: active.url }); handleClose(); }}
+                                        title="Use as Reference"
                                     >
                                         <ImagePlus size={16} />
-                                        Use as Reference
+                                        <span className="dmodal-btn-ref-label">Use as Reference</span>
                                     </button>
                                 )}
                                 <button

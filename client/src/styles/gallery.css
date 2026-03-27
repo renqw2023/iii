@@ -2354,37 +2354,47 @@
 }
 
 /* =====================================================
+   dmodal — Floating nav buttons (inside image, mobile only)
+   ===================================================== */
+.dmodal-mobile-float {
+  display: none;
+}
+
+/* =====================================================
    dmodal — Mobile overrides (< 768px)
-   Full-screen vertical layout, back button, scrollable
+   Full-screen vertical layout, floating nav, scrollable
    ===================================================== */
 @media (max-width: 767px) {
-  /* Mobile topbar: back ← and share → */
-  .dmodal-mobile-topbar {
+  /* Floating back + share buttons over image */
+  .dmodal-mobile-float {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
-    flex-shrink: 0;
-    background: var(--bg-card);
-    border-bottom: 1px solid var(--border-color);
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 10;
+    pointer-events: none;
   }
-  .dmodal-mobile-back-btn,
-  .dmodal-mobile-share-btn {
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .dmodal-float-btn {
+    pointer-events: all;
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
   }
-  .dmodal-mobile-back-btn:active,
-  .dmodal-mobile-share-btn:active {
-    background: rgba(255,255,255,0.08);
+  .dmodal-float-btn:active {
+    background: rgba(0, 0, 0, 0.7);
   }
 
   /* Remove blur backdrop on mobile (perf) */
@@ -2406,9 +2416,9 @@
     width: 100vw;
   }
 
-  /* Image pane: fixed height, full width */
+  /* Image pane: taller now that topbar is gone */
   .dmodal-left {
-    flex: 0 0 44svh;
+    flex: 0 0 50svh;
     width: 100%;
     border-radius: 0;
   }
@@ -2423,7 +2433,8 @@
     border-left: none;
     border-top: 1px solid var(--border-color);
     overflow-y: auto;
-    display: block; /* override flex so body scrolls naturally */
+    display: flex;
+    flex-direction: column;
   }
 
   /* Hide desktop header row (model badge + X button) */
@@ -2431,48 +2442,63 @@
     display: none;
   }
 
-  /* Tighten body padding */
+  /* Scrollable body fills remaining height */
   .dmodal-right-body {
+    flex: 1;
     padding: 1rem;
-    overflow: visible; /* scroll handled by .dmodal-right */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
-  /* Footer: horizontal scrollable pill row */
+  /* Footer: sticky, 1 primary btn + icon buttons */
   .dmodal-right-footer {
+    flex-shrink: 0;
     position: sticky;
     bottom: 0;
     background: var(--bg-card);
-    padding: 10px 12px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    flex-wrap: nowrap;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
     gap: 8px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
     border-top: 1px solid var(--border-color);
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
   }
-  .dmodal-right-footer::-webkit-scrollbar { display: none; }
 
+  /* Primary button: fills flex space */
   .dmodal-btn-primary {
-    flex: 0 0 auto;
+    flex: 1;
+    min-width: 0;
     white-space: nowrap;
-    font-size: 0.8rem;
-    padding: 0.55rem 0.9rem;
+    font-size: 0.82rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  /* Reference button: icon-only on mobile */
+  .dmodal-btn-ref {
+    flex: 0 0 auto !important;
+    width: 40px;
+    height: 40px;
+    padding: 0 !important;
+    border-radius: 10px;
+    border: 1px solid var(--border-color) !important;
+    background: none !important;
+    color: var(--text-secondary) !important;
+    font-size: 0 !important;
+    justify-content: center;
+  }
+  .dmodal-btn-ref-label {
+    display: none;
   }
   .dmodal-btn-icon {
     flex-shrink: 0;
+    width: 40px;
+    height: 40px;
   }
 
   /* Prompt text — no truncation, fully visible */
   .dmodal-prompt-text {
     max-height: none;
     overflow: visible;
-  }
-}
-
-/* Desktop: hide mobile topbar */
-@media (min-width: 768px) {
-  .dmodal-mobile-topbar {
-    display: none;
   }
 }

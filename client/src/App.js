@@ -42,6 +42,7 @@ import MagicLinkVerify from './pages/MagicLinkVerify';
 import Img2Prompt from './pages/Img2Prompt';
 import GalleryList from './pages/Gallery/GalleryList';
 import GalleryModal from './pages/Gallery/GalleryModal';
+import MePage from './pages/MePage';
 import SeedanceList from './pages/Seedance/SeedanceList';
 import SeedanceModal from './pages/Seedance/SeedanceModal';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
@@ -139,6 +140,7 @@ function App() {
                         </Route>
                         <Route path="post/:id" element={<PostDetail />} />
                         <Route path="user/:id" element={<Profile />} />
+                        <Route path="me" element={<MePage />} />
                       </Route>
 
                       <Route path="/" element={<DocsLayout />}>

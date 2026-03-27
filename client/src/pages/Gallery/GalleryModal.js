@@ -183,16 +183,6 @@ const GalleryModal = () => {
                     transition={{ duration: 0.2 }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* ── Mobile top bar: back + share (hidden on desktop via CSS) ── */}
-                    <div className="dmodal-mobile-topbar">
-                        <button className="dmodal-mobile-back-btn" onClick={handleClose}>
-                            <ArrowLeft size={22} />
-                        </button>
-                        <button className="dmodal-mobile-share-btn" onClick={handleShare}>
-                            <Share2 size={20} />
-                        </button>
-                    </div>
-
                     {/* ── Left: image 轮播（点击放大）── */}
                     <div
                         className="dmodal-left"
@@ -200,6 +190,15 @@ const GalleryModal = () => {
                         onClick={() => currentImage && setLightboxOpen(true)}
                         title={currentImage ? 'Click to zoom' : undefined}
                     >
+                        {/* Mobile floating back + share buttons over image */}
+                        <div className="dmodal-mobile-float">
+                            <button className="dmodal-float-btn" onClick={(e) => { e.stopPropagation(); handleClose(); }}>
+                                <ArrowLeft size={20} />
+                            </button>
+                            <button className="dmodal-float-btn" onClick={(e) => { e.stopPropagation(); handleShare(); }}>
+                                <Share2 size={18} />
+                            </button>
+                        </div>
                         {isLoading ? (
                             <div className="dmodal-loading">
                                 <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid #333', borderTopColor: '#6366f1', borderRadius: '50%' }} />
@@ -380,11 +379,12 @@ const GalleryModal = () => {
                                 </button>
                                 {currentImage && (
                                     <button
-                                        className="dmodal-btn-primary"
+                                        className="dmodal-btn-primary dmodal-btn-ref"
                                         onClick={() => { setPrefill({ referenceImageUrl: currentImage }); handleClose(); }}
+                                        title={t('gallery.detail.useAsReference')}
                                     >
                                         <ImagePlus size={16} />
-                                        {t('gallery.detail.useAsReference')}
+                                        <span className="dmodal-btn-ref-label">{t('gallery.detail.useAsReference')}</span>
                                     </button>
                                 )}
                                 <button

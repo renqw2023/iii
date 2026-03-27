@@ -1,21 +1,22 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutGrid, Compass, User } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 
 const NAV_TABS = [
   { to: '/gallery',  icon: LayoutGrid, label: 'Gallery' },
   { to: '/explore',  icon: Compass,    label: 'Explore' },
+  { to: '/me',       icon: User,       label: 'Me' },
 ];
 
-const MobileDock = ({ onMeClick }) => {
-  const location = useLocation();
-  const { isAuthenticated } = useAuth();
+const ME_ACTIVE_PATHS = ['/me', '/dashboard', '/favorites', '/credits', '/settings', '/browse-history', '/generate-history'];
 
-  // Me tab is "active" when on any auth-related page
-  const meActive = ['/dashboard', '/favorites', '/credits', '/settings', '/browse-history', '/generate-history'].some(
-    p => location.pathname.startsWith(p)
-  );
+const MobileDock = () => {
+  const location = useLocation();
+
+  const isActive = (to) => {
+    if (to === '/me') return ME_ACTIVE_PATHS.some(p => location.pathname.startsWith(p));
+    return location.pathname === to || location.pathname.startsWith(to + '/');
+  };
 
   return (
     <nav
@@ -32,7 +33,7 @@ const MobileDock = ({ onMeClick }) => {
       }}
     >
       {NAV_TABS.map(({ to, icon: Icon, label }) => {
-        const active = location.pathname === to || location.pathname.startsWith(to + '/');
+        const active = isActive(to);
         return (
           <Link
             key={to}
@@ -56,28 +57,6 @@ const MobileDock = ({ onMeClick }) => {
           </Link>
         );
       })}
-
-      {/* Me tab — triggers profile bottom sheet */}
-      <button
-        onClick={onMeClick}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 3,
-          padding: '6px 20px',
-          borderRadius: 9999,
-          border: 'none',
-          background: meActive ? 'rgba(124,58,237,0.2)' : 'transparent',
-          color: meActive ? '#c4b5fd' : 'rgba(255,255,255,0.38)',
-          cursor: 'pointer',
-          transition: 'background 0.15s, color 0.15s',
-        }}
-      >
-        <User size={22} strokeWidth={meActive ? 2.2 : 1.8} />
-        <span style={{ fontSize: 10, lineHeight: 1, fontWeight: meActive ? 600 : 400 }}>Me</span>
-      </button>
     </nav>
   );
 };

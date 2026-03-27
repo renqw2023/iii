@@ -388,7 +388,7 @@ async function syncNanoBanana() {
         const previewImage = item.media?.[0] || item.mediaThumbnails?.[0] || '';
         const record = {
           title: (item.title || '').substring(0, 200),
-          prompt: promptText.substring(0, 10000),
+          prompt: promptText,
           description: (item.description || promptText.substring(0, 300)).substring(0, 500),
           model: 'nanobanana',
           useCase: extractUseCase(item.title || ''),
@@ -492,7 +492,7 @@ async function syncSeedanceGithub() {
 
       const record = {
         title: title.substring(0, 300),
-        prompt: prompt.substring(0, 15000),
+        prompt: prompt,
         description: description.substring(0, 3000),
         videoUrl,
         thumbnailUrl,
@@ -662,7 +662,7 @@ async function syncGithubTrending() {
 
         const record = {
           title:          buildTrendingTitle(item.prompt),
-          prompt:         item.prompt.substring(0, 10000),
+          prompt:         item.prompt,
           description:    '',
           model:          modelVal,
           style,

@@ -12,7 +12,6 @@ const galleryPromptSchema = new mongoose.Schema({
   prompt: {
     type: String,
     required: true,
-    maxlength: 10000,
     trim: true
   },
   description: {

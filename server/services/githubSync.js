@@ -154,7 +154,7 @@ function parseNanoBananaContent(content) {
     const displayTitle = pos.categoryRaw ? `${pos.categoryRaw} - ${pos.title}` : pos.title;
     prompts.push({
       title: displayTitle.substring(0, 200),
-      prompt: promptText.substring(0, 10000),
+      prompt: promptText,
       description,
       model: 'nanobanana',
       useCase, style, subject,
@@ -248,7 +248,7 @@ function parseSeedanceReadme(content) {
     promptMap[youmindId] = {
       youmindId,
       title: title.substring(0, 300),
-      prompt: uniquePrompt.substring(0, 15000) || descriptionLines.join('\n').substring(0, 15000),
+      prompt: uniquePrompt || descriptionLines.join('\n'),
       description: descriptionLines.slice(0, 3).join(' ').substring(0, 3000),
       category: guessCategory(title, fullText),
       tags: extractSeedanceTags(title, fullText),

@@ -12,7 +12,6 @@ const seedancePromptSchema = new mongoose.Schema({
     prompt: {
         type: String,
         required: true,
-        maxlength: 15000,
         trim: true
     },
     description: {

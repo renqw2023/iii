@@ -196,7 +196,7 @@ async function syncSeedanceYouMind() {
 
       const record = {
         title: title.substring(0, 300),
-        prompt: content.length > 10 ? content.substring(0, 15000) : description.substring(0, 15000),
+        prompt: content.length > 10 ? content : description,
         description: description.substring(0, 3000),
         videoUrl: videoInfo.videoUrl,
         thumbnailUrl: videoInfo.thumbnailUrl,

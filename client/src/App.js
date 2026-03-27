@@ -66,6 +66,13 @@ const LoginRedirect = () => {
   return <Navigate to="/" replace />;
 };
 
+// 移动端主页重定向：手机访问 / 时直接进入 Gallery
+const MobileHomeRedirect = () => {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  if (isMobile) return <Navigate to="/gallery" replace />;
+  return <Home />;
+};
+
 // 全局 SearchModal 挂载
 const GlobalSearchModal = () => {
   const { isSearchOpen, closeSearch } = useAuth();
@@ -110,7 +117,7 @@ function App() {
                     <Routes>
                       {/* 首页 + 认证页 — 无全局侧边栏，顶部 Header */}
                       <Route path="/" element={<HomeLayout />}>
-                        <Route index element={<Home />} />
+                        <Route index element={<MobileHomeRedirect />} />
                         <Route path="login" element={<LoginRedirect />} />
                         <Route path="register" element={<Register />} />
                         <Route path="verify-email" element={<EmailVerification />} />

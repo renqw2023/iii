@@ -1,50 +1,57 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Heart, Clock, Coins, Compass } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutGrid, Compass, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-const DOCK_ITEMS = [
-  { to: '/',         icon: Home,    label: '首页',   auth: false },
-  { to: '/explore',  icon: Compass, label: '探索',   auth: false },
-  { to: '/favorites',icon: Heart,   label: '收藏',   auth: true  },
-  { to: '/history',  icon: Clock,   label: '历史',   auth: false },
-  { to: '/credits',  icon: Coins,   label: '积分',   auth: true  },
+const TABS = [
+  { to: '/gallery',  icon: LayoutGrid, label: 'Gallery', auth: false },
+  { to: '/explore',  icon: Compass, label: 'Explore',  auth: false },
+  { to: '/dashboard',icon: User,    label: 'Me',       auth: true  },
 ];
 
 const MobileDock = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, openLoginModal } = useAuth();
 
   return (
     <nav
-      className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 px-3 md:hidden"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center md:hidden"
       style={{
-        height: 60,
-        borderRadius: 20,
-        backgroundColor: 'var(--bg-header, rgba(15,15,25,0.85))',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        border: '1px solid var(--border-color)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+        gap: 8,
+        padding: '10px 20px',
+        borderRadius: 9999,
+        backgroundColor: 'rgba(14,14,22,0.88)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset',
       }}
     >
-      {DOCK_ITEMS.map(({ to, icon: Icon, label, auth }) => {
-        const active = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
-        const handleClick = auth && !isAuthenticated ? openLoginModal : undefined;
+      {TABS.map(({ to, icon: Icon, label, auth }) => {
+        const active = location.pathname === to || location.pathname.startsWith(to + '/');
 
         if (auth && !isAuthenticated) {
           return (
             <button
               key={to}
-              onClick={handleClick}
-              className="flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all"
+              onClick={openLoginModal}
               style={{
-                minWidth: 52,
-                color: 'var(--text-tertiary, rgba(255,255,255,0.35))',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 3,
+                padding: '6px 18px',
+                borderRadius: 9999,
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'rgba(255,255,255,0.35)',
               }}
             >
-              <Icon size={20} />
-              <span className="text-[10px] leading-none">{label}</span>
+              <Icon size={22} strokeWidth={1.8} />
+              <span style={{ fontSize: 10, lineHeight: 1 }}>{label}</span>
             </button>
           );
         }
@@ -53,15 +60,26 @@ const MobileDock = () => {
           <Link
             key={to}
             to={to}
-            className="flex flex-col items-center justify-center gap-0.5 px-4 py-2 rounded-2xl transition-all"
             style={{
-              minWidth: 52,
-              backgroundColor: active ? 'rgba(99,102,241,0.18)' : 'transparent',
-              color: active ? 'var(--accent-primary, #6366f1)' : 'var(--text-tertiary, rgba(255,255,255,0.45))',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+              padding: '6px 18px',
+              borderRadius: 9999,
+              textDecoration: 'none',
+              background: active ? 'rgba(124,58,237,0.18)' : 'transparent',
+              color: active ? '#a78bfa' : 'rgba(255,255,255,0.38)',
+              transition: 'background 0.15s, color 0.15s',
             }}
           >
-            <Icon size={20} fill={active && to === '/favorites' ? 'currentColor' : 'none'} />
-            <span className="text-[10px] leading-none">{label}</span>
+            <Icon
+              size={22}
+              strokeWidth={1.8}
+              fill={active ? 'rgba(124,58,237,0.25)' : 'none'}
+            />
+            <span style={{ fontSize: 10, lineHeight: 1 }}>{label}</span>
           </Link>
         );
       })}

@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import Header from './Header';
 import Sidebar from './Sidebar';
 import MobileDock from '../UI/MobileDock';
 import DesktopDock from '../UI/DesktopDock';
@@ -50,13 +49,8 @@ const Layout = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Mobile header only */}
-        <div className="md:hidden">
-          <Header />
-        </div>
-
-        {/* pb-20 on desktop to avoid DesktopDock overlap */}
-        <main className="flex-1 pb-safe-bottom md:pb-20">
+        {/* pb-24 on mobile for MobileDock clearance; pb-20 on desktop for DesktopDock */}
+        <main className="flex-1 pb-24 md:pb-20">
           <Outlet />
         </main>
       </div>

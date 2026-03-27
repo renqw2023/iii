@@ -384,7 +384,10 @@ async function syncNanoBanana() {
       // Upsert this page immediately — no data lost on mid-sync failure
       for (const item of prompts) {
         const id = String(item.id);
-        const promptText = item.translatedContent || item.content || '';
+        // Prefer whichever is longer: original content usually beats truncated AI translation
+        const promptText = (item.content && item.translatedContent && item.content.length >= item.translatedContent.length)
+          ? item.content
+          : (item.translatedContent || item.content || '');
         const previewImage = item.media?.[0] || item.mediaThumbnails?.[0] || '';
         const record = {
           title: (item.title || '').substring(0, 200),

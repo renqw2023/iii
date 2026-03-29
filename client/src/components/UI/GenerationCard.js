@@ -277,6 +277,11 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
       <div style={innerStyle}>
         {isVideo ? (
           <>
+            {/* Dark placeholder bg for video */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+            }} />
             <video
               ref={videoRef}
               src={videoUrl}
@@ -298,24 +303,40 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
                 pointerEvents: 'none',
               }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: '50%',
-                  backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+                  width: 48, height: 48, borderRadius: '50%',
+                  backgroundColor: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
+                  border: '1.5px solid rgba(255,255,255,0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                 }}>
-                  <Play size={18} color="#fff" style={{ marginLeft: 2 }} />
+                  <Play size={20} color="#fff" style={{ marginLeft: 3 }} />
                 </div>
               </div>
             )}
             {/* VIDEO badge — always visible */}
             <div style={{
               position: 'absolute', top: 8, left: 8,
-              backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
-              borderRadius: 6, padding: '2px 7px',
-              fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.05em',
+              backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)',
+              borderRadius: 6, padding: '3px 8px',
+              fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.06em',
+              display: 'flex', alignItems: 'center', gap: 4,
               pointerEvents: 'none',
             }}>
-              ▶ VIDEO{job.generateAudio ? ' 🔊' : ''}
+              <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', backgroundColor: '#ef4444' }} />
+              VIDEO{job.generateAudio ? ' · AUDIO' : ''}
             </div>
+            {/* Model name badge */}
+            {job.modelName && (
+              <div style={{
+                position: 'absolute', top: 8, right: 8,
+                backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(8px)',
+                borderRadius: 6, padding: '3px 8px',
+                fontSize: 10, fontWeight: 500, color: 'rgba(255,255,255,0.8)',
+                pointerEvents: 'none',
+              }}>
+                {job.modelName}
+              </div>
+            )}
           </>
         ) : (
           <img

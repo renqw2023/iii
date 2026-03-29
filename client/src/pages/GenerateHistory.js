@@ -339,44 +339,86 @@ const GenerateHistory = () => {
         <div style={{ padding: '16px 16px 80px' }}>
 
           {/* Active generations (from GenerationContext) */}
-          {filteredActive.length > 0 && (
-            <section>
-              <GroupHeader label="Generating" />
-              <CardGrid minCardWidth={filteredActive.every(j => j.mediaType === 'video') ? (isMobile ? 320 : 340) : (isMobile ? 160 : 220)}>
-                {filteredActive.map(job => (
-                  <GenerationCard
-                    key={job.id}
-                    job={job}
-                    isActive
-                    onRetry={() => handleRetry(job)}
-                    onDownload={() => handleDownload(job)}
-                    onCopyUrl={() => handleCopyUrl(job)}
-                    onDismiss={() => removeGeneration(job.id)}
-                  />
-                ))}
-              </CardGrid>
-            </section>
-          )}
+          {filteredActive.length > 0 && (() => {
+            const activeImages = filteredActive.filter(j => (j.mediaType || 'image') !== 'video');
+            const activeVideos = filteredActive.filter(j => j.mediaType === 'video');
+            return (
+              <section>
+                <GroupHeader label="Generating" />
+                {activeImages.length > 0 && (
+                  <CardGrid minCardWidth={isMobile ? 160 : 220}>
+                    {activeImages.map(job => (
+                      <GenerationCard
+                        key={job.id}
+                        job={job}
+                        isActive
+                        onRetry={() => handleRetry(job)}
+                        onDownload={() => handleDownload(job)}
+                        onCopyUrl={() => handleCopyUrl(job)}
+                        onDismiss={() => removeGeneration(job.id)}
+                      />
+                    ))}
+                  </CardGrid>
+                )}
+                {activeVideos.length > 0 && (
+                  <CardGrid minCardWidth={isMobile ? 300 : 360}>
+                    {activeVideos.map(job => (
+                      <GenerationCard
+                        key={job.id}
+                        job={job}
+                        isActive
+                        onRetry={() => handleRetry(job)}
+                        onDownload={() => handleDownload(job)}
+                        onCopyUrl={() => handleCopyUrl(job)}
+                        onDismiss={() => removeGeneration(job.id)}
+                      />
+                    ))}
+                  </CardGrid>
+                )}
+              </section>
+            );
+          })()}
 
           {/* DB history grouped by date */}
-          {groupedRecords.map(({ label, items }) => (
-            <section key={label}>
-              <GroupHeader label={label} />
-              <CardGrid minCardWidth={items.every(r => r.mediaType === 'video') ? (isMobile ? 320 : 340) : (isMobile ? 160 : 220)}>
-                {items.map(rec => (
-                  <GenerationCard
-                    key={rec._id}
-                    job={recordToJob(rec)}
-                    isActive={false}
-                    onUseIdea={() => handleUseIdea(rec)}
-                    onDelete={() => handleDelete(rec._id)}
-                    onDownload={() => handleDownload(recordToJob(rec))}
-                    onCopyUrl={() => handleCopyUrl(recordToJob(rec))}
-                  />
-                ))}
-              </CardGrid>
-            </section>
-          ))}
+          {groupedRecords.map(({ label, items }) => {
+            const imageItems = items.filter(r => (r.mediaType || 'image') !== 'video');
+            const videoItems = items.filter(r => r.mediaType === 'video');
+            return (
+              <section key={label}>
+                <GroupHeader label={label} />
+                {imageItems.length > 0 && (
+                  <CardGrid minCardWidth={isMobile ? 160 : 220}>
+                    {imageItems.map(rec => (
+                      <GenerationCard
+                        key={rec._id}
+                        job={recordToJob(rec)}
+                        isActive={false}
+                        onUseIdea={() => handleUseIdea(rec)}
+                        onDelete={() => handleDelete(rec._id)}
+                        onDownload={() => handleDownload(recordToJob(rec))}
+                        onCopyUrl={() => handleCopyUrl(recordToJob(rec))}
+                      />
+                    ))}
+                  </CardGrid>
+                )}
+                {videoItems.length > 0 && (
+                  <CardGrid minCardWidth={isMobile ? 300 : 360}>
+                    {videoItems.map(rec => (
+                      <GenerationCard
+                        key={rec._id}
+                        job={recordToJob(rec)}
+                        isActive={false}
+                        onUseIdea={() => handleUseIdea(rec)}
+                        onDelete={() => handleDelete(rec._id)}
+                        onDownload={() => handleDownload(recordToJob(rec))}
+                        onCopyUrl={() => handleCopyUrl(recordToJob(rec))}
+                      />
+                    ))}
+                  </CardGrid>
+                )}
+              </section>
+            );
+          })}
 
           {/* Loading skeletons */}
           {isLoading && filteredActive.length === 0 && (

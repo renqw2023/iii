@@ -45,6 +45,7 @@ import GalleryModal from './pages/Gallery/GalleryModal';
 import MePage from './pages/MePage';
 import SeedanceList from './pages/Seedance/SeedanceList';
 import SeedanceModal from './pages/Seedance/SeedanceModal';
+import VideoFeed from './pages/VideoFeed/VideoFeed';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminRoute from './components/Auth/AdminRoute';
 import ScrollToTop from './components/UI/ScrollToTop';
@@ -173,6 +174,9 @@ function App() {
                         <Route path="subscription" element={<Subscription />} />
                         <Route path="invoice/:orderId" element={<Invoice />} />
                       </Route>
+
+                      {/* 移动端 TikTok 视频流 — 独立布局，不套 Layout */}
+                      <Route path="/video" element={<VideoFeed />} />
 
                       {/* 管理员路由 — 独立布局，不套 Layout（避免 app 侧边栏与 admin 侧边栏冲突） */}
                       <Route path="/admin" element={

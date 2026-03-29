@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, Compass, User } from 'lucide-react';
+import { LayoutGrid, Compass, User, Clapperboard } from 'lucide-react';
 
 const NAV_TABS = [
-  { to: '/gallery',  icon: LayoutGrid, label: 'Gallery' },
-  { to: '/explore',  icon: Compass,    label: 'Explore' },
-  { to: '/me',       icon: User,       label: 'Me' },
+  { to: '/gallery',  icon: LayoutGrid,   label: 'Gallery' },
+  { to: '/explore',  icon: Compass,      label: 'Explore' },
+  { to: '/video',    icon: Clapperboard, label: 'Video'   },
+  { to: '/me',       icon: User,         label: 'Me'      },
 ];
 
 const ME_ACTIVE_PATHS = ['/me', '/dashboard', '/favorites', '/credits', '/settings', '/browse-history', '/generate-history'];
@@ -44,7 +45,7 @@ const MobileDock = () => {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 3,
-              padding: '6px 20px',
+              padding: '6px 14px',
               borderRadius: 9999,
               textDecoration: 'none',
               background: active ? 'rgba(124,58,237,0.2)' : 'transparent',

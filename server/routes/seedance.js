@@ -36,7 +36,7 @@ const requireAuth = (req, res, next) => {
 router.get('/', optionalAuth, async (req, res) => {
     try {
         const {
-            category, tags, search,
+            category, tags, search, authorName,
             sort = 'newest', page = 1, limit = 12, featured
         } = req.query;
 
@@ -46,28 +46,56 @@ router.get('/', optionalAuth, async (req, res) => {
         if (tags) filter.tags = { $in: tags.split(',').map(t => t.trim().toLowerCase()) };
         if (featured === 'true') filter.isFeatured = true;
         if (search) filter.$text = { $search: search };
-
-        let sortOption = {};
-        switch (sort) {
-            case 'popular': sortOption = { views: -1 }; break;
-            case 'most-copied': sortOption = { copyCount: -1 }; break;
-            case 'oldest': sortOption = { createdAt: 1 }; break;
-            default: sortOption = { createdAt: -1 };
-        }
+        // authorName: direct regex match (case-insensitive), bypasses text index limitation
+        if (authorName) filter.authorName = { $regex: authorName.trim(), $options: 'i' };
 
         const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
         const skip = (pageNum - 1) * pageSize;
 
-        const [prompts, total] = await Promise.all([
-            SeedancePrompt.find(filter)
-                .sort(sortOption)
-                .skip(skip)
-                .limit(pageSize)
-                .select('-__v')
-                .lean(),
-            SeedancePrompt.countDocuments(filter)
-        ]);
+        let prompts, total;
+
+        if (sort === 'likes' || sort === 'random') {
+            // Aggregation pipeline for likes-weighted and random sorts
+            const basePipeline = [
+                { $match: filter },
+                { $addFields: { _likesCount: { $size: { $ifNull: ['$likes', []] } } } },
+            ];
+
+            if (sort === 'random') {
+                // True random sampling — different order every request
+                basePipeline.push({ $sample: { size: pageSize + skip } });
+                basePipeline.push({ $skip: skip });
+            } else {
+                // sort=likes: highest likes first, then by recency
+                basePipeline.push({ $sort: { _likesCount: -1, createdAt: -1 } });
+                basePipeline.push({ $skip: skip });
+                basePipeline.push({ $limit: pageSize });
+            }
+
+            [prompts, total] = await Promise.all([
+                SeedancePrompt.aggregate(basePipeline),
+                SeedancePrompt.countDocuments(filter),
+            ]);
+        } else {
+            let sortOption = {};
+            switch (sort) {
+                case 'popular':    sortOption = { views: -1, createdAt: -1 }; break;
+                case 'most-copied': sortOption = { copyCount: -1 }; break;
+                case 'oldest':     sortOption = { createdAt: 1 }; break;
+                default:           sortOption = { createdAt: -1 };
+            }
+
+            [prompts, total] = await Promise.all([
+                SeedancePrompt.find(filter)
+                    .sort(sortOption)
+                    .skip(skip)
+                    .limit(pageSize)
+                    .select('-__v')
+                    .lean(),
+                SeedancePrompt.countDocuments(filter),
+            ]);
+        }
 
         // 处理用户交互状态
         prompts.forEach(p => {
@@ -79,6 +107,7 @@ router.get('/', optionalAuth, async (req, res) => {
             p.favoritesCount = p.favorites?.length || 0;
             delete p.likes;
             delete p.favorites;
+            delete p._likesCount; // remove temp aggregation field
         });
 
         res.json({

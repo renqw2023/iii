@@ -1,19 +1,45 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
-import { ArrowLeft, Clapperboard } from 'lucide-react';
+import { ArrowLeft, Clapperboard, Volume2, VolumeX } from 'lucide-react';
 import { seedanceAPI } from '../../services/seedanceApi';
 import VideoFeedItem from './VideoFeedItem';
+
+/**
+ * Recommendation sort strategy:
+ * - Page 1: sort=likes (highest likes first — quality content upfront)
+ * - Page 2: sort=random (serendipity, avoid repetition)
+ * - Page 3+: alternating likes / random
+ */
+const getSortForPage = (page) => {
+  if (page === 1) return 'likes';
+  return page % 2 === 0 ? 'random' : 'likes';
+};
 
 const VideoFeed = () => {
   const navigate = useNavigate();
   const sentinelRef = useRef(null);
   const [searchParams] = useSearchParams();
 
-  // Feature 1: author filter via ?author=xxx
+  // Feature: author filter via ?author=xxx
   const authorFilter = searchParams.get('author') || '';
 
-  // All hooks must be declared before any conditional return
+  // Global muted state — shared across all VideoFeedItems
+  // Starts muted (browser autoplay policy), user can tap to unmute
+  const [globalMuted, setGlobalMuted] = useState(true);
+  const [soundHintDismissed, setSoundHintDismissed] = useState(false);
+
+  const handleUnmute = useCallback(() => {
+    setGlobalMuted(false);
+    setSoundHintDismissed(true);
+  }, []);
+
+  const handleToggleGlobalMute = useCallback(() => {
+    setGlobalMuted(m => !m);
+    setSoundHintDismissed(true);
+  }, []);
+
+  // All hooks before any conditional return
   const {
     data,
     isFetchingNextPage,
@@ -22,12 +48,15 @@ const VideoFeed = () => {
     isLoading,
   } = useInfiniteQuery(
     ['seedance-video-feed', authorFilter],
-    ({ pageParam = 1 }) => seedanceAPI.getPrompts({
-      page: pageParam,
-      limit: 10,
-      sort: 'newest',
-      ...(authorFilter ? { search: authorFilter } : {}),
-    }),
+    ({ pageParam = 1 }) => {
+      const sort = authorFilter ? 'newest' : getSortForPage(pageParam);
+      return seedanceAPI.getPrompts({
+        page: pageParam,
+        limit: 10,
+        sort,
+        ...(authorFilter ? { authorName: authorFilter } : {}),
+      });
+    },
     {
       getNextPageParam: (lastPage) => {
         const { page, totalPages } = lastPage?.data?.pagination || {};
@@ -58,10 +87,8 @@ const VideoFeed = () => {
   }
 
   const items = data?.pages?.flatMap(p => p?.data?.prompts || []) || [];
-
-  // Header title: author mode vs default
-  const headerTitle = authorFilter ? `@${authorFilter}` : 'Videos';
   const isAuthorMode = Boolean(authorFilter);
+  const headerTitle = isAuthorMode ? `@${authorFilter}` : 'Videos';
 
   return (
     <div style={{
@@ -107,7 +134,6 @@ const VideoFeed = () => {
           </span>
         </div>
 
-        {/* Right: "All Videos" back link when in author mode */}
         {isAuthorMode ? (
           <button
             onClick={() => navigate('/video', { replace: true })}
@@ -124,6 +150,57 @@ const VideoFeed = () => {
           <div style={{ width: 38 }} />
         )}
       </div>
+
+      {/* Sound hint — appears at top, dismisses on tap */}
+      {!soundHintDismissed && !isLoading && items.length > 0 && (
+        <button
+          onClick={handleUnmute}
+          style={{
+            position: 'fixed',
+            top: 'calc(env(safe-area-inset-top, 0px) + 64px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 60,
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '8px 16px',
+            borderRadius: 20,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            color: '#fff',
+            fontSize: 13, fontWeight: 600,
+            cursor: 'pointer',
+            animation: 'soundPulse 2s ease-in-out infinite',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <VolumeX size={15} />
+          Tap for sound
+        </button>
+      )}
+
+      {/* Global mute/unmute button — always accessible top-right */}
+      {soundHintDismissed && !isLoading && items.length > 0 && (
+        <button
+          onClick={handleToggleGlobalMute}
+          style={{
+            position: 'fixed',
+            top: 'calc(env(safe-area-inset-top, 0px) + 64px)',
+            right: 16,
+            zIndex: 60,
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.45)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            color: globalMuted ? 'rgba(255,255,255,0.5)' : '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {globalMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
+      )}
 
       {/* Loading state */}
       {isLoading && (
@@ -147,15 +224,14 @@ const VideoFeed = () => {
       {!isLoading && isAuthorMode && items.length === 0 && (
         <div style={{
           height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 12, scrollSnapAlign: 'start',
-          padding: '0 32px',
+          flexDirection: 'column', gap: 12, scrollSnapAlign: 'start', padding: '0 32px',
         }}>
           <p style={{ fontSize: 32 }}>🎬</p>
           <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', margin: 0, textAlign: 'center' }}>
-            No videos found
+            No other videos found
           </p>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0, textAlign: 'center' }}>
-            No other videos from @{authorFilter} in our library
+            No other videos from @{authorFilter} in the library
           </p>
           <button
             onClick={() => navigate('/video', { replace: true })}
@@ -172,7 +248,13 @@ const VideoFeed = () => {
 
       {/* Video items */}
       {items.map((item, i) => (
-        <VideoFeedItem key={item._id} item={item} index={i} />
+        <VideoFeedItem
+          key={item._id}
+          item={item}
+          index={i}
+          globalMuted={globalMuted}
+          onRequestUnmute={handleUnmute}
+        />
       ))}
 
       {/* Infinite scroll sentinel */}
@@ -195,6 +277,10 @@ const VideoFeed = () => {
 
       <style>{`
         @keyframes feedSpin { to { transform: rotate(360deg); } }
+        @keyframes soundPulse {
+          0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+          50% { opacity: 0.75; transform: translateX(-50%) scale(0.97); }
+        }
       `}</style>
     </div>
   );

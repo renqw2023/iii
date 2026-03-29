@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery } from 'react-query';
 import { ArrowLeft, Clapperboard } from 'lucide-react';
 import { seedanceAPI } from '../../services/seedanceApi';
@@ -8,8 +8,12 @@ import VideoFeedItem from './VideoFeedItem';
 const VideoFeed = () => {
   const navigate = useNavigate();
   const sentinelRef = useRef(null);
+  const [searchParams] = useSearchParams();
 
-  // All hooks must be called before any conditional return
+  // Feature 1: author filter via ?author=xxx
+  const authorFilter = searchParams.get('author') || '';
+
+  // All hooks must be declared before any conditional return
   const {
     data,
     isFetchingNextPage,
@@ -17,8 +21,13 @@ const VideoFeed = () => {
     hasNextPage,
     isLoading,
   } = useInfiniteQuery(
-    ['seedance-video-feed'],
-    ({ pageParam = 1 }) => seedanceAPI.getPrompts({ page: pageParam, limit: 10, sort: 'newest' }),
+    ['seedance-video-feed', authorFilter],
+    ({ pageParam = 1 }) => seedanceAPI.getPrompts({
+      page: pageParam,
+      limit: 10,
+      sort: 'newest',
+      ...(authorFilter ? { search: authorFilter } : {}),
+    }),
     {
       getNextPageParam: (lastPage) => {
         const { page, totalPages } = lastPage?.data?.pagination || {};
@@ -50,6 +59,10 @@ const VideoFeed = () => {
 
   const items = data?.pages?.flatMap(p => p?.data?.prompts || []) || [];
 
+  // Header title: author mode vs default
+  const headerTitle = authorFilter ? `@${authorFilter}` : 'Videos';
+  const isAuthorMode = Boolean(authorFilter);
+
   return (
     <div style={{
       position: 'fixed', inset: 0,
@@ -66,7 +79,7 @@ const VideoFeed = () => {
         zIndex: 50,
         display: 'flex', alignItems: 'center',
         padding: `calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px`,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)',
         pointerEvents: 'none',
       }}>
         <button
@@ -85,12 +98,31 @@ const VideoFeed = () => {
           flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
         }}>
           <Clapperboard size={16} stroke="rgba(255,255,255,0.8)" />
-          <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.01em' }}>
-            Videos
+          <span style={{
+            fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.9)',
+            letterSpacing: '0.01em',
+            maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {headerTitle}
           </span>
         </div>
 
-        <div style={{ width: 38 }} />
+        {/* Right: "All Videos" back link when in author mode */}
+        {isAuthorMode ? (
+          <button
+            onClick={() => navigate('/video', { replace: true })}
+            style={{
+              pointerEvents: 'auto',
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 500,
+              padding: '4px 0 4px 8px',
+            }}
+          >
+            All
+          </button>
+        ) : (
+          <div style={{ width: 38 }} />
+        )}
       </div>
 
       {/* Loading state */}
@@ -105,7 +137,36 @@ const VideoFeed = () => {
             borderTopColor: '#fff',
             animation: 'feedSpin 0.8s linear infinite',
           }} />
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, margin: 0 }}>Loading videos…</p>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, margin: 0 }}>
+            {isAuthorMode ? `Loading videos by @${authorFilter}…` : 'Loading videos…'}
+          </p>
+        </div>
+      )}
+
+      {/* Empty author state */}
+      {!isLoading && isAuthorMode && items.length === 0 && (
+        <div style={{
+          height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 12, scrollSnapAlign: 'start',
+          padding: '0 32px',
+        }}>
+          <p style={{ fontSize: 32 }}>🎬</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', margin: 0, textAlign: 'center' }}>
+            No videos found
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0, textAlign: 'center' }}>
+            No other videos from @{authorFilter} in our library
+          </p>
+          <button
+            onClick={() => navigate('/video', { replace: true })}
+            style={{
+              marginTop: 8, padding: '10px 24px', borderRadius: 20,
+              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Browse all videos
+          </button>
         </div>
       )}
 
@@ -117,7 +178,7 @@ const VideoFeed = () => {
       {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} style={{ height: 1, scrollSnapAlign: 'none' }} />
 
-      {/* Loading more indicator */}
+      {/* Loading more */}
       {isFetchingNextPage && (
         <div style={{
           height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',

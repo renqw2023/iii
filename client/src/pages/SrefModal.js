@@ -40,9 +40,22 @@ const SrefModal = () => {
         else navigate('/explore');
     };
 
+    // Lock body scroll on mobile — prevents background ExploreList from scrolling
+    // Uses position:fixed technique (saves/restores scrollY) to avoid Chrome's
+    // overflow:hidden-induced scroll reset bug.
     useEffect(() => {
-        // 不锁定 body scroll — modal 有全屏 backdrop 阻止背景交互
-        // overflow:hidden 会导致 Chrome 在移除时重置 scrollY 到 0
+        const isMobile = window.innerWidth < 768;
+        if (!isMobile) return;
+        const scrollY = window.scrollY;
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        return () => {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            window.scrollTo(0, scrollY);
+        };
     }, []);
 
     const { data, isLoading } = useQuery(

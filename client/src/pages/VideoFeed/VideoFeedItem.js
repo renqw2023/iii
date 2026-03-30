@@ -175,6 +175,7 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
         background: '#111',
         overflow: 'hidden',
         scrollSnapAlign: 'start',
+        scrollSnapStop: 'always',
         cursor: 'pointer',
         userSelect: 'none',
       }}

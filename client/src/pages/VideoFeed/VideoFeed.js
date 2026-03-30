@@ -100,8 +100,6 @@ const VideoFeed = () => {
   }
 
   const items = data?.pages?.flatMap(p => p?.data?.prompts || []) || [];
-  const isAuthorMode = Boolean(authorFilter);
-  const headerTitle = isAuthorMode ? `@${authorFilter}` : 'Videos';
 
   return (
     <div ref={feedRef} style={{
@@ -141,27 +139,12 @@ const VideoFeed = () => {
           <span style={{
             fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.9)',
             letterSpacing: '0.01em',
-            maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
-            {headerTitle}
+            Videos
           </span>
         </div>
 
-        {isAuthorMode ? (
-          <button
-            onClick={() => navigate('/video', { replace: true })}
-            style={{
-              pointerEvents: 'auto',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'rgba(255,255,255,0.55)', fontSize: 12, fontWeight: 500,
-              padding: '4px 0 4px 8px',
-            }}
-          >
-            All
-          </button>
-        ) : (
-          <div style={{ width: 38 }} />
-        )}
+        <div style={{ width: 38 }} />
       </div>
 
       {/* Sound hint — appears at top, dismisses on tap */}
@@ -228,36 +211,11 @@ const VideoFeed = () => {
             animation: 'feedSpin 0.8s linear infinite',
           }} />
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, margin: 0 }}>
-            {isAuthorMode ? `Loading videos by @${authorFilter}…` : 'Loading videos…'}
+            Loading videos…
           </p>
         </div>
       )}
 
-      {/* Empty author state */}
-      {!isLoading && isAuthorMode && items.length === 0 && (
-        <div style={{
-          height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 12, scrollSnapAlign: 'start', padding: '0 32px',
-        }}>
-          <p style={{ fontSize: 32 }}>🎬</p>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#fff', margin: 0, textAlign: 'center' }}>
-            No other videos found
-          </p>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0, textAlign: 'center' }}>
-            No other videos from @{authorFilter} in the library
-          </p>
-          <button
-            onClick={() => navigate('/video', { replace: true })}
-            style={{
-              marginTop: 8, padding: '10px 24px', borderRadius: 20,
-              background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-              color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Browse all videos
-          </button>
-        </div>
-      )}
 
       {/* Video items */}
       {items.map((item, i) => (

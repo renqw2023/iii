@@ -143,7 +143,7 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
   const handleAuthorClick = useCallback((e) => {
     e.stopPropagation();
     if (!item.authorName) return;
-    navigate(`/video?author=${encodeURIComponent(item.authorName)}`);
+    navigate(`/video/author/${encodeURIComponent(item.authorName)}`);
   }, [navigate, item.authorName]);
 
   // Rotating disc → Generate Video (with prompt prefill)

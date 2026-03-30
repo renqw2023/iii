@@ -305,6 +305,7 @@ export default function SEOTab() {
             { label: 'sitemap-main.xml', path: '/sitemap-main.xml', desc: '6 static pages' },
             { label: 'sitemap-sref.xml', path: '/sitemap-sref.xml', desc: '1,300+ sref style codes' },
             { label: 'sitemap-gallery.xml', path: '/sitemap-gallery.xml', desc: '11,795 gallery prompts' },
+            { label: 'sitemap-seedance.xml', path: '/sitemap-seedance.xml', desc: '1,223 Seedance videos (video:video)' },
             { label: 'sitemap-images.xml', path: '/sitemap-images.xml', desc: 'Image sitemap' },
           ].map(({ label, path, desc }) => (
             <a

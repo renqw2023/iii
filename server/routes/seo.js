@@ -85,6 +85,9 @@ router.get('/sitemap/status', async (req, res) => {
       'sitemap-ja-JP.xml',
       'sitemap-images.xml',
       'sitemap-videos.xml',
+      'sitemap-sref.xml',
+      'sitemap-gallery.xml',
+      'sitemap-seedance.xml',
       'robots.txt'
     ];
     

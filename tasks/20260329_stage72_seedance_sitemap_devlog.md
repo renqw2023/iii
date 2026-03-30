@@ -92,3 +92,51 @@ sitemap.xml 索引: 包含 sitemap-seedance.xml ✅
 - 运行中的 server 有 Node.js 模块缓存，API `/api/seo/sitemap/generate` 需要**重启 server** 后才能正确生成 `sitemap-seedance.xml`。本次已通过 `node` 脚本手动生成并写入。
 - Seedance 视频 URL 来自 Cloudflare Stream（`customer-*.cloudflarestream.com`），属于外部 CDN，Google Video sitemap 可以抓取，但播放需要 JS，Google 能否完整索引视频内容取决于其爬虫能力。
 - 建议重启 server 后通过 `/api/seo/sitemap/generate` 重新生成一次，确保所有文件一致。
+
+---
+
+## 补丁：Admin SEO Tab 修复（2026-03-29）
+
+**文件**: `server/routes/seo.js`, `client/src/components/Admin/tabs/SEOTab.js`
+
+### 问题
+
+Admin Panel → SEO Tab 有两处遗漏：
+
+1. **`/api/seo/sitemap/status` 状态检查列表硬编码**，缺少以下3个文件监控：
+   - `sitemap-sref.xml`
+   - `sitemap-gallery.xml`
+   - `sitemap-seedance.xml`
+
+   导致 Admin 面板显示"7/7 All Present"，但实际上这3个核心 sitemap 的状态完全看不到。
+
+2. **SEOTab 底部"Sitemap Index"快捷链接区**缺少 `sitemap-seedance.xml` 条目。
+
+### 修复
+
+**`server/routes/seo.js`** — 补全 sitemapFiles 数组：
+
+```diff
+  const sitemapFiles = [
+    'sitemap.xml',
+    'sitemap-zh-CN.xml',
+    'sitemap-en-US.xml',
+    'sitemap-ja-JP.xml',
+    'sitemap-images.xml',
+    'sitemap-videos.xml',
++   'sitemap-sref.xml',
++   'sitemap-gallery.xml',
++   'sitemap-seedance.xml',
+    'robots.txt'
+  ];
+```
+
+修复后状态面板展示 10 个文件，覆盖所有已生成的 sitemap。
+
+**`client/src/components/Admin/tabs/SEOTab.js`** — 加入 seedance 快捷链接：
+
+```diff
+  { label: 'sitemap-gallery.xml', path: '/sitemap-gallery.xml', desc: '11,795 gallery prompts' },
++ { label: 'sitemap-seedance.xml', path: '/sitemap-seedance.xml', desc: '1,223 Seedance videos (video:video)' },
+  { label: 'sitemap-images.xml', path: '/sitemap-images.xml', desc: 'Image sitemap' },
+```

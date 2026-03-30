@@ -76,6 +76,12 @@ class SitemapGenerator {
     xml += `    <lastmod>${lastmod}</lastmod>\n`;
     xml += `  </sitemap>\n`;
 
+    // Seedance video sitemap
+    xml += `  <sitemap>\n`;
+    xml += `    <loc>${this.baseUrl}/sitemap-seedance.xml</loc>\n`;
+    xml += `    <lastmod>${lastmod}</lastmod>\n`;
+    xml += `  </sitemap>\n`;
+
     xml += '</sitemapindex>';
 
     return xml;
@@ -534,6 +540,55 @@ Crawl-delay: 2
   }
 
   /**
+   * 生成专用 Seedance sitemap（含 video:video 条目）
+   */
+  async generateSeedanceSitemap() {
+    let xml = this.generateXMLHeader();
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n';
+
+    try {
+      const items = await SeedancePrompt.find({ isActive: true })
+        .select('_id title prompt description videoUrl thumbnailUrl tags category createdAt updatedAt')
+        .sort({ createdAt: -1 })
+        .limit(10000);
+
+      for (const item of items) {
+        const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
+        const pageUrl = `${this.baseUrl}/seedance/${item._id}`;
+        const label = item.title || item.prompt?.substring(0, 60) || 'AI Video';
+
+        xml += `  <url>\n`;
+        xml += `    <loc>${pageUrl}</loc>\n`;
+        xml += `    <lastmod>${lastmod}</lastmod>\n`;
+        xml += `    <changefreq>weekly</changefreq>\n`;
+        xml += `    <priority>0.7</priority>\n`;
+
+        if (item.videoUrl) {
+          xml += `    <video:video>\n`;
+          xml += `      <video:thumbnail_loc>${this.escapeXML(item.thumbnailUrl || item.videoUrl)}</video:thumbnail_loc>\n`;
+          xml += `      <video:title>${this.escapeXML(label)}</video:title>\n`;
+          xml += `      <video:description>${this.escapeXML(item.description || item.prompt?.substring(0, 200) || label)}</video:description>\n`;
+          xml += `      <video:content_loc>${this.escapeXML(item.videoUrl)}</video:content_loc>\n`;
+          xml += `      <video:publication_date>${item.createdAt.toISOString()}</video:publication_date>\n`;
+          if (item.tags && item.tags.length > 0) {
+            item.tags.slice(0, 10).forEach(tag => {
+              xml += `      <video:tag>${this.escapeXML(tag)}</video:tag>\n`;
+            });
+          }
+          xml += `    </video:video>\n`;
+        }
+
+        xml += `  </url>\n`;
+      }
+    } catch (error) {
+      console.error('Error generating seedance sitemap:', error);
+    }
+
+    xml += '</urlset>';
+    return xml;
+  }
+
+  /**
    * 生成 Seedance 内容 URLs
    */
   async generateSeedanceURLs() {
@@ -546,7 +601,7 @@ Crawl-delay: 2
       for (const item of items) {
         const lastmod = (item.updatedAt || item.createdAt).toISOString().split('T')[0];
         xml += `  <url>\n`;
-        xml += `    <loc>${this.baseUrl}/seedance?id=${item._id}</loc>\n`;
+        xml += `    <loc>${this.baseUrl}/seedance/${item._id}</loc>\n`;
         xml += `    <lastmod>${lastmod}</lastmod>\n`;
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.6</priority>\n`;
@@ -633,6 +688,10 @@ Crawl-delay: 2
       // 生成 gallery sitemap
       const gallerySitemap = await this.generateGallerySitemap();
       await this.saveSitemap('sitemap-gallery.xml', gallerySitemap);
+
+      // 生成 seedance video sitemap
+      const seedanceSitemap = await this.generateSeedanceSitemap();
+      await this.saveSitemap('sitemap-seedance.xml', seedanceSitemap);
 
       // 生成robots.txt
       const robotsTxt = this.generateRobotsTxt();

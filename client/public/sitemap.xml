@@ -1,19 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>https://iii.pics/sitemap-main.xml</loc>
-    <lastmod>2026-03-25</lastmod>
+    <loc>https://iii.pics/sitemap-zh-CN.xml</loc>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://iii.pics/sitemap-en-US.xml</loc>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://iii.pics/sitemap-ja-JP.xml</loc>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
   </sitemap>
   <sitemap>
     <loc>https://iii.pics/sitemap-images.xml</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://iii.pics/sitemap-videos.xml</loc>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
   </sitemap>
   <sitemap>
     <loc>https://iii.pics/sitemap-sref.xml</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
   </sitemap>
   <sitemap>
     <loc>https://iii.pics/sitemap-gallery.xml</loc>
-    <lastmod>2026-03-25</lastmod>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://iii.pics/sitemap-seedance.xml</loc>
+    <lastmod>2026-03-30T06:00:22.943Z</lastmod>
   </sitemap>
 </sitemapindex>

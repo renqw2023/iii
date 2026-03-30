@@ -25,26 +25,32 @@ const VideoFeed = () => {
   // Feature: author filter via ?author=xxx
   const authorFilter = searchParams.get('author') || '';
 
-  // Global muted state — shared across all VideoFeedItems
-  // Starts muted (browser autoplay policy), user can tap to unmute
-  const [globalMuted, setGlobalMuted] = useState(true);
-  const [soundHintDismissed, setSoundHintDismissed] = useState(false);
+  // Global muted state — persisted in localStorage so preference survives page re-entry
+  // Default true (browser autoplay policy); once user unmutes, remembered across sessions
+  const [globalMuted, setGlobalMuted] = useState(
+    () => localStorage.getItem('vf_muted') !== 'false'
+  );
+  const [soundHintDismissed, setSoundHintDismissed] = useState(
+    () => localStorage.getItem('vf_sound_hint') === 'true'
+  );
 
   const handleUnmute = useCallback(() => {
-    // Imperatively unmute all videos synchronously within the user-gesture context
-    // (iOS Safari requires the muted change to happen inside the click handler, not in a useEffect)
     document.querySelectorAll('video').forEach(v => { v.muted = false; });
     setGlobalMuted(false);
     setSoundHintDismissed(true);
+    localStorage.setItem('vf_muted', 'false');
+    localStorage.setItem('vf_sound_hint', 'true');
   }, []);
 
   const handleToggleGlobalMute = useCallback(() => {
     setGlobalMuted(m => {
       const next = !m;
       document.querySelectorAll('video').forEach(v => { v.muted = next; });
+      localStorage.setItem('vf_muted', String(next));
       return next;
     });
     setSoundHintDismissed(true);
+    localStorage.setItem('vf_sound_hint', 'true');
   }, []);
 
   // All hooks before any conditional return

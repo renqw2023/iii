@@ -179,7 +179,23 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
         userSelect: 'none',
       }}
     >
-      {/* Video element */}
+      {/* Blurred background — fills bars left by 16:9 videos in portrait container.
+          Uses the thumbnail (not a second video element) for minimal memory cost.
+          GPU-accelerated via translateZ(0). Invisible behind 9:16 videos. */}
+      {thumbSrc && (
+        <div style={{
+          position: 'absolute',
+          inset: '-8%',          // oversized to hide blur soft edges
+          backgroundImage: `url(${thumbSrc})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(22px)',
+          transform: 'translateZ(0)', // GPU layer
+          opacity: 0.55,
+        }} />
+      )}
+
+      {/* Video element — contain shows full frame; blurred bg fills any letterbox bars */}
       <video
         ref={videoRef}
         src={videoSrc}
@@ -191,7 +207,7 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
         style={{
           position: 'absolute', inset: 0,
           width: '100%', height: '100%',
-          objectFit: 'cover',
+          objectFit: 'contain',
         }}
       />
 

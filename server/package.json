@@ -11,6 +11,7 @@
     "seed": "node scripts/seedData.js",
     "create-sample": "node scripts/createSampleData.js",
     "test-db": "node scripts/testConnection.js",
+    "generate-sitemaps": "node scripts/generateSitemaps.js",
     "generate-config": "node scripts/generateConfig.js",
     "validate-config": "node scripts/validateConfig.js",
     "setup": "npm install && node scripts/initUploads.js && node scripts/createAdmin.js",

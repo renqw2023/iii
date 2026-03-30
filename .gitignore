@@ -35,3 +35,7 @@ liblib_*.json
 !client/public/ImageFlow/gptimage/*.jpg
 !client/public/og-default.jpg
 output/
+
+# Sitemap & robots — generated at build time via prebuild script, not committed
+client/public/sitemap*.xml
+client/public/robots.txt

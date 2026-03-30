@@ -19,6 +19,7 @@ const getSortForPage = (page) => {
 const VideoFeed = () => {
   const navigate = useNavigate();
   const sentinelRef = useRef(null);
+  const feedRef = useRef(null);
   const [searchParams] = useSearchParams();
 
   // Feature: author filter via ?author=xxx
@@ -30,12 +31,19 @@ const VideoFeed = () => {
   const [soundHintDismissed, setSoundHintDismissed] = useState(false);
 
   const handleUnmute = useCallback(() => {
+    // Imperatively unmute all videos synchronously within the user-gesture context
+    // (iOS Safari requires the muted change to happen inside the click handler, not in a useEffect)
+    document.querySelectorAll('video').forEach(v => { v.muted = false; });
     setGlobalMuted(false);
     setSoundHintDismissed(true);
   }, []);
 
   const handleToggleGlobalMute = useCallback(() => {
-    setGlobalMuted(m => !m);
+    setGlobalMuted(m => {
+      const next = !m;
+      document.querySelectorAll('video').forEach(v => { v.muted = next; });
+      return next;
+    });
     setSoundHintDismissed(true);
   }, []);
 
@@ -66,6 +74,11 @@ const VideoFeed = () => {
     }
   );
 
+  // Reset scroll to top when author filter changes
+  useEffect(() => {
+    if (feedRef.current) feedRef.current.scrollTop = 0;
+  }, [authorFilter]);
+
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -91,7 +104,7 @@ const VideoFeed = () => {
   const headerTitle = isAuthorMode ? `@${authorFilter}` : 'Videos';
 
   return (
-    <div style={{
+    <div ref={feedRef} style={{
       position: 'fixed', inset: 0,
       background: '#000',
       overflowY: 'scroll',

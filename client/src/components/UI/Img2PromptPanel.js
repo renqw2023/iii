@@ -93,8 +93,10 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
 
 
   // 消费 prefillJob：prompt 填入文本框；referenceImageUrl 填入参考图
+  // tab:'video' prefills are meant for VideoTab — skip and let VideoTab consume them
   useEffect(() => {
     if (!prefillJob) return;
+    if (prefillJob.tab === 'video') return;
     if (prefillJob.prompt) {
       setPrompt(prefillJob.prompt);
     }

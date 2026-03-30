@@ -41,6 +41,7 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+  const globalMutedRef = useRef(globalMuted);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [liked, setLiked] = useState(item.isLiked || false);
@@ -52,8 +53,9 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
   const videoSrc = getVideoSrc(item.videoUrl);
   const thumbSrc = item.thumbnailUrl ? getThumbnailSrc(item.thumbnailUrl) : null;
 
-  // Sync globalMuted → video element whenever it changes
+  // Sync globalMuted → ref (for IntersectionObserver) + video element
   useEffect(() => {
+    globalMutedRef.current = globalMuted;
     const video = videoRef.current;
     if (video) video.muted = globalMuted;
   }, [globalMuted]);
@@ -67,7 +69,7 @@ const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          video.muted = globalMuted; // apply current muted preference
+          video.muted = globalMutedRef.current; // use ref — avoids stale closure
           video.play().catch(() => {
             // If unmuted autoplay blocked → play muted silently
             video.muted = true;

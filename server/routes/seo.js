@@ -417,6 +417,120 @@ router.get('/breadcrumbs', async (req, res) => {
 });
 
 /**
+ * GET /api/seo/coverage
+ * Sitemap coverage: DB item count vs sitemap entry estimate
+ * 1h cache
+ */
+let _coverageCache = null;
+let _coverageCacheTime = 0;
+
+router.get('/coverage', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (_coverageCache && now - _coverageCacheTime < HEALTH_TTL) {
+      return res.json(_coverageCache);
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const publicDir = path.join(__dirname, '../../client/public');
+
+    const countLines = async (file) => {
+      try {
+        const content = await fs.promises.readFile(path.join(publicDir, file), 'utf8');
+        return (content.match(/<loc>/g) || []).length;
+      } catch { return 0; }
+    };
+
+    const [
+      galleryDB, srefDB, seedanceDB,
+      galleryXml, srefXml, seedanceXml,
+    ] = await Promise.all([
+      GalleryPrompt.countDocuments({ isActive: true }),
+      SrefStyle.countDocuments({ isActive: true }),
+      SeedancePrompt.countDocuments({ isActive: true }),
+      countLines('sitemap-gallery.xml'),
+      countLines('sitemap-sref.xml'),
+      countLines('sitemap-seedance.xml'),
+    ]);
+
+    const coverage = {
+      gallery: { db: galleryDB, sitemap: galleryXml, pct: galleryDB > 0 ? Math.round((galleryXml / galleryDB) * 100) : 0 },
+      sref:    { db: srefDB,    sitemap: srefXml,    pct: srefDB > 0    ? Math.round((srefXml / srefDB) * 100) : 0 },
+      seedance:{ db: seedanceDB,sitemap: seedanceXml,pct: seedanceDB > 0 ? Math.round((seedanceXml / seedanceDB) * 100) : 0 },
+      cachedAt: new Date().toISOString(),
+    };
+
+    _coverageCache = coverage;
+    _coverageCacheTime = now;
+    res.json(coverage);
+  } catch (err) {
+    console.error('SEO coverage error:', err);
+    res.status(500).json({ error: 'Failed to fetch SEO coverage' });
+  }
+});
+
+/**
+ * GET /api/seo/health
+ * SEO健康指标：alt文本覆盖率 / 图片覆盖率 / sitemap条目数
+ * 1h in-memory cache
+ */
+let _healthCache = null;
+let _healthCacheTime = 0;
+const HEALTH_TTL = 60 * 60 * 1000; // 1 hour
+
+router.get('/health', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (_healthCache && now - _healthCacheTime < HEALTH_TTL) {
+      return res.json(_healthCache);
+    }
+
+    const [
+      galleryTotal,
+      galleryWithTitle,
+      galleryWithImage,
+      srefTotal,
+      seedanceTotal,
+      seedanceWithVideo,
+    ] = await Promise.all([
+      GalleryPrompt.countDocuments({ isActive: true }),
+      GalleryPrompt.countDocuments({ isActive: true, title: { $exists: true, $ne: '' } }),
+      GalleryPrompt.countDocuments({ isActive: true, previewImage: { $exists: true, $ne: '' } }),
+      SrefStyle.countDocuments({ isActive: true }),
+      SeedancePrompt.countDocuments({ isActive: true }),
+      SeedancePrompt.countDocuments({ isActive: true, videoUrl: { $exists: true, $ne: '' } }),
+    ]);
+
+    const health = {
+      gallery: {
+        total: galleryTotal,
+        altCoverage: galleryTotal > 0 ? Math.round((galleryWithTitle / galleryTotal) * 100) : 0,
+        imageCoverage: galleryTotal > 0 ? Math.round((galleryWithImage / galleryTotal) * 100) : 0,
+        withTitle: galleryWithTitle,
+        withImage: galleryWithImage,
+      },
+      sref: {
+        total: srefTotal,
+      },
+      seedance: {
+        total: seedanceTotal,
+        videoCoverage: seedanceTotal > 0 ? Math.round((seedanceWithVideo / seedanceTotal) * 100) : 0,
+        withVideo: seedanceWithVideo,
+      },
+      cachedAt: new Date().toISOString(),
+    };
+
+    _healthCache = health;
+    _healthCacheTime = now;
+    res.json(health);
+  } catch (err) {
+    console.error('SEO health error:', err);
+    res.status(500).json({ error: 'Failed to fetch SEO health' });
+  }
+});
+
+/**
  * POST /api/seo/submit-sitemap
  * 向搜索引擎提交sitemap
  */
@@ -472,6 +586,61 @@ router.post('/submit-sitemap', async (req, res) => {
       message: 'Failed to submit sitemap',
       error: error.message
     });
+  }
+});
+
+/**
+ * POST /api/seo/simulate-crawl
+ * Simulates a bot crawl of a given path and returns the HTML the bot would see.
+ * Body: { url: "/gallery/abc123" }
+ */
+router.post('/simulate-crawl', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'url is required (e.g. "/gallery/abc123")' });
+    }
+
+    const renderRoutes = require('./render');
+    const fakeReq = {
+      params: {},
+      headers: { 'user-agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)' },
+    };
+
+    // Parse the path to extract type/id
+    const match = url.match(/^\/(gallery|explore|seedance)\/([a-f0-9]{24})$/i);
+    if (!match) {
+      return res.status(400).json({ error: 'URL must match /(gallery|explore|seedance)/{24-char MongoDB id}' });
+    }
+
+    fakeReq.params = { id: match[2] };
+
+    // Call the appropriate route handler directly
+    let html = null;
+    const fakeRes = {
+      set: () => fakeRes,
+      send: (body) => { html = body; },
+    };
+    const fakeNext = () => { html = null; };
+
+    const type = match[1];
+    // Get the route layer matching the type
+    const stack = renderRoutes.stack || [];
+    const layer = stack.find(l => l.route && l.route.path === `/${type}/:id`);
+    if (!layer) {
+      return res.status(500).json({ error: 'Render route not found' });
+    }
+
+    await layer.route.stack[0].handle(fakeReq, fakeRes, fakeNext);
+
+    if (!html) {
+      return res.json({ found: false, message: 'Item not found in DB or render failed' });
+    }
+
+    res.json({ found: true, html });
+  } catch (err) {
+    console.error('simulate-crawl error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 

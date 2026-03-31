@@ -184,6 +184,15 @@ const GalleryModal = () => {
                         keywords: prompt.tags?.join(', ') || '',
                         creator: { '@type': 'Organization', name: 'III.PICS' },
                     })}</script>
+                    <script type="application/ld+json">{JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'BreadcrumbList',
+                        itemListElement: [
+                            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://iii.pics' },
+                            { '@type': 'ListItem', position: 2, name: 'Gallery', item: 'https://iii.pics/gallery' },
+                            { '@type': 'ListItem', position: 3, name: prompt.title || 'AI Prompt', item: `https://iii.pics/gallery/${prompt._id}` },
+                        ],
+                    })}</script>
                 </Helmet>
             )}
 

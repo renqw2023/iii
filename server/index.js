@@ -26,6 +26,8 @@ const { startAutoSync: startGptImageSync } = require('./services/syncGptImage');
 const syncRoutes = require('./routes/sync');
 const { startCronJobs } = require('./cron/index');
 const visitTracker = require('./middleware/visitTracker');
+const { isBot } = require('./utils/botDetect');
+const renderRoutes = require('./routes/render');
 
 const app = express();
 // 信任代理设置
@@ -79,6 +81,14 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/Circle', express.static(path.join(__dirname, '../client/public/Circle')));
 // Sref output 静态文件服务（图片/视频）
 app.use('/output', express.static(path.join(__dirname, '../output'), { maxAge: '7d' }));
+
+// 动态渲染中间件 — 仅对搜索引擎爬虫触发（Bot UA 检测）
+// 对 /gallery/:id, /explore/:id, /seedance/:id 返回包含完整 meta/JSON-LD 的轻量 HTML
+// 普通浏览器请求直接 next() → React SPA 由 Vercel 静态文件提供
+app.use((req, res, next) => {
+  if (isBot(req)) return renderRoutes(req, res, next);
+  next();
+});
 
 // 路由
 app.use('/api/auth', authRoutes);

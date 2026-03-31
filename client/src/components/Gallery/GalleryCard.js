@@ -125,7 +125,7 @@ const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _on
                 {inView && prompt.previewImage ? (
                     <img
                         src={prompt.previewImage}
-                        alt={prompt.title}
+                        alt={prompt.title || prompt.prompt?.substring(0, 80) || 'AI generated image'}
                         loading="lazy"
                         decoding="async"
                         onLoad={handleImageLoad}

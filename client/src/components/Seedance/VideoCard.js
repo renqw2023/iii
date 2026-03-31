@@ -143,7 +143,7 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
                 {thumbnailSrc && (
                     <img
                         src={thumbnailSrc}
-                        alt={prompt.title}
+                        alt={prompt.title || prompt.prompt?.substring(0, 80) || 'AI generated video'}
                         className={`video-card-poster ${thumbLoaded ? 'loaded' : ''} ${isHovering && videoReady ? 'hidden' : ''}`}
                         onLoad={() => setThumbLoaded(true)}
                         loading="lazy"

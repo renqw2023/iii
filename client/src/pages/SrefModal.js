@@ -218,6 +218,15 @@ const SrefModal = () => {
                         keywords: sref.tags?.join(', ') || '',
                         creator: { '@type': 'Organization', name: 'III.PICS' },
                     })}</script>
+                    <script type="application/ld+json">{JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'BreadcrumbList',
+                        itemListElement: [
+                            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://iii.pics' },
+                            { '@type': 'ListItem', position: 2, name: 'Explore', item: 'https://iii.pics/explore' },
+                            { '@type': 'ListItem', position: 3, name: `--sref ${sref.srefCode}`, item: `https://iii.pics/explore/${sref._id}` },
+                        ],
+                    })}</script>
                 </Helmet>
             )}
 

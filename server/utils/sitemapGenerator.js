@@ -269,89 +269,76 @@ class SitemapGenerator {
   }
 
   /**
-   * 生成图片sitemap
+   * 生成图片sitemap (GalleryPrompt — 替代已废弃的 Post 来源)
    */
   async generateImageSitemap() {
     let xml = this.generateXMLHeader();
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
-    
+
     try {
-      const posts = await Post.find({ 
-        status: 'published',
-        isDeleted: { $ne: true },
-        imageUrl: { $exists: true, $ne: null }
+      const items = await GalleryPrompt.find({
+        isActive: true,
+        previewImage: { $exists: true, $ne: '' }
       })
-      .select('_id title imageUrl thumbnailUrl createdAt')
+      .select('_id title prompt previewImage createdAt')
       .sort({ createdAt: -1 })
-      .limit(10000);
-      
-      for (const post of posts) {
-        const slug = this.generateSlug(post.title);
-        const url = `${this.baseUrl}/zh-CN/post/${post._id}/${slug}`;
-        
+      .limit(50000);
+
+      for (const item of items) {
+        const pageUrl = `${this.baseUrl}/gallery/${item._id}`;
+        const label = item.title || item.prompt?.substring(0, 60) || 'AI Image';
+
         xml += `  <url>\n`;
-        xml += `    <loc>${url}</loc>\n`;
-        
-        if (post.imageUrl) {
-          xml += `    <image:image>\n`;
-          xml += `      <image:loc>${post.imageUrl}</image:loc>\n`;
-          xml += `      <image:title>${this.escapeXML(post.title)}</image:title>\n`;
-          xml += `    </image:image>\n`;
-        }
-        
-        if (post.thumbnailUrl && post.thumbnailUrl !== post.imageUrl) {
-          xml += `    <image:image>\n`;
-          xml += `      <image:loc>${post.thumbnailUrl}</image:loc>\n`;
-          xml += `      <image:title>${this.escapeXML(post.title)} - 缩略图</image:title>\n`;
-          xml += `    </image:image>\n`;
-        }
-        
+        xml += `    <loc>${pageUrl}</loc>\n`;
+        xml += `    <image:image>\n`;
+        xml += `      <image:loc>${this.escapeXML(item.previewImage)}</image:loc>\n`;
+        xml += `      <image:title>${this.escapeXML(label)}</image:title>\n`;
+        xml += `    </image:image>\n`;
         xml += `  </url>\n`;
       }
     } catch (error) {
       console.error('Error generating image sitemap:', error);
     }
-    
+
     xml += '</urlset>';
     return xml;
   }
 
   /**
-   * 生成视频sitemap
+   * 生成视频sitemap (SeedancePrompt — 替代已废弃的 Post 来源)
    */
   async generateVideoSitemap() {
     let xml = this.generateXMLHeader();
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n';
-    
+
     try {
-      const posts = await Post.find({ 
-        status: 'published',
-        isDeleted: { $ne: true },
-        videoUrl: { $exists: true, $ne: null }
+      const items = await SeedancePrompt.find({
+        isActive: true,
+        videoUrl: { $exists: true, $ne: '' }
       })
-      .select('_id title description videoUrl thumbnailUrl createdAt')
+      .select('_id title prompt description videoUrl thumbnailUrl createdAt')
       .sort({ createdAt: -1 })
-      .limit(5000);
-      
-      for (const post of posts) {
-        const slug = this.generateSlug(post.title);
-        const url = `${this.baseUrl}/zh-CN/post/${post._id}/${slug}`;
-        
+      .limit(10000);
+
+      for (const item of items) {
+        const pageUrl = `${this.baseUrl}/seedance/${item._id}`;
+        const label = item.title || item.prompt?.substring(0, 60) || 'AI Video';
+
         xml += `  <url>\n`;
-        xml += `    <loc>${url}</loc>\n`;
+        xml += `    <loc>${pageUrl}</loc>\n`;
         xml += `    <video:video>\n`;
-        xml += `      <video:thumbnail_loc>${post.thumbnailUrl || post.videoUrl}</video:thumbnail_loc>\n`;
-        xml += `      <video:title>${this.escapeXML(post.title)}</video:title>\n`;
-        xml += `      <video:description>${this.escapeXML(post.description || post.title)}</video:description>\n`;
-        xml += `      <video:content_loc>${post.videoUrl}</video:content_loc>\n`;
-        xml += `      <video:publication_date>${post.createdAt.toISOString()}</video:publication_date>\n`;
+        xml += `      <video:thumbnail_loc>${this.escapeXML(item.thumbnailUrl || item.videoUrl)}</video:thumbnail_loc>\n`;
+        xml += `      <video:title>${this.escapeXML(label)}</video:title>\n`;
+        xml += `      <video:description>${this.escapeXML(item.description || item.prompt?.substring(0, 200) || label)}</video:description>\n`;
+        xml += `      <video:content_loc>${this.escapeXML(item.videoUrl)}</video:content_loc>\n`;
+        xml += `      <video:publication_date>${item.createdAt.toISOString()}</video:publication_date>\n`;
         xml += `    </video:video>\n`;
         xml += `  </url>\n`;
       }
     } catch (error) {
       console.error('Error generating video sitemap:', error);
     }
-    
+
     xml += '</urlset>';
     return xml;
   }
@@ -370,10 +357,8 @@ Sitemap: ${this.baseUrl}/sitemap.xml
 Disallow: /api/
 Disallow: /admin/
 Disallow: /uploads/temp/
-Disallow: /*?*
-Disallow: /*/settings
-Disallow: /*/login
-Disallow: /*/register
+Disallow: /dashboard/
+Disallow: /settings/
 
 # 允许搜索引擎访问静态资源
 Allow: /static/

@@ -127,8 +127,37 @@ const SeedanceModal = () => {
         <>
             {prompt && (
                 <Helmet>
-                    <title>{prompt.title} - Seedance 2.0</title>
-                    <meta name="description" content={prompt.prompt?.substring(0, 160)} />
+                    <title>{prompt.title || 'Seedance Video'} — III.PICS</title>
+                    <meta name="description" content={prompt.prompt?.substring(0, 155)} />
+                    <link rel="canonical" href={`https://iii.pics/seedance/${id}`} />
+                    <meta property="og:title" content={prompt.title || 'Seedance Video'} />
+                    <meta property="og:description" content={prompt.prompt?.substring(0, 155)} />
+                    <meta property="og:type" content="video.other" />
+                    <meta property="og:url" content={`https://iii.pics/seedance/${id}`} />
+                    <meta property="og:image" content={prompt.thumbnailUrl || prompt.previewImage || 'https://iii.pics/og-image.jpg'} />
+                    <meta name="twitter:card" content="summary_large_image" />
+                    <meta name="twitter:title" content={prompt.title || 'Seedance Video'} />
+                    <meta name="twitter:description" content={prompt.prompt?.substring(0, 155)} />
+                    <meta name="twitter:image" content={prompt.thumbnailUrl || prompt.previewImage || 'https://iii.pics/og-image.jpg'} />
+                    <script type="application/ld+json">{JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'VideoObject',
+                        name: prompt.title || 'Seedance Video',
+                        description: prompt.prompt?.substring(0, 300),
+                        thumbnailUrl: prompt.thumbnailUrl || prompt.previewImage || '',
+                        uploadDate: prompt.createdAt,
+                        contentUrl: prompt.videoUrl || '',
+                        url: `https://iii.pics/seedance/${id}`,
+                    })}</script>
+                    <script type="application/ld+json">{JSON.stringify({
+                        '@context': 'https://schema.org',
+                        '@type': 'BreadcrumbList',
+                        itemListElement: [
+                            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://iii.pics' },
+                            { '@type': 'ListItem', position: 2, name: 'Seedance', item: 'https://iii.pics/seedance' },
+                            { '@type': 'ListItem', position: 3, name: prompt.title || 'AI Video', item: `https://iii.pics/seedance/${id}` },
+                        ],
+                    })}</script>
                 </Helmet>
             )}
 

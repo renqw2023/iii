@@ -2,7 +2,6 @@ import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { X, Download, Link, Check } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import GalleryShareCard from './GalleryShareCard';
 import SrefShareCard from './SrefShareCard';
 
@@ -18,6 +17,7 @@ export default function ShareCardModal({ type, data, onClose }) {
     const timer = setTimeout(async () => {
       if (!cardRef.current) return;
       try {
+        const { default: html2canvas } = await import('html2canvas');
         const canvas = await html2canvas(cardRef.current, {
           useCORS: true,
           allowTaint: true,  // fallback if CORS fails

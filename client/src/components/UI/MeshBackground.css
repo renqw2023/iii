@@ -51,7 +51,7 @@
 .mesh-bg-orb {
     position: absolute;
     mix-blend-mode: normal;
-    will-change: filter;
+    will-change: transform;
 }
 
 /* ── 光球1：mesh-orbit 16s ── */

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { HelmetProvider } from 'react-helmet-async';
@@ -15,43 +15,45 @@ import SearchModal from './components/Search/SearchModal';
 import Layout from './components/Layout/Layout';
 import HomeLayout from './components/Layout/HomeLayout';
 import DocsLayout from './components/Layout/DocsLayout';
-import Home from './pages/Home';
-import Register from './pages/Register';
-import EmailVerification from './pages/EmailVerification';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
-import PostDetail from './pages/PostDetail';
-import CreatePost from './pages/CreatePost';
-import Dashboard from './pages/Dashboard';
-import AdminPanel from './pages/AdminPanel';
-import NotFound from './pages/NotFound';
-import Explore from './pages/Explore';
-import SrefModal from './pages/SrefModal';
-import Favorites from './pages/Favorites';
-import Settings from './pages/Settings';
-import DocsCenter from './pages/DocsCenter';
-import Notifications from './pages/Notifications';
-import Credits from './pages/Credits';
-import History from './pages/History';
-import GenerateHistory from './pages/GenerateHistory';
-import Orders from './pages/Orders';
-import Subscription from './pages/Subscription';
-import Invoice from './pages/Invoice';
-import MagicLinkVerify from './pages/MagicLinkVerify';
-import Img2Prompt from './pages/Img2Prompt';
-import GalleryList from './pages/Gallery/GalleryList';
-import GalleryModal from './pages/Gallery/GalleryModal';
-import MePage from './pages/MePage';
-import SeedanceList from './pages/Seedance/SeedanceList';
-import SeedanceModal from './pages/Seedance/SeedanceModal';
-import VideoFeed from './pages/VideoFeed/VideoFeed';
-import AuthorPage from './pages/VideoFeed/AuthorPage';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import AdminRoute from './components/Auth/AdminRoute';
 import ScrollToTop from './components/UI/ScrollToTop';
 // 国际化配置
 import './i18n';
+
+// 页面按需加载 — 减小首屏 JS bundle
+const Home              = lazy(() => import('./pages/Home'));
+const Register          = lazy(() => import('./pages/Register'));
+const EmailVerification = lazy(() => import('./pages/EmailVerification'));
+const ForgotPassword    = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword     = lazy(() => import('./pages/ResetPassword'));
+const Profile           = lazy(() => import('./pages/Profile'));
+const PostDetail        = lazy(() => import('./pages/PostDetail'));
+const CreatePost        = lazy(() => import('./pages/CreatePost'));
+const Dashboard         = lazy(() => import('./pages/Dashboard'));
+const AdminPanel        = lazy(() => import('./pages/AdminPanel'));
+const NotFound          = lazy(() => import('./pages/NotFound'));
+const Explore           = lazy(() => import('./pages/Explore'));
+const SrefModal         = lazy(() => import('./pages/SrefModal'));
+const Favorites         = lazy(() => import('./pages/Favorites'));
+const Settings          = lazy(() => import('./pages/Settings'));
+const DocsCenter        = lazy(() => import('./pages/DocsCenter'));
+const Notifications     = lazy(() => import('./pages/Notifications'));
+const Credits           = lazy(() => import('./pages/Credits'));
+const History           = lazy(() => import('./pages/History'));
+const GenerateHistory   = lazy(() => import('./pages/GenerateHistory'));
+const Orders            = lazy(() => import('./pages/Orders'));
+const Subscription      = lazy(() => import('./pages/Subscription'));
+const Invoice           = lazy(() => import('./pages/Invoice'));
+const MagicLinkVerify   = lazy(() => import('./pages/MagicLinkVerify'));
+const Img2Prompt        = lazy(() => import('./pages/Img2Prompt'));
+const GalleryList       = lazy(() => import('./pages/Gallery/GalleryList'));
+const GalleryModal      = lazy(() => import('./pages/Gallery/GalleryModal'));
+const MePage            = lazy(() => import('./pages/MePage'));
+const SeedanceList      = lazy(() => import('./pages/Seedance/SeedanceList'));
+const SeedanceModal     = lazy(() => import('./pages/Seedance/SeedanceModal'));
+const VideoFeed         = lazy(() => import('./pages/VideoFeed/VideoFeed'));
+const AuthorPage        = lazy(() => import('./pages/VideoFeed/AuthorPage'));
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
@@ -117,6 +119,7 @@ function App() {
                 }}>
                   <ScrollToTop />
                   <div className="min-h-screen">
+                  <Suspense fallback={<div className="min-h-screen" />}>
                     <Routes>
                       {/* 首页 + 认证页 — 无全局侧边栏，顶部 Header */}
                       <Route path="/" element={<HomeLayout />}>
@@ -191,6 +194,7 @@ function App() {
                       <Route path="*" element={<NotFound />} />
                     </Routes>
 
+                  </Suspense>
                     {/* 全局 LoginModal */}
                     <GlobalLoginModal />
 

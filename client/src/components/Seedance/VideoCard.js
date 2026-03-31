@@ -147,6 +147,7 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
                         className={`video-card-poster ${thumbLoaded ? 'loaded' : ''} ${isHovering && videoReady ? 'hidden' : ''}`}
                         onLoad={() => setThumbLoaded(true)}
                         loading="lazy"
+                        decoding="async"
                     />
                 )}
 

@@ -24,6 +24,16 @@ function startCronJobs() {
     }
   }, { timezone: 'UTC' });
 
+  // Repair missing gallery images: daily 02:15 UTC (runs after NanaBanana sync)
+  cron.schedule('15 2 * * *', async () => {
+    console.log('[cron] Starting gallery image repair...');
+    try {
+      await runSync('repair-gallery-images');
+    } catch (err) {
+      console.error('[cron] Gallery repair error:', err.message);
+    }
+  }, { timezone: 'UTC' });
+
   // Seedance GitHub: daily 02:30 UTC
   cron.schedule('30 2 * * *', async () => {
     console.log('[cron] Starting Seedance GitHub sync...');

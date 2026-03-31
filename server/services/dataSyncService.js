@@ -6,7 +6,7 @@
  */
 
 const DataSyncLog = require('../models/DataSyncLog');
-const { syncNanoBanana, syncSeedanceGithub, syncGithubTrending } = require('./githubSync');
+const { syncNanoBanana, syncSeedanceGithub, syncGithubTrending, repairMissingGalleryImages } = require('./githubSync');
 const { syncSeedanceYouMind } = require('./youmindSync');
 const { startCrawl, stopCrawl, getCrawlStatus } = require('./srefScraper');
 
@@ -16,6 +16,7 @@ const _running = {
   'seedance-github': false,
   'seedance-youmind': false,
   'github-trending': false,
+  'repair-gallery-images': false,
 };
 
 const SOURCES = {
@@ -47,6 +48,12 @@ const SOURCES = {
     label: 'Explore · Sref (MJ)',
     description: 'promptsref.com 爬虫 → SrefStyle · Midjourney --sref 风格码 · 手动触发 · 增量模式遇连续已知页自动停止',
     manual: true,
+  },
+  'repair-gallery-images': {
+    label: 'Gallery · Repair Missing Images',
+    description: '扫描 previewImage 为空的记录，从 YouMind 重新拉取前50页并回填图片 URL（仅处理 nanobanana-ym 来源）',
+    fn: repairMissingGalleryImages,
+    manual: false,
   },
 };
 

@@ -45,7 +45,7 @@ router.get('/', optionalAuth, async (req, res) => {
             sort = 'newest', page = 1, limit = 20, featured
         } = req.query;
 
-        const filter = { isActive: true, isPublic: true };
+        const filter = { isActive: true, isPublic: true, previewImage: { $exists: true, $ne: '' } };
 
         // 过滤条件
         if (model && model !== 'all') filter.model = model;
@@ -133,7 +133,8 @@ router.get('/featured', async (req, res) => {
     try {
         const { limit = 12 } = req.query;
         const prompts = await GalleryPrompt.find({
-            isActive: true, isPublic: true, isFeatured: true
+            isActive: true, isPublic: true, isFeatured: true,
+            previewImage: { $exists: true, $ne: '' }
         })
             .sort({ views: -1 })
             .limit(Math.min(50, parseInt(limit)))

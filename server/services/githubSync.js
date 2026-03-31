@@ -416,9 +416,12 @@ async function syncNanoBanana() {
           isFeatured: item.featured === true,
         };
         try {
+          // 不用空 previewImage 覆盖已有图片（YouMind 有时先返回无图记录，稍后才有图）
+          const setFields = { ...record };
+          if (!setFields.previewImage) delete setFields.previewImage;
           const result = await GalleryPrompt.findOneAndUpdate(
             { sourceId: record.sourceId },
-            { $set: record },
+            { $set: setFields },
             { upsert: true, new: true, rawResult: true }
           );
           if (result.lastErrorObject?.updatedExisting) updatedCount++;
@@ -720,4 +723,107 @@ async function syncGithubTrending() {
   }
 }
 
-module.exports = { syncNanoBanana, syncSeedanceGithub, syncGithubTrending };
+/**
+ * repairMissingGalleryImages
+ *
+ * 扫描所有 previewImage 为空的 nanobanana-ym 记录，
+ * 从 YouMind API 重新拉取前 50 页（约 900 条），按 sourceId 匹配并回填图片 URL。
+ * 由 cron（每日 02:15 UTC）和 Admin DataSync 面板手动触发。
+ */
+async function repairMissingGalleryImages() {
+  const log = await DataSyncLog.create({
+    source: 'repair-gallery-images',
+    status: 'running',
+    startedAt: new Date(),
+  });
+
+  try {
+    // 1. 找出所有缺图记录
+    const broken = await GalleryPrompt.find(
+      { sourceId: /^nanobanana-ym-/, previewImage: { $in: ['', null] } },
+      { sourceId: 1 }
+    ).lean();
+
+    if (!broken.length) {
+      await DataSyncLog.findByIdAndUpdate(log._id, {
+        status: 'success',
+        completedAt: new Date(),
+        newCount: 0,
+        meta: { checked: 0, repaired: 0, stillMissing: 0 },
+      });
+      console.log('[repair-gallery] No broken records found.');
+      return { checked: 0, repaired: 0, stillMissing: 0 };
+    }
+
+    const brokenMap = new Map(broken.map(d => [d.sourceId, d._id]));
+    console.log(`[repair-gallery] Found ${broken.length} records with empty previewImage`);
+
+    // 2. 重新拉取 YouMind 前 50 页
+    let repaired = 0;
+    const REPAIR_HEADERS = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36',
+      'Origin': 'https://youmind.com',
+      'Referer': 'https://youmind.com/en-US/nano-banana-pro-prompts',
+      'Accept': '*/*',
+    };
+
+    for (let page = 1; page <= 50 && brokenMap.size > 0; page++) {
+      let data;
+      try {
+        const res = await axios.post(
+          YOUMIND_NB_API_URL,
+          { model: 'nano-banana-pro', page, limit: 18, locale: 'en-US',
+            campaign: 'nano-banana-pro-prompts', filterMode: 'imageCategories' },
+          { timeout: 30000, headers: REPAIR_HEADERS }
+        );
+        data = res.data;
+      } catch (err) {
+        console.warn(`[repair-gallery] page ${page} fetch failed: ${err.message}`);
+        continue;
+      }
+
+      const prompts = data?.prompts || [];
+      if (!prompts.length) break;
+
+      for (const item of prompts) {
+        const sid = `nanobanana-ym-${item.id}`;
+        const img = item.media?.[0] || item.mediaThumbnails?.[0] || '';
+        if (img && brokenMap.has(sid)) {
+          await GalleryPrompt.updateOne(
+            { sourceId: sid },
+            { $set: { previewImage: img } }
+          );
+          brokenMap.delete(sid);
+          repaired++;
+        }
+      }
+
+      if (page % 10 === 0) {
+        console.log(`[repair-gallery] page ${page}: repaired so far ${repaired}, still missing ${brokenMap.size}`);
+      }
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    const stillMissing = brokenMap.size;
+    console.log(`[repair-gallery] Done: checked=${broken.length} repaired=${repaired} stillMissing=${stillMissing}`);
+
+    await DataSyncLog.findByIdAndUpdate(log._id, {
+      status: 'success',
+      completedAt: new Date(),
+      newCount: repaired,
+      meta: { checked: broken.length, repaired, stillMissing },
+    });
+
+    return { checked: broken.length, repaired, stillMissing };
+  } catch (err) {
+    await DataSyncLog.findByIdAndUpdate(log._id, {
+      status: 'error',
+      completedAt: new Date(),
+      errorMessages: [err.message.substring(0, 500)],
+    });
+    throw err;
+  }
+}
+
+module.exports = { syncNanoBanana, syncSeedanceGithub, syncGithubTrending, repairMissingGalleryImages };

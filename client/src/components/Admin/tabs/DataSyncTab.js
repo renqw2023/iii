@@ -366,7 +366,7 @@ export default function DataSyncTab() {
     }
   };
 
-  const handleStop = async (source) => {
+  const handleStop = async (_source) => {
     try {
       await adminAPI.stopSrefCrawl();
       showToast('Stop signal sent');

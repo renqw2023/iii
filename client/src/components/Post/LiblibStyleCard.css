@@ -181,10 +181,10 @@
 }
 
 
-/* Mobile: card overlay always visible (touch has no hover) */
+/* Mobile: overlay hidden by default (touch has no hover; tap navigates to detail) */
 @media (max-width: 767px) {
   .liblib-card-overlay {
-    opacity: 1;
-    pointer-events: auto;
+    opacity: 0;
+    pointer-events: none;
   }
 }

@@ -1391,8 +1391,8 @@
   }
 }
 
-/* ≤400px: single column */
-@media (max-width: 400px) {
+/* ≤360px: single column (very small phones only; iPhone 14/15 = 390px stays 2-col) */
+@media (max-width: 360px) {
   .gallery-grid {
     grid-template-columns: 1fr;
     gap: 0;
@@ -2507,12 +2507,6 @@
   .dmodal-prompt-text {
     max-height: none;
     overflow: visible;
-  }
-
-  /* Card overlays: always visible on touch (no hover state) */
-  .gallery-card-overlay {
-    opacity: 1;
-    pointer-events: auto;
   }
 
   /* Favorites page remove button: always visible on mobile */

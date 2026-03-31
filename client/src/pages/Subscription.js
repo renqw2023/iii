@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CreditCard, ArrowLeft, Zap, Coins, RotateCcw, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,9 +48,6 @@ export default function Subscription() {
   const total         = isFree ? dailyFree   : totalPurchased;
   const pct           = total > 0 ? Math.round((remaining / total) * 100) : 0;
   const depleted      = remaining === 0;
-
-  // Progress bar color
-  const barColor = depleted ? '#ef4444' : pct > 40 ? '#10b981' : '#f59e0b';
 
   return (
     <div className="max-w-lg mx-auto px-4 py-8">

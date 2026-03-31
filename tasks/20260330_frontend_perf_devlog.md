@@ -153,3 +153,72 @@ client/src/components/UI/MeshBackground.css      — will-change: transform
 client/.env.production                            — GENERATE_SOURCEMAP=false
 tasks/20260330_frontend_perf_devlog.md            — 本文件
 ```
+
+---
+
+## 补丁修复（同日）
+
+### Bug：移动端图片 Overlay 常驻显示
+
+**现象**：Gallery（`/gallery`）和 Explore（`/explore`）两个图片列表页，在移动端打开时，卡片上的操作遮罩（作者名、❤️收藏、🔖书签、"Use Idea"按钮、分享按钮、`--sref code`等）始终可见，大面积遮挡图片内容，严重影响视觉体验。
+
+**根因**：
+- `gallery.css` 的 `@media (max-width: 767px)` 块中有规则 `.gallery-card-overlay { opacity: 1; pointer-events: auto; }` — 明确将 Gallery overlay 强制设为可见（触屏无 hover 状态的历史妥协）
+- `LiblibStyleCard.css` 的 `@media (max-width: 767px)` 块有同类规则 `.liblib-card-overlay { opacity: 1; ... }` — 影响 Explore/SrefCard 的 overlay
+
+**修复**：
+- `gallery.css`：删除 `.gallery-card-overlay` 的移动端强制显示规则，回归 opacity:0 默认状态（overlay 仅桌面端 hover 时触发）
+- `LiblibStyleCard.css`：将规则改为 `opacity: 0; pointer-events: none;`（明确覆盖，防止继承冲突）
+
+**隔离保证**：两处修改全在 `@media (max-width: 767px)` 内，桌面端 hover 逻辑完全不受影响。
+
+---
+
+### Bug：移动端 Gallery/Seedance 单列布局（iPhone 14/15）
+
+**现象**：390px 宽度（iPhone 14/15 标准宽度）的 Gallery 页面显示为单列，而预期为双列。
+
+**根因**：`gallery.css` 有 `@media (max-width: 400px)` → `grid-template-columns: 1fr`，390px < 400px，触发了单列规则。
+
+**修复**：将阈值从 `400px` 改为 `360px`，只有极小屏幕（如旧款 Android 小屏）才退化为单列，iPhone 14/15（390px）恢复双列。
+
+---
+
+### 构建警告清零（ESLint no-unused-vars）
+
+构建输出 `Compiled with warnings`，6 处未用变量：
+
+| 文件 | 问题 | 修复 |
+|------|------|------|
+| `DataSyncTab.js:369` | `source` 参数未用 | 改为 `_source` |
+| `TrafficTab.js:98` | `color` 参数未用 | 改为 `_color` |
+| `Credits.js:1` | `useRef` import 未用 | 移除 |
+| `Subscription.js:1` | `useEffect`/`useState` 未用 | 移除；`barColor` 变量也删除 |
+| `VideoFeedItem.js:38` | `onRequestUnmute` prop 未用 | 重命名为 `_onRequestUnmute` |
+
+修复后 `npm run build` 输出 `Compiled successfully.`，零警告。
+
+---
+
+### 补丁验证结果
+
+| 验证项 | 结果 |
+|--------|------|
+| 移动端 Gallery overlay 隐藏 | ✅ 图片干净，无遮挡 |
+| 移动端 Explore overlay 隐藏 | ✅ 图片干净，无遮挡 |
+| 移动端 Gallery 双列布局 (390px) | ✅ 恢复 2 列 |
+| 桌面端 Gallery hover overlay | ✅ 仍正常显示（未受影响） |
+| 桌面端 4 列布局 | ✅ 正常 |
+| 构建警告 | ✅ 零警告（Compiled successfully） |
+
+### 补丁修改文件清单
+
+```
+client/src/styles/gallery.css                               — 删除 overlay 强制显示；单列阈值 400→360px
+client/src/components/Post/LiblibStyleCard.css              — overlay 移动端改为 opacity:0
+client/src/components/Admin/tabs/DataSyncTab.js             — source → _source
+client/src/components/Admin/tabs/TrafficTab.js              — color → _color
+client/src/pages/Credits.js                                 — 移除未用 useRef
+client/src/pages/Subscription.js                            — 移除未用 hooks + barColor
+client/src/pages/VideoFeed/VideoFeedItem.js                 — onRequestUnmute → _onRequestUnmute
+```

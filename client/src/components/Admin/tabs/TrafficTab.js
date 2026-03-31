@@ -95,7 +95,7 @@ function TrafficChart({ data, loading, period }) {
   const uvPts = mkPoints('uv');
 
   const toPolyline = pts => pts.map(p => `${p.x},${p.y}`).join(' ');
-  const toArea = (pts, color) =>
+  const toArea = (pts, _color) =>
     `M${pts[0].x},${H} ` + pts.map(p => `L${p.x},${p.y}`).join(' ') + ` L${pts[pts.length - 1].x},${H} Z`;
 
   const step = data.length > 14 ? 5 : (data.length > 7 ? 3 : 1);

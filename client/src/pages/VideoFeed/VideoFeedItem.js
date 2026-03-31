@@ -35,7 +35,7 @@ const ActionCount = ({ n }) => (
  *   globalMuted — controlled by VideoFeed parent; synced to video.muted
  *   onRequestUnmute — callback to parent to unmute globally
  */
-const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute }) => {
+const VideoFeedItem = ({ item, index, globalMuted, onRequestUnmute: _onRequestUnmute }) => {
   const { isAuthenticated, openLoginModal } = useAuth();
   const { setPrefill } = useGeneration();
   const navigate = useNavigate();

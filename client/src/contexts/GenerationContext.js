@@ -53,7 +53,7 @@ export const GenerationProvider = ({ children }) => {
       window.clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-  });
+  }, [state.generations]);
 
   // Cleanup on unmount
   useEffect(() => {

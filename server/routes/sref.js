@@ -1,7 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const NodeCache = require('node-cache');
 const router = express.Router();
 const SrefStyle = require('../models/SrefStyle');
+const viewsBuffer = require('../services/viewsBuffer');
+
+// 默认首页 60 秒缓存
+const listCache = new NodeCache({ stdTTL: 60 });
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -36,6 +41,14 @@ router.get('/', optionalAuth, async (req, res) => {
     try {
         const { tags, search, sort = 'newest', page = 1, limit = 24 } = req.query;
 
+        // 默认首页缓存（未登录 + 无过滤参数 + page=1 + sort=newest）
+        const pageNum = Math.max(1, parseInt(page));
+        const isDefaultPage = !req.user && !tags && !search && sort === 'newest' && pageNum === 1;
+        if (isDefaultPage) {
+            const cached = listCache.get('sref:default:p1');
+            if (cached) return res.json(cached);
+        }
+
         const filter = { isActive: true };
         if (tags && tags !== 'all') {
             filter.tags = { $in: tags.split(',').map(t => t.trim()) };
@@ -54,7 +67,6 @@ router.get('/', optionalAuth, async (req, res) => {
             default: sortOption = { createdAt: -1 };
         }
 
-        const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
         const skip = (pageNum - 1) * pageSize;
 
@@ -85,10 +97,14 @@ router.get('/', optionalAuth, async (req, res) => {
             if (s.likesCount === undefined) s.likesCount = 0;
         });
 
-        res.json({
+        const responseData = {
             posts: srefs,
             pagination: { total, page: pageNum, limit: pageSize, pages: Math.ceil(total / pageSize) },
-        });
+        };
+
+        if (isDefaultPage) listCache.set('sref:default:p1', responseData);
+
+        res.json(responseData);
     } catch (error) {
         console.error('Sref 列表错误:', error);
         res.status(500).json({ message: '服务器错误' });
@@ -168,13 +184,14 @@ router.get('/:id', optionalAuth, async (req, res) => {
             return res.status(404).json({ message: 'Sref 未找到' });
         }
 
-        const sref = await SrefStyle.findOneAndUpdate(
-            { _id: req.params.id, isActive: true },
-            { $inc: { views: 1 } },
-            { new: true }
+        const sref = await SrefStyle.findOne(
+            { _id: req.params.id, isActive: true }
         ).lean({ virtuals: true });
 
         if (!sref) return res.status(404).json({ message: 'Sref 未找到' });
+
+        // buffer 写入，30s 后批量刷新到 DB
+        viewsBuffer.increment('sref', req.params.id);
 
         const base = `/output/sref_${sref.srefCode}`;
         sref.imageUrls = (sref.images || []).map(f => `${base}/images/${f}`);

@@ -1,6 +1,11 @@
 const express = require('express');
+const NodeCache = require('node-cache');
 const router = express.Router();
 const SeedancePrompt = require('../models/SeedancePrompt');
+const viewsBuffer = require('../services/viewsBuffer');
+
+// 默认首页 60 秒缓存
+const listCache = new NodeCache({ stdTTL: 60 });
 
 // 可选认证中间件
 const optionalAuth = (req, res, next) => {
@@ -40,6 +45,14 @@ router.get('/', optionalAuth, async (req, res) => {
             sort = 'newest', page = 1, limit = 12, featured
         } = req.query;
 
+        // 默认首页缓存（未登录 + 无过滤参数 + page=1 + sort=newest）
+        const pageNum = Math.max(1, parseInt(page));
+        const isDefaultPage = !req.user && !category && !tags && !search && !authorName && !featured && sort === 'newest' && pageNum === 1;
+        if (isDefaultPage) {
+            const cached = listCache.get('seedance:default:p1');
+            if (cached) return res.json(cached);
+        }
+
         const filter = { isActive: true, isPublic: true };
 
         if (category && category !== 'all') filter.category = category;
@@ -49,7 +62,6 @@ router.get('/', optionalAuth, async (req, res) => {
         // authorName: direct regex match (case-insensitive), bypasses text index limitation
         if (authorName) filter.authorName = { $regex: authorName.trim(), $options: 'i' };
 
-        const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
         const skip = (pageNum - 1) * pageSize;
 
@@ -110,7 +122,7 @@ router.get('/', optionalAuth, async (req, res) => {
             delete p._likesCount; // remove temp aggregation field
         });
 
-        res.json({
+        const responseData = {
             prompts,
             pagination: {
                 total,
@@ -118,7 +130,11 @@ router.get('/', optionalAuth, async (req, res) => {
                 limit: pageSize,
                 totalPages: Math.ceil(total / pageSize)
             }
-        });
+        };
+
+        if (isDefaultPage) listCache.set('seedance:default:p1', responseData);
+
+        res.json(responseData);
     } catch (error) {
         console.error('Seedance列表错误:', error);
         res.status(500).json({ message: '服务器错误' });
@@ -385,15 +401,16 @@ router.post('/:id/translate', async (req, res) => {
  */
 router.get('/:id', optionalAuth, async (req, res) => {
     try {
-        const prompt = await SeedancePrompt.findOneAndUpdate(
-            { _id: req.params.id, isActive: true },
-            { $inc: { views: 1 } },
-            { new: true }
+        const prompt = await SeedancePrompt.findOne(
+            { _id: req.params.id, isActive: true }
         ).select('-__v').lean();
 
         if (!prompt) {
             return res.status(404).json({ message: '未找到' });
         }
+
+        // buffer 写入，30s 后批量刷新到 DB
+        viewsBuffer.increment('seedance', req.params.id);
 
         if (req.user) {
             prompt.isLiked = prompt.likes?.some(l => l.user?.toString() === req.user.id);

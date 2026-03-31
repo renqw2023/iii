@@ -1,9 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const NodeCache = require('node-cache');
 const router = express.Router();
 const GalleryPrompt = require('../models/GalleryPrompt');
+const viewsBuffer = require('../services/viewsBuffer');
 
-const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// 默认首页 60 秒缓存（仅未登录、无过滤参数的首页请求）
+const listCache = new NodeCache({ stdTTL: 60 });
 
 // 可选认证中间件 - 未登录也可浏览，登录后可收藏/点赞
 const optionalAuth = (req, res, next) => {
@@ -45,6 +48,14 @@ router.get('/', optionalAuth, async (req, res) => {
             sort = 'newest', page = 1, limit = 20, featured
         } = req.query;
 
+        // 默认首页缓存（未登录 + 无过滤参数 + page=1 + sort=newest）
+        const pageNum = Math.max(1, parseInt(page));
+        const isDefaultPage = !req.user && !model && !useCase && !style && !subject && !tags && !search && !featured && sort === 'newest' && pageNum === 1;
+        if (isDefaultPage) {
+            const cached = listCache.get('gallery:default:p1');
+            if (cached) return res.json(cached);
+        }
+
         const filter = { isActive: true, isPublic: true, previewImage: { $exists: true, $ne: '' } };
 
         // 过滤条件
@@ -55,17 +66,9 @@ router.get('/', optionalAuth, async (req, res) => {
         if (tags) filter.tags = { $in: tags.split(',').map(t => t.trim().toLowerCase()) };
         if (featured === 'true') filter.isFeatured = true;
 
-        // 全文搜索
+        // 全文搜索（利用 GalleryPrompt text index: title/prompt/tags）
         if (search?.trim()) {
-            const safeSearch = escapeRegex(search.trim());
-            const searchRegex = new RegExp(safeSearch, 'i');
-            filter.$or = [
-                { title: searchRegex },
-                { prompt: searchRegex },
-                { description: searchRegex },
-                { tags: { $in: [searchRegex] } },
-                { sourceAuthor: searchRegex },
-            ];
+            filter.$text = { $search: search.trim() };
         }
 
         // 排序
@@ -76,7 +79,6 @@ router.get('/', optionalAuth, async (req, res) => {
             case 'oldest': sortOption = { createdAt: 1 }; break;
             default: sortOption = { createdAt: -1 }; // newest
         }
-        const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
         const skip = (pageNum - 1) * pageSize;
 
@@ -110,7 +112,7 @@ router.get('/', optionalAuth, async (req, res) => {
             });
         }
 
-        res.json({
+        const responseData = {
             prompts,
             pagination: {
                 total,
@@ -118,7 +120,11 @@ router.get('/', optionalAuth, async (req, res) => {
                 limit: pageSize,
                 totalPages: Math.ceil(total / pageSize)
             }
-        });
+        };
+
+        if (isDefaultPage) listCache.set('gallery:default:p1', responseData);
+
+        res.json(responseData);
     } catch (error) {
         console.error('画廊列表错误:', error);
         res.status(500).json({ message: '服务器错误' });
@@ -280,24 +286,16 @@ router.get('/search', optionalAuth, async (req, res) => {
         const pageNum = Math.max(1, parseInt(page));
         const pageSize = Math.min(50, parseInt(limit));
         const skip = (pageNum - 1) * pageSize;
-        const safeSearch = escapeRegex(q.trim());
-        const searchRegex = new RegExp(safeSearch, 'i');
 
         const filter = {
             isActive: true,
             isPublic: true,
-            $or: [
-                { title: searchRegex },
-                { prompt: searchRegex },
-                { description: searchRegex },
-                { tags: { $in: [searchRegex] } },
-                { sourceAuthor: searchRegex },
-            ]
+            $text: { $search: q.trim() }
         };
 
         const [prompts, total] = await Promise.all([
-            GalleryPrompt.find(filter)
-                .sort({ views: -1, createdAt: -1 })
+            GalleryPrompt.find(filter, { score: { $meta: 'textScore' } })
+                .sort({ score: { $meta: 'textScore' }, views: -1 })
                 .skip(skip)
                 .limit(pageSize)
                 .select('-likes -favorites -__v')
@@ -325,15 +323,16 @@ router.get('/:id', optionalAuth, async (req, res) => {
             return res.status(404).json({ message: '提示词未找到' });
         }
 
-        const prompt = await GalleryPrompt.findOneAndUpdate(
-            { _id: req.params.id, isActive: true },
-            { $inc: { views: 1 } },
-            { new: true }
+        const prompt = await GalleryPrompt.findOne(
+            { _id: req.params.id, isActive: true }
         ).select('-__v').lean();
 
         if (!prompt) {
             return res.status(404).json({ message: '提示词未找到' });
         }
+
+        // buffer 写入，30s 后批量刷新到 DB
+        viewsBuffer.increment('gallery', req.params.id);
 
         // 标记用户交互状态
         if (req.user) {

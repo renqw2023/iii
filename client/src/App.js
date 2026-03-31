@@ -10,8 +10,6 @@ import { SidebarProvider } from './contexts/SidebarContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { GenerationProvider } from './contexts/GenerationContext';
 import ErrorBoundary from './components/Error/ErrorBoundary';
-import LoginModal from './components/Auth/LoginModal';
-import SearchModal from './components/Search/SearchModal';
 import Layout from './components/Layout/Layout';
 import HomeLayout from './components/Layout/HomeLayout';
 import DocsLayout from './components/Layout/DocsLayout';
@@ -54,6 +52,8 @@ const SeedanceList      = lazy(() => import('./pages/Seedance/SeedanceList'));
 const SeedanceModal     = lazy(() => import('./pages/Seedance/SeedanceModal'));
 const VideoFeed         = lazy(() => import('./pages/VideoFeed/VideoFeed'));
 const AuthorPage        = lazy(() => import('./pages/VideoFeed/AuthorPage'));
+const LoginModal        = lazy(() => import('./components/Auth/LoginModal'));
+const SearchModal       = lazy(() => import('./components/Search/SearchModal'));
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';

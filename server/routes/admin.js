@@ -1150,7 +1150,7 @@ router.get('/traffic', adminAuth, async (req, res) => {
     const days = period === '30d' ? 30 : 7;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    const [chartData, topPages, topIPs] = await Promise.all([
+    const [chartData, topPages, topIPs, topCountries] = await Promise.all([
       VisitLog.aggregate([
         { $match: { createdAt: { $gte: since } } },
         {
@@ -1174,10 +1174,26 @@ router.get('/traffic', adminAuth, async (req, res) => {
 
       VisitLog.aggregate([
         { $match: { createdAt: { $gte: since } } },
-        { $group: { _id: '$ip', count: { $sum: 1 }, lastSeen: { $max: '$createdAt' } } },
+        {
+          $group: {
+            _id: '$ip',
+            count: { $sum: 1 },
+            lastSeen: { $max: '$createdAt' },
+            country: { $first: '$country' },
+            city: { $first: '$city' },
+          },
+        },
         { $sort: { count: -1 } },
         { $limit: 10 },
-        { $project: { _id: 0, ip: '$_id', count: 1, lastSeen: 1 } },
+        { $project: { _id: 0, ip: '$_id', count: 1, lastSeen: 1, country: 1, city: 1 } },
+      ]),
+
+      VisitLog.aggregate([
+        { $match: { createdAt: { $gte: since }, country: { $exists: true, $ne: '' } } },
+        { $group: { _id: '$country', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 15 },
+        { $project: { _id: 0, country: '$_id', count: 1 } },
       ]),
     ]);
 
@@ -1192,12 +1208,70 @@ router.get('/traffic', adminAuth, async (req, res) => {
       weekUV:  weekDays.reduce((s, d) => s + d.uv, 0),
     };
 
-    const data = { summary, chart: chartData, topPages, topIPs };
+    const data = { summary, chart: chartData, topPages, topIPs, topCountries };
     trafficCache.set(period, { data, ts: Date.now() });
     res.json({ success: true, data });
   } catch (error) {
     console.error('获取流量数据失败:', error);
     res.status(500).json({ success: false, message: '获取流量数据失败' });
+  }
+});
+
+// daily-ips 缓存：key = date 字符串，TTL 5 分钟
+const dailyIPCache = new Map();
+
+/**
+ * GET /admin/traffic/daily-ips?date=2026-03-31
+ * 返回指定日期的所有 IP 访问汇总（最多 200 条，按访问次数倒序）
+ */
+router.get('/traffic/daily-ips', adminAuth, async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ success: false, message: '请提供有效日期（YYYY-MM-DD）' });
+    }
+
+    const cached = dailyIPCache.get(date);
+    if (cached && Date.now() - cached.ts < TRAFFIC_TTL) {
+      return res.json({ success: true, data: cached.data });
+    }
+
+    const start = new Date(date + 'T00:00:00.000Z');
+    const end   = new Date(date + 'T23:59:59.999Z');
+
+    const ips = await VisitLog.aggregate([
+      { $match: { createdAt: { $gte: start, $lte: end } } },
+      {
+        $group: {
+          _id: '$ip',
+          count:    { $sum: 1 },
+          country:  { $first: '$country' },
+          city:     { $first: '$city' },
+          lastSeen: { $max: '$createdAt' },
+          paths:    { $push: '$path' },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 200 },
+      {
+        $project: {
+          _id: 0,
+          ip: '$_id',
+          count: 1,
+          country: 1,
+          city: 1,
+          lastSeen: 1,
+          paths: { $slice: ['$paths', 5] }, // 只返回前 5 条路径
+        },
+      },
+    ]);
+
+    const data = { date, total: ips.length, ips };
+    dailyIPCache.set(date, { data, ts: Date.now() });
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('获取日 IP 记录失败:', error);
+    res.status(500).json({ success: false, message: '获取日 IP 记录失败' });
   }
 });
 

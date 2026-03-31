@@ -1,4 +1,5 @@
 const VisitLog = require('../models/VisitLog');
+const { getGeoLocation } = require('../utils/analyticsUtils');
 
 // Paths/extensions to skip — static assets and internal routes
 const SKIP_PREFIXES = ['/output/', '/uploads/', '/Circle/', '/favicon'];
@@ -47,6 +48,7 @@ function visitTracker(req, res, next) {
       req.ip ||
       '';
 
+    const geo = getGeoLocation(ip);
     buffer.push({
       ip,
       path: path.length > 200 ? path.slice(0, 200) : path,
@@ -55,6 +57,8 @@ function visitTracker(req, res, next) {
       userId: req.user?._id || undefined,
       userAgent: (req.headers['user-agent'] || '').slice(0, 200),
       duration: Date.now() - start,
+      country: geo.country || '',
+      city: geo.city || '',
     });
 
     if (buffer.length >= MAX_BUFFER) flush();

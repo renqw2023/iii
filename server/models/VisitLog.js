@@ -8,6 +8,8 @@ const visitLogSchema = new mongoose.Schema({
   userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
   userAgent:{ type: String },
   duration: { type: Number },  // ms
+  country:  { type: String, default: '' },
+  city:     { type: String, default: '' },
   createdAt:{ type: Date, default: Date.now, index: { expireAfterSeconds: 7776000 } }, // 90-day TTL
 });
 

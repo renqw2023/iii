@@ -150,6 +150,7 @@ export const adminAPI = {
 
   // 访客流量
   getTraffic: (params) => api.get('/admin/traffic', { params }),
+  getDailyIPs: (params) => api.get('/admin/traffic/daily-ips', { params }),
 
   // 数据同步
   getSyncStatus: () => api.get('/admin/sync/status'),

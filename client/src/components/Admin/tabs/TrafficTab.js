@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Eye, Users, TrendingUp, Globe, RefreshCw } from 'lucide-react';
+import { Eye, Users, TrendingUp, Globe, RefreshCw, Calendar } from 'lucide-react';
 import { adminAPI } from '../../../services/api';
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
@@ -13,6 +13,10 @@ function fmtNum(n) {
 function fmtDate(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /* ─── Skeleton ────────────────────────────────────────────────── */
@@ -95,7 +99,7 @@ function TrafficChart({ data, loading, period }) {
   const uvPts = mkPoints('uv');
 
   const toPolyline = pts => pts.map(p => `${p.x},${p.y}`).join(' ');
-  const toArea = (pts, _color) =>
+  const toArea = (pts) =>
     `M${pts[0].x},${H} ` + pts.map(p => `L${p.x},${p.y}`).join(' ') + ` L${pts[pts.length - 1].x},${H} Z`;
 
   const step = data.length > 14 ? 5 : (data.length > 7 ? 3 : 1);
@@ -197,7 +201,7 @@ function TopPages({ pages, loading }) {
   );
 }
 
-/* ─── Top IPs List ────────────────────────────────────────────── */
+/* ─── Top IPs（带地理信息）────────────────────────────────────── */
 function TopIPs({ ips, loading }) {
   if (loading) {
     return (
@@ -221,21 +225,217 @@ function TopIPs({ ips, loading }) {
         <div className="space-y-2">
           {ips.map((item, i) => (
             <div key={i} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: 'var(--border-color)' }}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <span
                   className="w-5 h-5 rounded text-xs flex items-center justify-center font-bold flex-shrink-0"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
                 >
                   {i + 1}
                 </span>
-                <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{item.ip}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{item.ip}</p>
+                  {(item.country || item.city) && (
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                      {[item.country, item.city].filter(Boolean).join(' / ')}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0 ml-2">
                 <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>{fmtNum(item.count)} hits</span>
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{fmtDate(item.lastSeen)}</p>
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Country Ranking ─────────────────────────────────────────── */
+function CountryRanking({ countries, loading }) {
+  if (loading) {
+    return (
+      <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+        <Skeleton className="w-32 h-4 rounded mb-4" />
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 mb-3">
+            <Skeleton className="w-6 h-3 rounded" />
+            <Skeleton className="flex-1 h-3 rounded" />
+            <Skeleton className="w-10 h-3 rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const max = countries?.[0]?.count || 1;
+  const total = countries?.reduce((s, c) => s + c.count, 0) || 1;
+
+  return (
+    <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+      <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>来源国家</p>
+      <p className="text-xs mb-4" style={{ color: 'var(--text-tertiary)' }}>仅含有地理信息的访问</p>
+      {!countries?.length ? (
+        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>暂无数据（新访问将自动记录）</p>
+      ) : (
+        <div className="space-y-3">
+          {countries.map((c, i) => (
+            <div key={i}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  {c.country}
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  <span className="font-semibold" style={{ color: '#06b6d4' }}>{fmtNum(c.count)}</span>
+                  {' '}
+                  <span>({Math.round((c.count / total) * 100)}%)</span>
+                </span>
+              </div>
+              <div className="w-full h-1.5 rounded-full" style={{ background: 'var(--bg-tertiary)' }}>
+                <div
+                  className="h-1.5 rounded-full"
+                  style={{ width: `${Math.round((c.count / max) * 100)}%`, background: '#06b6d4' }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Daily IP Log ────────────────────────────────────────────── */
+function DailyIPLog() {
+  const [date, setDate] = useState(todayStr());
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(null); // expanded IP index
+
+  const load = useCallback(async (d) => {
+    setLoading(true);
+    setError(null);
+    setExpanded(null);
+    try {
+      const res = await adminAPI.getDailyIPs({ date: d });
+      setResult(res.data?.data || null);
+    } catch {
+      setError('加载失败，请重试');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(date); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>当日 IP 访问记录</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            {result ? `共 ${result.total} 个 IP，最多显示 200 条` : '选择日期查看明细'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-lg px-3 py-1.5" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}>
+            <Calendar size={13} style={{ color: 'var(--text-tertiary)' }} />
+            <input
+              type="date"
+              value={date}
+              max={todayStr()}
+              onChange={e => setDate(e.target.value)}
+              className="text-xs bg-transparent outline-none"
+              style={{ color: 'var(--text-primary)', width: 110 }}
+            />
+          </div>
+          <button
+            onClick={() => load(date)}
+            disabled={loading}
+            className="p-2 rounded-lg transition-all"
+            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)' }}
+            title="刷新"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} style={{ color: 'var(--text-secondary)' }} />
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <p className="text-sm mb-3" style={{ color: '#ef4444' }}>{error}</p>
+      )}
+
+      {/* Table */}
+      {loading ? (
+        <div className="space-y-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="w-6 h-3 rounded" />
+              <Skeleton className="w-28 h-3 rounded" />
+              <Skeleton className="w-16 h-3 rounded" />
+              <Skeleton className="w-16 h-3 rounded" />
+              <Skeleton className="w-10 h-3 rounded" />
+            </div>
+          ))}
+        </div>
+      ) : !result?.ips?.length ? (
+        <p className="text-sm text-center py-6" style={{ color: 'var(--text-tertiary)' }}>
+          {result ? '当日暂无访问记录' : '请选择日期后点击刷新'}
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                {['#', 'IP', '国家', '城市', '访问次数', '最后访问', '路径'].map(h => (
+                  <th key={h} className="pb-2 pr-4 text-left font-medium" style={{ color: 'var(--text-tertiary)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {result.ips.map((item, i) => (
+                <React.Fragment key={i}>
+                  <tr
+                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ borderBottom: '1px solid var(--border-color)' }}
+                    onClick={() => setExpanded(expanded === i ? null : i)}
+                  >
+                    <td className="py-2 pr-4 font-mono" style={{ color: 'var(--text-tertiary)' }}>{i + 1}</td>
+                    <td className="py-2 pr-4 font-mono font-medium" style={{ color: 'var(--text-primary)' }}>{item.ip || '—'}</td>
+                    <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{item.country || '—'}</td>
+                    <td className="py-2 pr-4" style={{ color: 'var(--text-secondary)' }}>{item.city || '—'}</td>
+                    <td className="py-2 pr-4 font-semibold" style={{ color: '#f59e0b' }}>{item.count}</td>
+                    <td className="py-2 pr-4" style={{ color: 'var(--text-tertiary)' }}>{fmtDate(item.lastSeen)}</td>
+                    <td className="py-2 font-mono truncate" style={{ color: 'var(--text-tertiary)', maxWidth: 160 }}>
+                      {item.paths?.[0] || '—'}
+                      {item.paths?.length > 1 && (
+                        <span className="ml-1 px-1 rounded text-xs" style={{ background: 'var(--bg-tertiary)', color: '#6366f1' }}>
+                          +{item.paths.length - 1}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                  {expanded === i && item.paths?.length > 1 && (
+                    <tr>
+                      <td colSpan={7} className="pb-2 pt-1 pl-8">
+                        <div className="flex flex-wrap gap-1">
+                          {item.paths.map((p, pi) => (
+                            <span key={pi} className="px-2 py-0.5 rounded font-mono text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                              {p}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
@@ -280,7 +480,6 @@ export default function TrafficTab() {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>全站访问统计（包含未登录用户）</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Period toggle */}
           {['7d', '30d'].map(p => (
             <button
               key={p}
@@ -324,11 +523,15 @@ export default function TrafficTab() {
       {/* Chart */}
       <TrafficChart data={data?.chart} loading={loading} period={period} />
 
-      {/* Bottom 2-col */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 3-col: TopPages / TopIPs / CountryRanking */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <TopPages pages={data?.topPages} loading={loading} />
         <TopIPs ips={data?.topIPs} loading={loading} />
+        <CountryRanking countries={data?.topCountries} loading={loading} />
       </div>
+
+      {/* Daily IP Log */}
+      <DailyIPLog />
     </div>
   );
 }

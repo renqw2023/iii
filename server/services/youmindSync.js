@@ -254,11 +254,26 @@ async function syncSeedanceYouMind() {
           const updateFields = {};
           if (record.prompt && record.prompt.length > (existing.prompt?.length || 0)) updateFields.prompt = record.prompt;
           if (record.title !== existing.title) updateFields.title = record.title;
-          if (record.videoUrl && record.videoUrl !== existing.videoUrl) updateFields.videoUrl = record.videoUrl;
           if (record.thumbnailUrl && !existing.thumbnailUrl) updateFields.thumbnailUrl = record.thumbnailUrl;
           if (record.description && !existing.description) updateFields.description = record.description;
           if (record.authorName && !existing.authorName) updateFields.authorName = record.authorName;
           if (record.authorLink && !existing.authorLink) updateFields.authorLink = record.authorLink;
+
+          const isLocalOrR2 = existing.storageType === 'local' || existing.storageType === 'r2';
+
+          if (!isLocalOrR2 && record.videoUrl && record.videoUrl.includes('twimg.com')) {
+            // 未本地化：CSV 带来了新鲜 Twitter URL，尝试立即下载
+            const localPath = await downloadVideoToLocal(record.videoUrl, existing._id.toString());
+            if (localPath) {
+              updateFields.localVideoPath = localPath;
+              updateFields.storageType = 'local';
+              updateFields.videoUrl = `/v/${localPath}`;
+            } else {
+              // 下载失败（可能仍过期），至少保留最新 Twitter URL 供下次尝试
+              updateFields.videoUrl = record.videoUrl;
+            }
+          }
+          // 已本地化/R2：不覆盖 videoUrl，保留 /v/ 路径
 
           if (Object.keys(updateFields).length > 0) {
             await SeedancePrompt.updateOne({ sourceId: record.sourceId }, { $set: updateFields });

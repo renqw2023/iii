@@ -58,8 +58,12 @@ const HERO_STYLES = `
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background: radial-gradient(ellipse at 25% 30%, rgba(160, 0, 70, 0.55) 0%, rgba(18, 0, 20, 0.98) 55%, #08000f 100%);
-    border-right: 1px solid rgba(255,255,255,0.06);
+    background:
+      radial-gradient(ellipse at 18% 15%, rgba(139, 100, 170, 0.60) 0%, transparent 48%),
+      radial-gradient(ellipse at 78% 82%, rgba(200, 128, 55,  0.50) 0%, transparent 48%),
+      radial-gradient(ellipse at 50% 50%, rgba(190, 110, 125, 0.28) 0%, transparent 65%),
+      #0e080f;
+    border-right: 1px solid rgba(255,255,255,0.07);
   }
   .split-hero-left-content {
     position: relative;

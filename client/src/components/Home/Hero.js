@@ -58,10 +58,8 @@ const HERO_STYLES = `
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    background:
-      radial-gradient(ellipse 70% 55% at 62% 45%, rgba(235, 140, 110, 0.28) 0%, transparent 100%),
-      linear-gradient(158deg, #c8a8e0 0%, #e0a8d0 25%, #f0a8a0 50%, #e8c070 74%, #987098 100%);
     border-right: 1px solid rgba(255,255,255,0.10);
+    transition: background 1.2s ease;
   }
   .split-hero-left-content {
     position: relative;
@@ -269,6 +267,112 @@ const HERO_STYLES = `
   .hero-lightbox-link:hover {
     color: #93c5fd;
   }
+
+  /* ── Sun / Moon orbs ── */
+  .hero-orb {
+    position: absolute;
+    top: 1.2rem;
+    left: 1.2rem;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 20;
+    pointer-events: auto;
+  }
+  .hero-orb-sun {
+    background: radial-gradient(circle at 38% 36%, #fff5c0, #fbbf24 40%, #f97316 75%, #ea580c);
+    box-shadow: 0 0 14px 5px rgba(251,191,36,0.60), 0 0 34px 14px rgba(249,115,22,0.32);
+    animation: orbSunPulse 3s ease-in-out infinite;
+  }
+  .hero-orb-moon {
+    background: radial-gradient(circle at 36% 34%, #f0f8ff, #bdd4f8 42%, #7baae8 76%, #4a7ec8);
+    box-shadow: 0 0 14px 5px rgba(185,212,255,0.60), 0 0 34px 14px rgba(120,170,240,0.32);
+    animation: orbMoonPulse 3s ease-in-out infinite;
+  }
+  .hero-orb-sun:hover {
+    box-shadow: 0 0 22px 10px rgba(251,191,36,0.80), 0 0 50px 22px rgba(249,115,22,0.48);
+  }
+  .hero-orb-moon:hover {
+    box-shadow: 0 0 22px 10px rgba(185,212,255,0.80), 0 0 50px 22px rgba(120,170,240,0.48);
+  }
+  @keyframes orbSunPulse {
+    0%,100% { box-shadow: 0 0 14px 5px rgba(251,191,36,0.60), 0 0 34px 14px rgba(249,115,22,0.32); }
+    50%      { box-shadow: 0 0 22px 9px rgba(251,191,36,0.82), 0 0 50px 20px rgba(249,115,22,0.48); }
+  }
+  @keyframes orbMoonPulse {
+    0%,100% { box-shadow: 0 0 14px 5px rgba(185,212,255,0.60), 0 0 34px 14px rgba(120,170,240,0.32); }
+    50%      { box-shadow: 0 0 22px 9px rgba(185,212,255,0.82), 0 0 50px 20px rgba(120,170,240,0.48); }
+  }
+
+  /* Sun falling (right arc of ellipse: top-left → right → bottom-right) */
+  .hero-sun-falling {
+    position: absolute;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 36%, #fff5c0, #fbbf24 40%, #f97316 75%, #ea580c);
+    box-shadow: 0 0 20px 8px rgba(251,191,36,0.70), 0 0 44px 18px rgba(249,115,22,0.40);
+    z-index: 20;
+    pointer-events: none;
+    animation: sunFall 1.6s cubic-bezier(0.42,0,0.58,1) forwards;
+  }
+  @keyframes sunFall {
+    0%   { left: 3%;  top: 3%;  opacity: 1; }
+    18%  { left: 52%; top: 5%;              }
+    38%  { left: 86%; top: 22%;             }
+    60%  { left: 90%; top: 52%;             }
+    80%  { left: 83%; top: 78%;             }
+    100% { left: 79%; top: 88%; opacity: 0.8; }
+  }
+
+  /* Moon rising (left arc: bottom-right → bottom-left → top-left) */
+  .hero-moon-rising {
+    position: absolute;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 34%, #f0f8ff, #bdd4f8 42%, #7baae8 76%, #4a7ec8);
+    box-shadow: 0 0 18px 7px rgba(185,212,255,0.65), 0 0 40px 16px rgba(120,170,240,0.35);
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    animation: moonRise 2.0s ease-in-out 0.8s forwards;
+  }
+  @keyframes moonRise {
+    0%   { left: 79%; top: 88%; opacity: 0; }
+    10%  { left: 78%; top: 88%; opacity: 1; }
+    28%  { left: 38%; top: 91%;             }
+    48%  { left: 6%;  top: 74%;             }
+    68%  { left: 3%;  top: 50%;             }
+    85%  { left: 3%;  top: 22%;             }
+    100% { left: 3%;  top: 3%;  opacity: 1; }
+  }
+
+  /* Night→Day: moon falls along right arc, sun rises along left arc */
+  .hero-moon-falling {
+    position: absolute;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 36% 34%, #f0f8ff, #bdd4f8 42%, #7baae8 76%, #4a7ec8);
+    box-shadow: 0 0 18px 7px rgba(185,212,255,0.65), 0 0 40px 16px rgba(120,170,240,0.35);
+    z-index: 20;
+    pointer-events: none;
+    animation: sunFall 1.6s cubic-bezier(0.42,0,0.58,1) forwards;
+  }
+  .hero-sun-rising {
+    position: absolute;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 36%, #fff5c0, #fbbf24 40%, #f97316 75%, #ea580c);
+    box-shadow: 0 0 20px 8px rgba(251,191,36,0.70), 0 0 44px 18px rgba(249,115,22,0.40);
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    animation: moonRise 2.0s ease-in-out 0.8s forwards;
+  }
 `;
 
 const Hero = () => {
@@ -278,6 +382,8 @@ const Hero = () => {
   const navigate = useNavigate();
   const [randomWork, setRandomWork] = useState(null);
   const [isRandomLoading, setIsRandomLoading] = useState(false);
+  const [heroNight, setHeroNight] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [statTargets, setStatTargets] = useState({
     srefCount: 1300,
     galleryCount: 13000,
@@ -325,6 +431,16 @@ const Hero = () => {
 
   const handleCloseRandomWork = () => setRandomWork(null);
 
+  const handleOrbClick = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    // sun fall: 1.6s | moon rise delay 0.8s + 2.0s → total 2.8s → switch at 3.0s
+    setTimeout(() => {
+      setHeroNight(prev => !prev);
+      setIsTransitioning(false);
+    }, 3000);
+  };
+
   const handleBrowseRandomWork = () => {
     if (!randomWork?.id) return;
     const returnTo = `${location.pathname}${location.search}${location.hash}` || '/';
@@ -339,7 +455,30 @@ const Hero = () => {
       <style>{HERO_STYLES}</style>
 
       {/* Left Panel */}
-      <div className="split-hero-left">
+      <div
+        className="split-hero-left"
+        style={{
+          background: heroNight
+            ? 'radial-gradient(ellipse 55% 45% at 20% 75%, rgba(80,40,160,0.40) 0%, transparent 70%), #08000f'
+            : `radial-gradient(ellipse 70% 55% at 62% 45%, rgba(235,140,110,0.28) 0%, transparent 100%),
+               linear-gradient(158deg, #c8a8e0 0%, #e0a8d0 25%, #f0a8a0 50%, #e8c070 74%, #987098 100%)`,
+        }}
+      >
+        {/* Sun / Moon orb */}
+        {!isTransitioning && (
+          <div
+            className={`hero-orb ${heroNight ? 'hero-orb-moon' : 'hero-orb-sun'}`}
+            onClick={handleOrbClick}
+            title={heroNight ? 'Switch to day' : 'Switch to night'}
+          />
+        )}
+        {isTransitioning && (
+          <>
+            <div className={heroNight ? 'hero-moon-falling' : 'hero-sun-falling'} />
+            <div className={heroNight ? 'hero-sun-rising'  : 'hero-moon-rising'} />
+          </>
+        )}
+
         <div className="split-hero-left-content">
           <h1>
             <span style={{ background: 'linear-gradient(135deg, #ffffff, #e2e8f0)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>III.PICS</span>

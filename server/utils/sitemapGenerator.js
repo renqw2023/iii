@@ -321,7 +321,7 @@ class SitemapGenerator {
         isActive: true,
         videoUrl: { $exists: true, $ne: '' }
       })
-      .select('_id title prompt description videoUrl thumbnailUrl createdAt')
+      .select('_id title prompt description videoUrl localVideoPath storageType thumbnailUrl createdAt')
       .sort({ createdAt: -1 })
       .limit(10000);
 
@@ -330,9 +330,15 @@ class SitemapGenerator {
         const label = item.title || item.prompt?.substring(0, 60) || 'AI Video';
         const thumbnail = item.thumbnailUrl && !item.thumbnailUrl.includes('twimg.com')
           ? item.thumbnailUrl : '';
-        // Twitter/X video URLs require auth — skip as content_loc (Google can't access them)
-        const isTwitterVideo = item.videoUrl && item.videoUrl.includes('twimg.com');
-        const contentLoc = isTwitterVideo ? '' : item.videoUrl;
+        // 优先使用本地存储 URL（对 Google 公开可访问）
+        let contentLoc = '';
+        if (item.storageType === 'local' && item.localVideoPath) {
+          contentLoc = `${this.baseUrl}/v/${item.localVideoPath}`;
+        } else if (item.storageType === 'r2' && item.videoUrl && item.videoUrl.startsWith('http')) {
+          contentLoc = item.videoUrl;
+        } else if (item.videoUrl && !item.videoUrl.includes('twimg.com')) {
+          contentLoc = item.videoUrl;
+        }
 
         // Skip entries with no usable thumbnail (Google requires thumbnail_loc)
         if (!thumbnail) continue;
@@ -549,7 +555,7 @@ Crawl-delay: 2
 
     try {
       const items = await SeedancePrompt.find({ isActive: true })
-        .select('_id title prompt description videoUrl thumbnailUrl tags category createdAt updatedAt')
+        .select('_id title prompt description videoUrl localVideoPath storageType thumbnailUrl tags category createdAt updatedAt')
         .sort({ createdAt: -1 })
         .limit(10000);
 
@@ -567,8 +573,15 @@ Crawl-delay: 2
         // Only emit video:video block when a usable public thumbnail exists
         const thumbnail = item.thumbnailUrl && !item.thumbnailUrl.includes('twimg.com')
           ? item.thumbnailUrl : '';
-        const isTwitterVideo = item.videoUrl && item.videoUrl.includes('twimg.com');
-        const contentLoc = isTwitterVideo ? '' : (item.videoUrl || '');
+        // 优先使用本地存储 URL（对 Google 公开可访问）
+        let contentLoc = '';
+        if (item.storageType === 'local' && item.localVideoPath) {
+          contentLoc = `${this.baseUrl}/v/${item.localVideoPath}`;
+        } else if (item.storageType === 'r2' && item.videoUrl && item.videoUrl.startsWith('http')) {
+          contentLoc = item.videoUrl;
+        } else if (item.videoUrl && !item.videoUrl.includes('twimg.com')) {
+          contentLoc = item.videoUrl;
+        }
 
         if (thumbnail) {
           xml += `    <video:video>\n`;

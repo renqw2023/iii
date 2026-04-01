@@ -8,6 +8,8 @@ import config from '../config';
  */
 export const getVideoSrc = (url) => {
     if (!url) return '';
+    // 本地存储或 R2 URL 直接使用（无需代理）
+    if (url.startsWith('/v/') || url.startsWith('https://iii.pics/v/')) return url;
     // Twitter/X 视频需要代理
     if (url.includes('twimg.com') || url.includes('video.twimg.com')) {
         const baseURL = config.api.baseURL || '/api';

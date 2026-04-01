@@ -7,8 +7,48 @@
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 const SeedancePrompt = require('../models/SeedancePrompt');
 const DataSyncLog = require('../models/DataSyncLog');
+
+const VIDEO_DIR = path.join(__dirname, '../uploads/videos/seedance');
+
+// ─── Video download helper ─────────────────────────────────────
+async function downloadVideoToLocal(videoUrl, docId) {
+  if (!videoUrl || !videoUrl.includes('twimg.com')) return null;
+  fs.mkdirSync(VIDEO_DIR, { recursive: true });
+  const dest = path.join(VIDEO_DIR, `${docId}.mp4`);
+  if (fs.existsSync(dest) && fs.statSync(dest).size > 10000) {
+    return `seedance/${docId}.mp4`;
+  }
+  return new Promise((resolve) => {
+    const proto = videoUrl.startsWith('https') ? https : http;
+    const file = fs.createWriteStream(dest);
+    const req = proto.get(videoUrl, { timeout: 30000 }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        file.close();
+        fs.unlink(dest, () => {});
+        return downloadVideoToLocal(res.headers.location, docId).then(resolve);
+      }
+      if (res.statusCode !== 200) {
+        file.close();
+        fs.unlink(dest, () => {});
+        return resolve(null);
+      }
+      res.pipe(file);
+      file.on('finish', () => {
+        file.close(() => {
+          const size = fs.existsSync(dest) ? fs.statSync(dest).size : 0;
+          if (size < 5000) { fs.unlink(dest, () => {}); return resolve(null); }
+          resolve(`seedance/${docId}.mp4`);
+        });
+      });
+    });
+    req.on('error', () => { file.close(); fs.unlink(dest, () => {}); resolve(null); });
+    req.on('timeout', () => { req.destroy(); file.close(); fs.unlink(dest, () => {}); resolve(null); });
+  });
+}
 
 const YOUMIND_CSV_URL = 'https://youmind.com/api/export/csv?slug=seedance-2-0-prompts';
 const YOUMIND_PAGE_URL = 'https://youmind.com/zh-CN/seedance-2-0-prompts';
@@ -227,7 +267,20 @@ async function syncSeedanceYouMind() {
             skippedCount++;
           }
         } else {
-          await SeedancePrompt.create(record);
+          // 新记录：尝试立即下载视频到本地
+          const doc = await SeedancePrompt.create(record);
+          if (record.videoUrl && record.videoUrl.includes('twimg.com')) {
+            const localPath = await downloadVideoToLocal(record.videoUrl, doc._id.toString());
+            if (localPath) {
+              await SeedancePrompt.updateOne({ _id: doc._id }, {
+                $set: {
+                  localVideoPath: localPath,
+                  storageType: 'local',
+                  videoUrl: `/v/${localPath}`,
+                }
+              });
+            }
+          }
           newCount++;
         }
       } catch (err) {

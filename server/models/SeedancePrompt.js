@@ -30,6 +30,18 @@ const seedancePromptSchema = new mongoose.Schema({
         default: ''
     },
 
+    // 本地存储（R2 迁移预留）
+    localVideoPath: {
+        type: String,
+        default: ''
+    },
+    storageType: {
+        type: String,
+        enum: ['twitter', 'local', 'r2'],
+        default: 'twitter',
+        index: true
+    },
+
     // 分类
     category: {
         type: String,

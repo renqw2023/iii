@@ -81,6 +81,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/Circle', express.static(path.join(__dirname, '../client/public/Circle')));
 // Sref output 静态文件服务（图片/视频）
 app.use('/output', express.static(path.join(__dirname, '../output'), { maxAge: '7d' }));
+// 本地视频存储（/v/seedance/{id}.mp4 → uploads/videos/seedance/）
+app.use('/v', (req, res, next) => {
+  res.set('Cache-Control', 'public, max-age=604800'); // 7天缓存
+  next();
+});
+app.use('/v', express.static(path.join(__dirname, 'uploads/videos'), { maxAge: '7d' }));
 
 // 动态渲染中间件 — 仅对搜索引擎爬虫触发（Bot UA 检测）
 // 对 /gallery/:id, /explore/:id, /seedance/:id 返回包含完整 meta/JSON-LD 的轻量 HTML

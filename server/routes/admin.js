@@ -7,6 +7,7 @@ const CreditTransaction = require('../models/CreditTransaction');
 const VisitLog = require('../models/VisitLog');
 const { adminAuth } = require('../middleware/auth');
 const adminCache = require('../services/adminCache');
+const { getGeoLocation } = require('../utils/analyticsUtils');
 
 const router = express.Router();
 
@@ -1179,8 +1180,9 @@ router.get('/traffic', adminAuth, async (req, res) => {
             _id: '$ip',
             count: { $sum: 1 },
             lastSeen: { $max: '$createdAt' },
-            country: { $first: '$country' },
-            city: { $first: '$city' },
+            // $max 在字符串比较中 '中国' > '' > null，能可靠取到非空值
+            country: { $max: '$country' },
+            city:    { $max: '$city' },
           },
         },
         { $sort: { count: -1 } },
@@ -1208,7 +1210,14 @@ router.get('/traffic', adminAuth, async (req, res) => {
       weekUV:  weekDays.reduce((s, d) => s + d.uv, 0),
     };
 
-    const data = { summary, chart: chartData, topPages, topIPs, topCountries };
+    // 对无 geo 记录的 IP 做实时补查（老记录无 country 字段时也能显示）
+    const enrichedTopIPs = topIPs.map(item => {
+      if (item.country) return item;
+      const geo = getGeoLocation(item.ip);
+      return { ...item, country: geo.country || '', city: geo.city || '' };
+    });
+
+    const data = { summary, chart: chartData, topPages, topIPs: enrichedTopIPs, topCountries };
     trafficCache.set(period, { data, ts: Date.now() });
     res.json({ success: true, data });
   } catch (error) {
@@ -1245,8 +1254,9 @@ router.get('/traffic/daily-ips', adminAuth, async (req, res) => {
         $group: {
           _id: '$ip',
           count:    { $sum: 1 },
-          country:  { $first: '$country' },
-          city:     { $first: '$city' },
+          // $max 在字符串比较中 '中国' > '' > null，能可靠取到非空值
+          country:  { $max: '$country' },
+          city:     { $max: '$city' },
           lastSeen: { $max: '$createdAt' },
           paths:    { $push: '$path' },
         },
@@ -1266,7 +1276,14 @@ router.get('/traffic/daily-ips', adminAuth, async (req, res) => {
       },
     ]);
 
-    const data = { date, total: ips.length, ips };
+    // 对无 geo 记录的 IP 做实时补查
+    const enrichedIPs = ips.map(item => {
+      if (item.country) return item;
+      const geo = getGeoLocation(item.ip);
+      return { ...item, country: geo.country || '', city: geo.city || '' };
+    });
+
+    const data = { date, total: enrichedIPs.length, ips: enrichedIPs };
     dailyIPCache.set(date, { data, ts: Date.now() });
     res.json({ success: true, data });
   } catch (error) {

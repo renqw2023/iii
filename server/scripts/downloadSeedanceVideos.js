@@ -31,9 +31,10 @@ const SeedancePrompt = require('../models/SeedancePrompt');
 const config = require('../config');
 
 const VIDEO_DIR = path.join(__dirname, '../uploads/videos/seedance');
-const CONCURRENCY = 2;
-const DELAY_MS = 300;
-const TIMEOUT_MS = 60000; // 60s per video
+const CONCURRENCY = 1;          // 串行：避免 twimg.com 并发限速
+const DELAY_MS = 1500;          // 基础间隔 1.5s
+const JITTER_MS = 1000;         // 额外随机抖动 0-1s，防规律性检测
+const TIMEOUT_MS = 60000;       // 60s per video
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -56,7 +57,9 @@ function downloadFile(url, dest) {
       if (res.statusCode !== 200) {
         file.close();
         fs.unlink(dest, () => {});
-        return reject(new Error(`HTTP ${res.statusCode}`));
+        const hint = res.statusCode === 403 ? '(URL 可能已过期)' :
+                     res.statusCode === 429 ? '(触发限速，可降低并发或增大延迟)' : '';
+        return reject(new Error(`HTTP ${res.statusCode} ${hint}`));
       }
       res.pipe(file);
       file.on('finish', () => {
@@ -145,7 +148,7 @@ async function main() {
       console.error(`\n[download] FAIL ${id}: ${err.message}`);
     }
 
-    await sleep(DELAY_MS);
+    await sleep(DELAY_MS + Math.random() * JITTER_MS);
   }
 
   // 并发池

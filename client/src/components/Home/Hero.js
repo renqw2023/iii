@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Wand2, Banana, ImageIcon, Shuffle, X, ArrowRight, Video, Compass, LogIn, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { galleryAPI } from '../../services/galleryApi';
@@ -305,7 +306,9 @@ const HERO_STYLES = `
     50%      { box-shadow: 0 0 22px 9px rgba(185,212,255,0.82), 0 0 50px 20px rgba(120,170,240,0.48); }
   }
 
-  /* Sun falling (right arc of ellipse: top-left → right → bottom-right) */
+  /* ── Sun falling (right arc) ──
+     Positions pre-computed along cubic-bezier C(3,3)(90,3)(90,89)(80,89)
+     使用11个等间距点 + linear 插值，消除折角感 */
   .hero-sun-falling {
     position: absolute;
     width: 2.8rem;
@@ -315,18 +318,26 @@ const HERO_STYLES = `
     box-shadow: 0 0 20px 8px rgba(251,191,36,0.70), 0 0 44px 18px rgba(249,115,22,0.40);
     z-index: 20;
     pointer-events: none;
-    animation: sunFall 1.6s cubic-bezier(0.42,0,0.58,1) forwards;
+    will-change: left, top;
+    animation: sunFall 1.8s linear forwards;
   }
   @keyframes sunFall {
     0%   { left: 3%;  top: 3%;  opacity: 1; }
-    18%  { left: 52%; top: 5%;              }
-    38%  { left: 86%; top: 22%;             }
-    60%  { left: 90%; top: 52%;             }
-    80%  { left: 83%; top: 78%;             }
-    100% { left: 79%; top: 88%; opacity: 0.8; }
+    10%  { left: 24%; top: 3%;              }
+    20%  { left: 43%; top: 5%;              }
+    30%  { left: 59%; top: 10%;             }
+    40%  { left: 72%; top: 17%;             }
+    50%  { left: 81%; top: 26%;             }
+    60%  { left: 87%; top: 37%;             }
+    70%  { left: 90%; top: 49%;             }
+    80%  { left: 89%; top: 62%;             }
+    90%  { left: 86%; top: 75%;             }
+    100% { left: 80%; top: 89%; opacity: 0.7; }
   }
 
-  /* Moon rising (left arc: bottom-right → bottom-left → top-left) */
+  /* ── Moon rising (left arc) ──
+     Positions pre-computed along cubic-bezier C(80,89)(-20,89)(-20,3)(3,3)
+     11个等间距点 + linear，与 sunFall 合成完整椭圆 */
   .hero-moon-rising {
     position: absolute;
     width: 2.6rem;
@@ -337,19 +348,25 @@ const HERO_STYLES = `
     z-index: 20;
     pointer-events: none;
     opacity: 0;
-    animation: moonRise 2.0s ease-in-out 0.8s forwards;
+    will-change: left, top;
+    animation: moonRise 2.2s linear 0.9s forwards;
   }
   @keyframes moonRise {
-    0%   { left: 79%; top: 88%; opacity: 0; }
-    10%  { left: 78%; top: 88%; opacity: 1; }
-    28%  { left: 38%; top: 91%;             }
-    48%  { left: 6%;  top: 74%;             }
-    68%  { left: 3%;  top: 50%;             }
-    85%  { left: 3%;  top: 22%;             }
+    0%   { left: 80%; top: 89%; opacity: 0; }
+    5%   { left: 79%; top: 89%; opacity: 1; }
+    10%  { left: 69%; top: 89%;             }
+    20%  { left: 47%; top: 86%;             }
+    30%  { left: 27%; top: 78%;             }
+    40%  { left: 12%; top: 67%;             }
+    50%  { left: 4%;  top: 54%;             }
+    60%  { left: 3%;  top: 41%;             }
+    70%  { left: 3%;  top: 29%;             }
+    80%  { left: 3%;  top: 19%;             }
+    90%  { left: 3%;  top: 10%;             }
     100% { left: 3%;  top: 3%;  opacity: 1; }
   }
 
-  /* Night→Day: moon falls along right arc, sun rises along left arc */
+  /* Night→Day: 月亮走右弧落下，太阳走左弧升起（复用相同关键帧路径） */
   .hero-moon-falling {
     position: absolute;
     width: 2.6rem;
@@ -359,7 +376,8 @@ const HERO_STYLES = `
     box-shadow: 0 0 18px 7px rgba(185,212,255,0.65), 0 0 40px 16px rgba(120,170,240,0.35);
     z-index: 20;
     pointer-events: none;
-    animation: sunFall 1.6s cubic-bezier(0.42,0,0.58,1) forwards;
+    will-change: left, top;
+    animation: sunFall 1.8s linear forwards;
   }
   .hero-sun-rising {
     position: absolute;
@@ -371,18 +389,19 @@ const HERO_STYLES = `
     z-index: 20;
     pointer-events: none;
     opacity: 0;
-    animation: moonRise 2.0s ease-in-out 0.8s forwards;
+    will-change: left, top;
+    animation: moonRise 2.2s linear 0.9s forwards;
   }
 `;
 
 const Hero = () => {
   const { t } = useTranslation();
   const { user, openLoginModal } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [randomWork, setRandomWork] = useState(null);
   const [isRandomLoading, setIsRandomLoading] = useState(false);
-  const [heroNight, setHeroNight] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [statTargets, setStatTargets] = useState({
     srefCount: 1300,
@@ -434,11 +453,11 @@ const Hero = () => {
   const handleOrbClick = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-    // sun fall: 1.6s | moon rise delay 0.8s + 2.0s → total 2.8s → switch at 3.0s
+    // sun fall: 1.8s | moon rise delay 0.9s + 2.2s = total 3.1s → switch at 3.2s
     setTimeout(() => {
-      setHeroNight(prev => !prev);
+      toggleTheme();
       setIsTransitioning(false);
-    }, 3000);
+    }, 3200);
   };
 
   const handleBrowseRandomWork = () => {
@@ -458,7 +477,7 @@ const Hero = () => {
       <div
         className="split-hero-left"
         style={{
-          background: heroNight
+          background: isDark
             ? 'radial-gradient(ellipse 55% 45% at 20% 75%, rgba(80,40,160,0.40) 0%, transparent 70%), #08000f'
             : `radial-gradient(ellipse 70% 55% at 62% 45%, rgba(235,140,110,0.28) 0%, transparent 100%),
                linear-gradient(158deg, #c8a8e0 0%, #e0a8d0 25%, #f0a8a0 50%, #e8c070 74%, #987098 100%)`,
@@ -467,15 +486,15 @@ const Hero = () => {
         {/* Sun / Moon orb */}
         {!isTransitioning && (
           <div
-            className={`hero-orb ${heroNight ? 'hero-orb-moon' : 'hero-orb-sun'}`}
+            className={`hero-orb ${isDark ? 'hero-orb-moon' : 'hero-orb-sun'}`}
             onClick={handleOrbClick}
-            title={heroNight ? 'Switch to day' : 'Switch to night'}
+            title={isDark ? 'Switch to day' : 'Switch to night'}
           />
         )}
         {isTransitioning && (
           <>
-            <div className={heroNight ? 'hero-moon-falling' : 'hero-sun-falling'} />
-            <div className={heroNight ? 'hero-sun-rising'  : 'hero-moon-rising'} />
+            <div className={isDark ? 'hero-moon-falling' : 'hero-sun-falling'} />
+            <div className={isDark ? 'hero-sun-rising'  : 'hero-moon-rising'} />
           </>
         )}
 

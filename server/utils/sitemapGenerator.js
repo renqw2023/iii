@@ -24,7 +24,12 @@ class SitemapGenerator {
       { path: '/docs', priority: 0.7, changefreq: 'monthly' },
       { path: '/docs#about', priority: 0.6, changefreq: 'monthly' },
       { path: '/docs#privacy', priority: 0.5, changefreq: 'yearly' },
-      { path: '/docs#terms', priority: 0.5, changefreq: 'yearly' }
+      { path: '/docs#terms', priority: 0.5, changefreq: 'yearly' },
+      // Keyword landing pages
+      { path: '/midjourney-sref', priority: 0.85, changefreq: 'weekly' },
+      { path: '/nanobanana', priority: 0.85, changefreq: 'daily' },
+      { path: '/gpt-image', priority: 0.85, changefreq: 'daily' },
+      { path: '/seedance-guide', priority: 0.85, changefreq: 'weekly' }
     ];
   }
 

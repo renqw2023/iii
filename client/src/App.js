@@ -52,8 +52,12 @@ const SeedanceList      = lazy(() => import('./pages/Seedance/SeedanceList'));
 const SeedanceModal     = lazy(() => import('./pages/Seedance/SeedanceModal'));
 const VideoFeed         = lazy(() => import('./pages/VideoFeed/VideoFeed'));
 const AuthorPage        = lazy(() => import('./pages/VideoFeed/AuthorPage'));
-const LoginModal        = lazy(() => import('./components/Auth/LoginModal'));
-const SearchModal       = lazy(() => import('./components/Search/SearchModal'));
+const LoginModal           = lazy(() => import('./components/Auth/LoginModal'));
+const SearchModal          = lazy(() => import('./components/Search/SearchModal'));
+const MidjourneySrefGuide  = lazy(() => import('./pages/Landing/MidjourneySrefGuide'));
+const NanobananaGallery    = lazy(() => import('./pages/Landing/NanobananaGallery'));
+const GptImageGallery      = lazy(() => import('./pages/Landing/GptImageGallery'));
+const SeedanceGuide        = lazy(() => import('./pages/Landing/SeedanceGuide'));
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
@@ -130,6 +134,10 @@ function App() {
                         <Route path="forgot-password" element={<ForgotPassword />} />
                         <Route path="reset-password" element={<ResetPassword />} />
                         <Route path="magic-link/verify" element={<MagicLinkVerify />} />
+                        <Route path="midjourney-sref" element={<MidjourneySrefGuide />} />
+                        <Route path="nanobanana" element={<NanobananaGallery />} />
+                        <Route path="gpt-image" element={<GptImageGallery />} />
+                        <Route path="seedance-guide" element={<SeedanceGuide />} />
                       </Route>
 
                       {/* 内容页 — 带全局侧边栏（含 filter 集成页） */}

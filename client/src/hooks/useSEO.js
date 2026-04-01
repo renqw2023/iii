@@ -321,6 +321,100 @@ export const useSrefSEO = (sref) => {
   });
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Landing page hooks — keyword-targeted long-tail pages
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * /midjourney-sref — Midjourney Style Reference Hub
+ */
+export const useMidjourneySrefSEO = () => {
+  useSEO({
+    title: 'Midjourney Style Reference Codes (--sref) — Complete Gallery | III.PICS',
+    description: 'Browse 1,300+ Midjourney --sref style reference codes with visual previews. Copy any sref code instantly and use it in your Midjourney prompts. The most complete free sref gallery, updated daily.',
+    keywords: 'midjourney sref codes, midjourney sref, sref midjourney, midjourney style reference, how to use midjourney sref, best midjourney sref codes 2025, midjourney --sref guide, sref code list, III.PICS',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      'name': 'How to Use Midjourney --sref Style Reference Codes',
+      'description': 'A complete guide to using Midjourney --sref style reference codes to control the artistic style of your AI-generated images.',
+      'url': 'https://iii.pics/midjourney-sref',
+      'step': [
+        { '@type': 'HowToStep', 'position': 1, 'name': 'Browse the sref gallery', 'text': 'Explore over 1,300 Midjourney --sref style codes with visual previews on III.PICS.' },
+        { '@type': 'HowToStep', 'position': 2, 'name': 'Find your style', 'text': 'Click any style card to see full-size previews and explore related images generated with that sref code.' },
+        { '@type': 'HowToStep', 'position': 3, 'name': 'Copy the sref code', 'text': 'Click the copy button to instantly copy the --sref code to your clipboard.' },
+        { '@type': 'HowToStep', 'position': 4, 'name': 'Use in Midjourney', 'text': 'Paste the code at the end of your Midjourney prompt: /imagine [your prompt] --sref [code]' }
+      ]
+    }
+  });
+};
+
+/**
+ * /nanobanana — NanoBanana Pro AI Image Prompts
+ */
+export const useNanobananaSEO = () => {
+  useSEO({
+    title: 'NanoBanana Pro AI Image Prompts — Browse & Copy Free | III.PICS',
+    description: 'Explore thousands of NanoBanana Pro AI image prompts with stunning visual results. One-click copy, no prompt engineering required. Free AI art inspiration updated daily.',
+    keywords: 'nanobanana pro prompts, nanobanana ai, nanobanana pro image, nanobanana ai art generator, nanobanana prompt examples, nanobanana pro guide, ai image prompts nanobanana, III.PICS nanobanana',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': 'NanoBanana Pro AI Image Prompts — III.PICS',
+      'description': 'A curated gallery of NanoBanana Pro AI image prompts with visual previews and one-click copy.',
+      'url': 'https://iii.pics/nanobanana',
+      'provider': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' }
+    }
+  });
+};
+
+/**
+ * /gpt-image — GPT Image 1.5 Prompts Gallery
+ */
+export const useGptImageSEO = () => {
+  useSEO({
+    title: 'GPT Image 1.5 Prompts & AI Art Gallery — III.PICS',
+    description: 'Browse GPT Image 1.5 prompts with visual examples. Discover how to write effective ChatGPT image generation prompts. Free gallery of OpenAI image generator results, updated daily.',
+    keywords: 'gpt image prompts, gpt image 1.5, chatgpt image generation, openai image generator prompts, gpt image prompt examples, dall-e prompts, ai image generator prompts, III.PICS gpt image',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      'name': 'GPT Image 1.5 Prompts Gallery — III.PICS',
+      'description': 'A curated gallery of GPT Image 1.5 AI-generated images with their prompts for inspiration.',
+      'url': 'https://iii.pics/gpt-image',
+      'provider': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' }
+    }
+  });
+};
+
+/**
+ * /seedance-guide — Seedance 2.0 AI Video Prompts
+ */
+export const useSeedanceGuideSEO = () => {
+  useSEO({
+    title: 'Seedance 2.0 AI Video Prompts — Text-to-Video Gallery | III.PICS',
+    description: 'Explore Seedance 2.0 text-to-video and image-to-video prompts with playable previews. The best Seedance AI video prompt gallery — free inspiration for AI video creators.',
+    keywords: 'seedance 2.0 prompts, seedance ai video, seedance video prompts examples, seedance 2.0 text to video, ai video generator prompts 2025, seedance prompt guide, kling ai video, text to video prompts, III.PICS seedance',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      'name': 'How to Use Seedance 2.0 for AI Video Generation',
+      'description': 'A guide to creating AI videos with Seedance 2.0, including text-to-video and image-to-video prompts.',
+      'url': 'https://iii.pics/seedance-guide',
+      'step': [
+        { '@type': 'HowToStep', 'position': 1, 'name': 'Browse video examples', 'text': 'Explore our gallery of Seedance 2.0 AI-generated videos with their original prompts.' },
+        { '@type': 'HowToStep', 'position': 2, 'name': 'Find your style', 'text': 'Click any video to play it and see the full prompt used to generate it.' },
+        { '@type': 'HowToStep', 'position': 3, 'name': 'Copy the prompt', 'text': 'Copy the text-to-video or image-to-video prompt with one click.' },
+        { '@type': 'HowToStep', 'position': 4, 'name': 'Generate with Seedance', 'text': 'Paste the prompt into Seedance 2.0 and generate your own AI video.' }
+      ]
+    }
+  });
+};
+
 export default {
   useSEO,
   useHomeSEO,
@@ -338,5 +432,9 @@ export default {
   useImg2PromptSEO,
   useDocsSEO,
   useGalleryItemSEO,
-  useSrefSEO
+  useSrefSEO,
+  useMidjourneySrefSEO,
+  useNanobananaSEO,
+  useGptImageSEO,
+  useSeedanceGuideSEO
 };

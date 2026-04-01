@@ -65,6 +65,7 @@ const SrefModal = () => {
     );
 
     const sref = data?.data?.post;
+    const related = data?.data?.related || [];
     const imageUrls = sref?.imageUrls || [];
     const videoUrls = sref?.videoUrls || [];
 
@@ -478,6 +479,35 @@ const SrefModal = () => {
                                                     #{tag}
                                                 </span>
                                             ))}
+                                        </div>
+                                    )}
+
+                                    {/* ── Related Styles ── */}
+                                    {related.length > 0 && (
+                                        <div style={{ marginTop: '1.25rem' }}>
+                                            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Related Styles
+                                            </p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                                                {related.slice(0, 4).map((r) => (
+                                                    <div
+                                                        key={r._id}
+                                                        onClick={() => navigate(`/explore/${r._id}`)}
+                                                        style={{ aspectRatio: '1/1', borderRadius: '0.4rem', overflow: 'hidden', cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', transition: 'transform 0.15s', position: 'relative' }}
+                                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                        title={`--sref ${r.srefCode}`}
+                                                    >
+                                                        {r.previewImage && (
+                                                            <img src={r.previewImage} alt={`--sref ${r.srefCode}`} loading="lazy" decoding="async"
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                        )}
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', padding: '0.3rem 0.3rem 0.25rem', fontSize: '0.62rem', color: 'rgba(255,255,255,0.85)', fontFamily: 'monospace', textAlign: 'center' }}>
+                                                            {r.srefCode}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </>

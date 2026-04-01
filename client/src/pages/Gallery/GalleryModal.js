@@ -81,6 +81,14 @@ const GalleryModal = () => {
 
     const prompt = data?.data?.prompt;
 
+    // 同类提示词：model + 第一个 tag，limit=4，排除当前
+    const { data: similarData } = useQuery(
+        ['gallery-similar', prompt?.model, prompt?.tags?.[0]],
+        () => galleryAPI.getPrompts({ model: prompt.model, tag: prompt.tags[0], limit: 8, sort: 'newest' }),
+        { enabled: !!(prompt?.model && prompt?.tags?.length > 0), staleTime: 10 * 60 * 1000 }
+    );
+    const similarItems = (similarData?.data?.prompts || similarData?.data?.data || []).filter(p => p._id !== id).slice(0, 4);
+
     // 多图轮播：切换 prompt 时重置索引
     useEffect(() => { setImgIndex(0); }, [prompt?._id]);
 
@@ -415,6 +423,35 @@ const GalleryModal = () => {
                                                     }
                                                 })()}
                                             </a>
+                                        </div>
+                                    )}
+
+                                    {/* ── Similar Prompts ── */}
+                                    {similarItems.length > 0 && (
+                                        <div style={{ marginTop: '1.25rem' }}>
+                                            <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                Similar Prompts
+                                            </p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                                                {similarItems.map((item) => (
+                                                    <div
+                                                        key={item._id}
+                                                        onClick={() => navigate(`/gallery/${item._id}`)}
+                                                        style={{ aspectRatio: '1/1', borderRadius: '0.4rem', overflow: 'hidden', cursor: 'pointer', background: 'var(--bg-primary)', border: '1px solid var(--border-color)', transition: 'transform 0.15s', position: 'relative' }}
+                                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                        title={item.prompt?.substring(0, 60) || item.title}
+                                                    >
+                                                        {(item.previewImage || item.imageUrl) && (
+                                                            <img src={item.previewImage || item.imageUrl} alt={item.title || 'AI image'} loading="lazy" decoding="async"
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                        )}
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', padding: '0.3rem 0.3rem 0.25rem', fontSize: '0.6rem', color: 'rgba(255,255,255,0.85)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {item.prompt?.substring(0, 30) || item.title || ''}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </>

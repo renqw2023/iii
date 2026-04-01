@@ -209,6 +209,14 @@ router.get('/seedance/:id', async (req, res, next) => {
     const canonicalUrl = `${BASE_URL}/seedance/${id}`;
     const image = item.thumbnailUrl || item.previewImage || '';
 
+    // Twitter/X video URLs (twimg.com) require auth cookies and may expire —
+    // they are inaccessible to Google's crawler. Only expose publicly-stable URLs
+    // (e.g. GitHub Releases, direct CDN) as contentUrl.
+    const isTwitterVideo = item.videoUrl && (
+      item.videoUrl.includes('twimg.com') || item.videoUrl.includes('video.twimg.com')
+    );
+    const publicVideoUrl = isTwitterVideo ? '' : (item.videoUrl || '');
+
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'VideoObject',
@@ -216,7 +224,8 @@ router.get('/seedance/:id', async (req, res, next) => {
       description,
       thumbnailUrl: image,
       uploadDate: item.createdAt,
-      contentUrl: item.videoUrl || '',
+      ...(publicVideoUrl ? { contentUrl: publicVideoUrl } : {}),
+      embedUrl: canonicalUrl,
       url: canonicalUrl,
     };
 

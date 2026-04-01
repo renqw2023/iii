@@ -328,14 +328,25 @@ class SitemapGenerator {
       for (const item of items) {
         const pageUrl = `${this.baseUrl}/seedance/${item._id}`;
         const label = item.title || item.prompt?.substring(0, 60) || 'AI Video';
+        const thumbnail = item.thumbnailUrl && !item.thumbnailUrl.includes('twimg.com')
+          ? item.thumbnailUrl : '';
+        // Twitter/X video URLs require auth — skip as content_loc (Google can't access them)
+        const isTwitterVideo = item.videoUrl && item.videoUrl.includes('twimg.com');
+        const contentLoc = isTwitterVideo ? '' : item.videoUrl;
+
+        // Skip entries with no usable thumbnail (Google requires thumbnail_loc)
+        if (!thumbnail) continue;
 
         xml += `  <url>\n`;
         xml += `    <loc>${pageUrl}</loc>\n`;
         xml += `    <video:video>\n`;
-        xml += `      <video:thumbnail_loc>${this.escapeXML(item.thumbnailUrl || item.videoUrl)}</video:thumbnail_loc>\n`;
+        xml += `      <video:thumbnail_loc>${this.escapeXML(thumbnail)}</video:thumbnail_loc>\n`;
         xml += `      <video:title>${this.escapeXML(label)}</video:title>\n`;
         xml += `      <video:description>${this.escapeXML(item.description || item.prompt?.substring(0, 200) || label)}</video:description>\n`;
-        xml += `      <video:content_loc>${this.escapeXML(item.videoUrl)}</video:content_loc>\n`;
+        if (contentLoc) {
+          xml += `      <video:content_loc>${this.escapeXML(contentLoc)}</video:content_loc>\n`;
+        }
+        xml += `      <video:player_loc>${this.escapeXML(pageUrl)}</video:player_loc>\n`;
         xml += `      <video:publication_date>${item.createdAt.toISOString()}</video:publication_date>\n`;
         xml += `    </video:video>\n`;
         xml += `  </url>\n`;
@@ -553,12 +564,21 @@ Crawl-delay: 2
         xml += `    <changefreq>weekly</changefreq>\n`;
         xml += `    <priority>0.7</priority>\n`;
 
-        if (item.videoUrl) {
+        // Only emit video:video block when a usable public thumbnail exists
+        const thumbnail = item.thumbnailUrl && !item.thumbnailUrl.includes('twimg.com')
+          ? item.thumbnailUrl : '';
+        const isTwitterVideo = item.videoUrl && item.videoUrl.includes('twimg.com');
+        const contentLoc = isTwitterVideo ? '' : (item.videoUrl || '');
+
+        if (thumbnail) {
           xml += `    <video:video>\n`;
-          xml += `      <video:thumbnail_loc>${this.escapeXML(item.thumbnailUrl || item.videoUrl)}</video:thumbnail_loc>\n`;
+          xml += `      <video:thumbnail_loc>${this.escapeXML(thumbnail)}</video:thumbnail_loc>\n`;
           xml += `      <video:title>${this.escapeXML(label)}</video:title>\n`;
           xml += `      <video:description>${this.escapeXML(item.description || item.prompt?.substring(0, 200) || label)}</video:description>\n`;
-          xml += `      <video:content_loc>${this.escapeXML(item.videoUrl)}</video:content_loc>\n`;
+          if (contentLoc) {
+            xml += `      <video:content_loc>${this.escapeXML(contentLoc)}</video:content_loc>\n`;
+          }
+          xml += `      <video:player_loc>${this.escapeXML(pageUrl)}</video:player_loc>\n`;
           xml += `      <video:publication_date>${item.createdAt.toISOString()}</video:publication_date>\n`;
           if (item.tags && item.tags.length > 0) {
             item.tags.slice(0, 10).forEach(tag => {

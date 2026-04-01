@@ -59,11 +59,12 @@ const HERO_STYLES = `
     justify-content: center;
     flex-shrink: 0;
     background:
-      radial-gradient(ellipse at 18% 15%, rgba(139, 100, 170, 0.60) 0%, transparent 48%),
-      radial-gradient(ellipse at 78% 82%, rgba(200, 128, 55,  0.50) 0%, transparent 48%),
-      radial-gradient(ellipse at 50% 50%, rgba(190, 110, 125, 0.28) 0%, transparent 65%),
-      #0e080f;
-    border-right: 1px solid rgba(255,255,255,0.07);
+      radial-gradient(ellipse at 18% 12%, rgba(176, 120, 220, 0.90) 0%, transparent 48%),
+      radial-gradient(ellipse at 82% 82%, rgba(230, 145, 65,  0.85) 0%, transparent 46%),
+      radial-gradient(ellipse at 52% 48%, rgba(218, 120, 148, 0.60) 0%, transparent 58%),
+      radial-gradient(ellipse at  8% 88%, rgba(212, 168, 36,  0.65) 0%, transparent 38%),
+      #1a0e2e;
+    border-right: 1px solid rgba(255,255,255,0.10);
   }
   .split-hero-left-content {
     position: relative;

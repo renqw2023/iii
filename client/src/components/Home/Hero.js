@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Wand2, Banana, ImageIcon, Shuffle, X, ArrowRight, Video, Compass, LogIn } from 'lucide-react';
+import { Wand2, Banana, ImageIcon, Shuffle, X, ArrowRight, Video, Compass, LogIn, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import axios from 'axios';
@@ -175,6 +175,14 @@ const HERO_STYLES = `
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.07);
     border-radius: 0.5rem;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+  .split-hero-stat:hover {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.18);
+    text-decoration: none;
   }
   .split-hero-stat-icon {
     width: 2rem;
@@ -348,10 +356,17 @@ const Hero = () => {
                 <Compass size={16} />
                 Explore Gallery
               </Link>
-              <button className="split-hero-btn-secondary" onClick={openLoginModal}>
-                <LogIn size={16} />
-                Sign In
-              </button>
+              {user ? (
+                <Link to="/dashboard" className="split-hero-btn-secondary">
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+              ) : (
+                <button className="split-hero-btn-secondary" onClick={openLoginModal}>
+                  <LogIn size={16} />
+                  Sign In
+                </button>
+              )}
             </div>
             <div>
               <button
@@ -366,7 +381,7 @@ const Hero = () => {
           </div>
 
           <div className="split-hero-stats">
-            <div className="split-hero-stat">
+            <Link to="/explore" className="split-hero-stat">
               <div className="split-hero-stat-icon" style={{ background: 'rgba(59,130,246,0.15)' }}>
                 <Wand2 size={16} color="#3b82f6" />
               </div>
@@ -374,8 +389,8 @@ const Hero = () => {
                 <div className="split-hero-stat-num">{formatCount(mjCount)}</div>
                 <div className="split-hero-stat-label">{t('home.hero.stats.midjourney')}</div>
               </div>
-            </div>
-            <div className="split-hero-stat">
+            </Link>
+            <Link to="/gallery" className="split-hero-stat">
               <div className="split-hero-stat-icon" style={{ background: 'rgba(234,179,8,0.15)' }}>
                 <Banana size={16} color="#ca8a04" />
               </div>
@@ -383,8 +398,8 @@ const Hero = () => {
                 <div className="split-hero-stat-num">{formatCount(nbCount)}</div>
                 <div className="split-hero-stat-label">{t('home.hero.stats.nanobanana')}</div>
               </div>
-            </div>
-            <div className="split-hero-stat">
+            </Link>
+            <Link to="/seedance" className="split-hero-stat">
               <div className="split-hero-stat-icon" style={{ background: 'rgba(168,85,247,0.15)' }}>
                 <Video size={16} color="#a855f7" />
               </div>
@@ -392,8 +407,8 @@ const Hero = () => {
                 <div className="split-hero-stat-num">{formatCount(sdCount)}</div>
                 <div className="split-hero-stat-label">{t('home.hero.stats.seedance')}</div>
               </div>
-            </div>
-            <div className="split-hero-stat">
+            </Link>
+            <Link to="/generate" className="split-hero-stat">
               <div className="split-hero-stat-icon" style={{ background: 'rgba(34,197,94,0.15)' }}>
                 <ImageIcon size={16} color="#22c55e" />
               </div>
@@ -401,7 +416,7 @@ const Hero = () => {
                 <div className="split-hero-stat-num">{formatCount(gpCount)}</div>
                 <div className="split-hero-stat-label">{t('home.hero.stats.gptimage')}</div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>

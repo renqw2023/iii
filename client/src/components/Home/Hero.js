@@ -59,8 +59,8 @@ const HERO_STYLES = `
     justify-content: center;
     flex-shrink: 0;
     background:
-      radial-gradient(ellipse 65% 55% at 58% 42%, rgba(225, 148, 120, 0.35) 0%, transparent 100%),
-      linear-gradient(145deg, #b8a0c8 0%, #d0a4b0 30%, #d8a890 60%, #907090 100%);
+      radial-gradient(ellipse 70% 55% at 62% 45%, rgba(235, 140, 110, 0.28) 0%, transparent 100%),
+      linear-gradient(158deg, #c8a8e0 0%, #e0a8d0 25%, #f0a8a0 50%, #e8c070 74%, #987098 100%);
     border-right: 1px solid rgba(255,255,255,0.10);
   }
   .split-hero-left-content {

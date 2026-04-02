@@ -105,8 +105,7 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
         if (videoSrc && !preloadedRef.current) {
             preloadedRef.current = true;
             const link = document.createElement('link');
-            link.rel = 'preload';
-            link.as = 'video';
+            link.rel = 'prefetch';  // 'preload as=video' 不被浏览器支持，改用 prefetch
             link.href = videoSrc;
             document.head.appendChild(link);
             // Remove after 5 min to avoid unbounded <head> growth

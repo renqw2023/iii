@@ -5,7 +5,7 @@ import { useQuery } from 'react-query';
 import { motion } from 'framer-motion';
 import { Copy, Heart, Bookmark, X, Eye, Share2, Film, ExternalLink, User, Languages, Loader2, Wand2 } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-import { seedanceAPI, getVideoSrc } from '../../services/seedanceApi';
+import { seedanceAPI, getVideoSrc, getThumbnailSrc } from '../../services/seedanceApi';
 import { favoritesAPI } from '../../services/favoritesApi';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
@@ -50,6 +50,14 @@ const SeedanceModal = () => {
     );
 
     const prompt = data?.data?.prompt;
+
+    // Similar Videos — 同 category，排除自身，最多 4 条
+    const { data: similarData } = useQuery(
+        ['seedance-similar', prompt?.category],
+        () => seedanceAPI.getPrompts({ category: prompt.category, limit: 8, sort: 'newest' }),
+        { enabled: !!prompt?.category, staleTime: 10 * 60 * 1000 }
+    );
+    const similarItems = (similarData?.data?.prompts || []).filter(p => p._id !== id).slice(0, 4);
 
     // 从 Favorites 集合查询真实收藏状态
     useEffect(() => {
@@ -308,6 +316,38 @@ const SeedanceModal = () => {
                                                     #{tag}
                                                 </span>
                                             ))}
+                                        </div>
+                                    )}
+
+                                    {/* Similar Videos */}
+                                    {similarItems.length > 0 && (
+                                        <div style={{ marginTop: '1rem' }}>
+                                            <p style={{ fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                                                SIMILAR VIDEOS
+                                            </p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                                                {similarItems.map(v => (
+                                                    <div
+                                                        key={v._id}
+                                                        onClick={() => navigate(`/seedance/${v._id}`, { state: { fromList: true } })}
+                                                        style={{ position: 'relative', aspectRatio: '16/9', borderRadius: '0.35rem', overflow: 'hidden', cursor: 'pointer', background: 'var(--bg-secondary)', transition: 'transform 0.15s' }}
+                                                        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                                                        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                    >
+                                                        {v.thumbnailUrl && (
+                                                            <img
+                                                                src={getThumbnailSrc(v.thumbnailUrl)}
+                                                                alt={v.title || ''}
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                        )}
+                                                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%)' }} />
+                                                        <span style={{ position: 'absolute', bottom: '0.25rem', left: '0.3rem', right: '0.3rem', fontSize: '0.6rem', color: '#fff', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {v.category || 'video'}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
                                 </>

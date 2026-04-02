@@ -348,7 +348,7 @@ class SitemapGenerator {
         xml += `    <video:video>\n`;
         xml += `      <video:thumbnail_loc>${this.escapeXML(thumbnail)}</video:thumbnail_loc>\n`;
         xml += `      <video:title>${this.escapeXML(label)}</video:title>\n`;
-        xml += `      <video:description>${this.escapeXML(item.description || item.prompt?.substring(0, 200) || label)}</video:description>\n`;
+        xml += `      <video:description>${this.escapeXML(this.stripMarkdown(item.prompt || item.description || label))}</video:description>\n`;
         if (contentLoc) {
           xml += `      <video:content_loc>${this.escapeXML(contentLoc)}</video:content_loc>\n`;
         }
@@ -587,7 +587,7 @@ Crawl-delay: 2
           xml += `    <video:video>\n`;
           xml += `      <video:thumbnail_loc>${this.escapeXML(thumbnail)}</video:thumbnail_loc>\n`;
           xml += `      <video:title>${this.escapeXML(label)}</video:title>\n`;
-          xml += `      <video:description>${this.escapeXML(item.description || item.prompt?.substring(0, 200) || label)}</video:description>\n`;
+          xml += `      <video:description>${this.escapeXML(this.stripMarkdown(item.prompt || item.description || label))}</video:description>\n`;
           if (contentLoc) {
             xml += `      <video:content_loc>${this.escapeXML(contentLoc)}</video:content_loc>\n`;
           }
@@ -655,13 +655,29 @@ Crawl-delay: 2
    */
   escapeXML(str) {
     if (!str) return '';
-    
     return str
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&apos;');
+  }
+
+  // 去除 Markdown 语法，输出纯文本（供 video:description 使用）
+  stripMarkdown(str) {
+    if (!str) return '';
+    return str
+      .replace(/\*\*([^*]+)\*\*/g, '$1')   // **bold**
+      .replace(/\*([^*]+)\*/g, '$1')        // *italic*
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) → text
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '') // ![img](url) → ''
+      .replace(/#{1,6}\s+/g, '')             // ## heading
+      .replace(/`[^`]+`/g, '')               // `code`
+      .replace(/\|[^|\n]+/g, '')             // table cells
+      .replace(/\n{2,}/g, ' ')
+      .replace(/\n/g, ' ')
+      .trim()
+      .substring(0, 200);
   }
 
   /**

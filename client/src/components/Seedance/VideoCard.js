@@ -90,7 +90,7 @@ const VideoCard = ({ prompt, onLike, onFavorite: _onFavorite, fastHoverPreview =
     };
 
     const handleMouseLeaveHalo = () => {
-        if (containerRef.current) containerRef.current.style.background = 'var(--bg-card)';
+        if (containerRef.current) containerRef.current.style.background = '';
     };
 
     const handleMouseLeave = () => {

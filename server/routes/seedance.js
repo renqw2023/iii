@@ -53,7 +53,7 @@ router.get('/', optionalAuth, async (req, res) => {
             if (cached) return res.json(cached);
         }
 
-        const filter = { isActive: true, isPublic: true };
+        const filter = { isActive: true, isPublic: true, videoUrl: { $ne: '' } };
 
         if (category && category !== 'all') filter.category = category;
         if (tags) filter.tags = { $in: tags.split(',').map(t => t.trim().toLowerCase()) };

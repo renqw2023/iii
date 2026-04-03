@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Wand2, Banana, ImageIcon, Shuffle, X, ArrowRight, Video, Compass, LogIn, LayoutDashboard } from 'lucide-react';
@@ -64,10 +64,20 @@ const HERO_STYLES = `
   }
   .split-hero-left-content {
     position: relative;
-    z-index: 1;
+    z-index: 3;
     padding: 2rem 2.5rem;
     max-width: 480px;
     width: 100%;
+  }
+  .hero-video-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
   }
   .split-hero-right {
     width: 62%;
@@ -419,6 +429,48 @@ const Hero = () => {
   const sdCount = useCountUp(statTargets.seedanceCount);
   const gpCount = useCountUp(statTargets.generationCount);
 
+  const videoARef = useRef(null);
+  const videoBRef = useRef(null);
+
+  useEffect(() => {
+    const vA = videoARef.current;
+    const vB = videoBRef.current;
+    if (!vA || !vB) return;
+
+    let active = 'a';
+    const CROSSFADE_AT = 7.0;
+
+    const onAUpdate = () => {
+      if (active === 'a' && vA.currentTime >= CROSSFADE_AT) {
+        active = 'b';
+        vB.currentTime = 0;
+        vB.play().catch(() => {});
+        vB.style.opacity = '1';
+        vA.style.opacity = '0';
+      }
+    };
+    const onBUpdate = () => {
+      if (active === 'b' && vB.currentTime >= CROSSFADE_AT) {
+        active = 'a';
+        vA.currentTime = 0;
+        vA.play().catch(() => {});
+        vA.style.opacity = '1';
+        vB.style.opacity = '0';
+      }
+    };
+
+    vA.addEventListener('timeupdate', onAUpdate);
+    vB.addEventListener('timeupdate', onBUpdate);
+    vA.play().catch(() => {});
+
+    return () => {
+      vA.removeEventListener('timeupdate', onAUpdate);
+      vB.removeEventListener('timeupdate', onBUpdate);
+      vA.pause();
+      vB.pause();
+    };
+  }, []);
+
   const handleOpenRandomWork = async () => {
     if (isRandomLoading) return;
     try {
@@ -477,12 +529,36 @@ const Hero = () => {
       <div
         className="split-hero-left"
         style={{
-          background: isDark
-            ? 'radial-gradient(ellipse 55% 45% at 20% 75%, rgba(80,40,160,0.40) 0%, transparent 70%), #08000f'
-            : `radial-gradient(ellipse 70% 55% at 62% 45%, rgba(235,140,110,0.28) 0%, transparent 100%),
-               linear-gradient(158deg, #c8a8e0 0%, #e0a8d0 25%, #f0a8a0 50%, #e8c070 74%, #987098 100%)`,
+          background: 'transparent',
         }}
       >
+        {/* Video background */}
+        <>
+          <video ref={videoARef} className="hero-video-bg"
+            src="/hero-bg.mp4" muted playsInline preload="auto"
+            style={{ opacity: 1 }}
+          />
+          <video ref={videoBRef} className="hero-video-bg"
+            src="/hero-bg.mp4" muted playsInline preload="auto"
+            style={{ opacity: 0 }}
+          />
+          {/* Readability overlay */}
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 1,
+            background: isDark
+              ? 'linear-gradient(to right, rgba(8,0,15,0.55) 0%, rgba(8,0,15,0.3) 100%)'
+              : 'linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.35) 100%)'
+          }} />
+          {/* Watermark cover — bottom-right */}
+          <div style={{
+            position: 'absolute', bottom: 0, right: 0,
+            width: '180px', height: '70px', zIndex: 2,
+            background: isDark
+              ? 'linear-gradient(135deg, transparent 30%, rgba(4,0,8,0.92) 100%)'
+              : 'linear-gradient(135deg, transparent 30%, rgba(240,240,240,0.95) 100%)'
+          }} />
+        </>
+
         {/* Sun / Moon orb */}
         {!isTransitioning && (
           <div

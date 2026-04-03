@@ -545,17 +545,13 @@ const Hero = () => {
           {/* Readability overlay */}
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
-            background: isDark
-              ? 'linear-gradient(to right, rgba(8,0,15,0.55) 0%, rgba(8,0,15,0.3) 100%)'
-              : 'linear-gradient(to right, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.45) 100%)'
+            background: 'linear-gradient(to right, rgba(8,0,15,0.55) 0%, rgba(8,0,15,0.3) 100%)'
           }} />
           {/* Watermark cover — bottom-right */}
           <div style={{
             position: 'absolute', bottom: 0, right: 0,
             width: '180px', height: '70px', zIndex: 2,
-            background: isDark
-              ? 'linear-gradient(135deg, transparent 30%, rgba(4,0,8,0.92) 100%)'
-              : 'linear-gradient(135deg, transparent 30%, rgba(240,240,240,0.95) 100%)'
+            background: 'linear-gradient(135deg, transparent 30%, rgba(4,0,8,0.92) 100%)'
           }} />
         </>
 

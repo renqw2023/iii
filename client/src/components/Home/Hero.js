@@ -292,8 +292,8 @@ const HERO_STYLES = `
     pointer-events: auto;
   }
   .hero-orb-sun {
-    background: radial-gradient(circle at 38% 36%, #fff5c0, #fbbf24 40%, #f97316 75%, #ea580c);
-    box-shadow: 0 0 14px 5px rgba(251,191,36,0.60), 0 0 34px 14px rgba(249,115,22,0.32);
+    background: radial-gradient(circle at 38% 36%, #ffffff, #f0f4ff 40%, #dce8ff 75%, #c8d8f8);
+    box-shadow: 0 0 14px 5px rgba(220,232,255,0.80), 0 0 34px 14px rgba(200,216,248,0.45);
     animation: orbSunPulse 3s ease-in-out infinite;
   }
   .hero-orb-moon {
@@ -302,14 +302,14 @@ const HERO_STYLES = `
     animation: orbMoonPulse 3s ease-in-out infinite;
   }
   .hero-orb-sun:hover {
-    box-shadow: 0 0 22px 10px rgba(251,191,36,0.80), 0 0 50px 22px rgba(249,115,22,0.48);
+    box-shadow: 0 0 22px 10px rgba(220,232,255,0.95), 0 0 50px 22px rgba(200,216,248,0.65);
   }
   .hero-orb-moon:hover {
     box-shadow: 0 0 22px 10px rgba(185,212,255,0.80), 0 0 50px 22px rgba(120,170,240,0.48);
   }
   @keyframes orbSunPulse {
-    0%,100% { box-shadow: 0 0 14px 5px rgba(251,191,36,0.60), 0 0 34px 14px rgba(249,115,22,0.32); }
-    50%      { box-shadow: 0 0 22px 9px rgba(251,191,36,0.82), 0 0 50px 20px rgba(249,115,22,0.48); }
+    0%,100% { box-shadow: 0 0 14px 5px rgba(220,232,255,0.80), 0 0 34px 14px rgba(200,216,248,0.45); }
+    50%      { box-shadow: 0 0 22px 9px rgba(220,232,255,0.95), 0 0 50px 20px rgba(200,216,248,0.65); }
   }
   @keyframes orbMoonPulse {
     0%,100% { box-shadow: 0 0 14px 5px rgba(185,212,255,0.60), 0 0 34px 14px rgba(120,170,240,0.32); }
@@ -547,7 +547,7 @@ const Hero = () => {
             position: 'absolute', inset: 0, zIndex: 1,
             background: isDark
               ? 'linear-gradient(to right, rgba(8,0,15,0.55) 0%, rgba(8,0,15,0.3) 100%)'
-              : 'linear-gradient(to right, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.35) 100%)'
+              : 'linear-gradient(to right, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.45) 100%)'
           }} />
           {/* Watermark cover — bottom-right */}
           <div style={{

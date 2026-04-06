@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from 'react-query';
@@ -34,6 +34,9 @@ const GalleryModal = () => {
     const [translatedPrompt, setTranslatedPrompt] = useState(null);
     const [imgIndex, setImgIndex] = useState(0);
     const [localFavorited, setLocalFavorited] = useState(false);
+    const [promptExpanded, setPromptExpanded] = useState(false);
+    const [promptOverflows, setPromptOverflows] = useState(false);
+    const promptTextRef = useRef(null);
 
     const handleClose = () => {
         const returnTo = searchParams.get('returnTo') || location.state?.returnTo;
@@ -91,6 +94,17 @@ const GalleryModal = () => {
 
     // 多图轮播：切换 prompt 时重置索引
     useEffect(() => { setImgIndex(0); }, [prompt?._id]);
+
+    // Prompt 溢出检测：切换 prompt / 翻译时重置折叠状态并重新测量
+    useEffect(() => {
+        setPromptExpanded(false);
+        const el = promptTextRef.current;
+        if (!el) return;
+        const id = requestAnimationFrame(() => {
+            setPromptOverflows(el.scrollHeight > el.clientHeight + 2);
+        });
+        return () => cancelAnimationFrame(id);
+    }, [prompt?.prompt, translatedPrompt]);
 
     // 从 Favorites 集合查询真实收藏状态（旧嵌入数组 prompt.isFavorited 可能不同步）
     useEffect(() => {
@@ -388,9 +402,22 @@ const GalleryModal = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <p className="dmodal-prompt-text">
-                                            {translatedPrompt || prompt.prompt}
-                                        </p>
+                                        <div className={`dmodal-prompt-text-wrap${promptExpanded ? ' expanded' : ''}`}>
+                                            <p ref={promptTextRef} className="dmodal-prompt-text">
+                                                {translatedPrompt || prompt.prompt}
+                                            </p>
+                                            {!promptExpanded && promptOverflows && (
+                                                <div className="dmodal-prompt-fade" aria-hidden="true" />
+                                            )}
+                                        </div>
+                                        {promptOverflows && (
+                                            <button
+                                                className="dmodal-prompt-toggle"
+                                                onClick={() => setPromptExpanded(e => !e)}
+                                            >
+                                                {promptExpanded ? '↑ Show less' : '↓ Show more'}
+                                            </button>
+                                        )}
                                     </div>
 
                                     {prompt.tags?.length > 0 && (

@@ -1595,6 +1595,60 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+  max-height: 130px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.dmodal-prompt-text::-webkit-scrollbar {
+  width: 3px;
+}
+
+.dmodal-prompt-text::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* ── Prompt scroll / expand wrapper ─────────────────── */
+.dmodal-prompt-text-wrap {
+  position: relative;
+}
+
+.dmodal-prompt-text-wrap.expanded .dmodal-prompt-text {
+  max-height: none;
+  overflow-y: visible;
+}
+
+.dmodal-prompt-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  background: linear-gradient(transparent, var(--bg-secondary));
+  pointer-events: none;
+  border-radius: 0 0 2px 2px;
+}
+
+.dmodal-prompt-toggle {
+  width: 100%;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  background: var(--bg-tertiary);
+  border: none;
+  border-top: 1px solid var(--border-color);
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.03em;
+  transition: background 0.15s, color 0.15s;
+}
+
+.dmodal-prompt-toggle:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .dmodal-tags {
@@ -2511,10 +2565,15 @@
     height: 40px;
   }
 
-  /* Prompt text — no truncation, fully visible */
+  /* Prompt text — no truncation, fully visible on mobile */
   .dmodal-prompt-text {
     max-height: none;
-    overflow: visible;
+    overflow-y: visible;
+  }
+
+  .dmodal-prompt-fade,
+  .dmodal-prompt-toggle {
+    display: none;
   }
 
   /* Favorites page remove button: always visible on mobile */

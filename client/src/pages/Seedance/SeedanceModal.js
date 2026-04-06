@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from 'react-query';
@@ -25,6 +25,9 @@ const SeedanceModal = () => {
     const [translatedText, setTranslatedText] = useState('');
     const [isTranslating, setIsTranslating] = useState(false);
     const [videoLoading, setVideoLoading] = useState(true);
+    const [promptExpanded, setPromptExpanded] = useState(false);
+    const [promptOverflows, setPromptOverflows] = useState(false);
+    const promptTextRef = useRef(null);
 
     const handleClose = () => {
         if (location.state?.fromList) navigate(-1);
@@ -66,6 +69,17 @@ const SeedanceModal = () => {
             .then(res => { setLocalFavorited(!!(res.data?.data?.[id])); })
             .catch(() => {});
     }, [id, isAuthenticated]);
+
+    // Prompt 溢出检测：切换 prompt / 翻译时重置折叠状态并重新测量
+    useEffect(() => {
+        setPromptExpanded(false);
+        const el = promptTextRef.current;
+        if (!el) return;
+        const rafId = requestAnimationFrame(() => {
+            setPromptOverflows(el.scrollHeight > el.clientHeight + 2);
+        });
+        return () => cancelAnimationFrame(rafId);
+    }, [prompt?.prompt, showTranslated, translatedText]);
 
     const handleCopy = async () => {
         try {
@@ -277,9 +291,22 @@ const SeedanceModal = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <p className="dmodal-prompt-text">
-                                            {showTranslated && translatedText ? translatedText : prompt.prompt}
-                                        </p>
+                                        <div className={`dmodal-prompt-text-wrap${promptExpanded ? ' expanded' : ''}`}>
+                                            <p ref={promptTextRef} className="dmodal-prompt-text">
+                                                {showTranslated && translatedText ? translatedText : prompt.prompt}
+                                            </p>
+                                            {!promptExpanded && promptOverflows && (
+                                                <div className="dmodal-prompt-fade" aria-hidden="true" />
+                                            )}
+                                        </div>
+                                        {promptOverflows && (
+                                            <button
+                                                className="dmodal-prompt-toggle"
+                                                onClick={() => setPromptExpanded(e => !e)}
+                                            >
+                                                {promptExpanded ? '↑ Show less' : '↓ Show more'}
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Author / Source links */}

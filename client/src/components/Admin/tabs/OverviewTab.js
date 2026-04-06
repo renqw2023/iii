@@ -77,95 +77,157 @@ function KpiCard({ cfg, value, loading }) {
 }
 
 /* ─── Mini Line Chart ─────────────────────────────────────────── */
+function smoothPath(pts) {
+  if (pts.length < 2) return '';
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const cp = (pts[i].x - pts[i - 1].x) * 0.35;
+    d += ` C${pts[i - 1].x + cp},${pts[i - 1].y} ${pts[i].x - cp},${pts[i].y} ${pts[i].x},${pts[i].y}`;
+  }
+  return d;
+}
+
+function fmtYReg(v) {
+  if (v >= 1000) return `${(v / 1000).toFixed(1)}K`;
+  return String(Math.round(v));
+}
+
 function RegistrationChart({ data, loading }) {
+  const [hoveredIdx, setHoveredIdx] = React.useState(null);
+
   if (loading) {
     return (
       <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
         <Skeleton className="w-40 h-4 rounded mb-6" />
-        <Skeleton className="w-full h-16 rounded" />
-        <div className="flex justify-between mt-3">
-          {[...Array(7)].map((_, i) => <Skeleton key={i} className="w-8 h-3 rounded" />)}
-        </div>
+        <Skeleton className="w-full h-48 rounded" />
       </div>
     );
   }
 
   if (!data || data.length === 0) return null;
 
+  const W = 640, H = 220, PADL = 52, PADR = 12, PADT = 16, PADB = 32;
+  const chartW = W - PADL - PADR;
+  const chartH = H - PADT - PADB;
   const max = Math.max(...data.map(d => d.count), 1);
-  const W = 560, H = 72, PADX = 12, PADY = 8;
-
-  const points = data.map((d, i) => {
-    const x = PADX + (i / (data.length - 1)) * (W - PADX * 2);
-    const y = H - PADY - (d.count / max) * (H - PADY * 2);
-    return { x, y, ...d };
-  });
-
-  const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
-  // Area fill path
-  const area = `M${points[0].x},${H} ` + points.map(p => `L${p.x},${p.y}`).join(' ') + ` L${points[points.length - 1].x},${H} Z`;
-
   const totalNew = data.reduce((s, d) => s + d.count, 0);
 
+  const points = data.map((d, i) => ({
+    x: PADL + (data.length === 1 ? chartW / 2 : (i / (data.length - 1)) * chartW),
+    y: PADT + (1 - d.count / max) * chartH,
+    ...d,
+  }));
+
+  const linePath = smoothPath(points);
+  const areaPath = linePath + ` L${points[points.length - 1].x},${H - PADB} L${points[0].x},${H - PADB} Z`;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1.0];
+  const step = data.length > 10 ? 4 : data.length > 6 ? 2 : 1;
+
+  const handleMouseMove = (e) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * W;
+    let nearest = 0, minDist = Infinity;
+    points.forEach((p, i) => {
+      const dist = Math.abs(p.x - mx);
+      if (dist < minDist) { minDist = dist; nearest = i; }
+    });
+    setHoveredIdx(nearest);
+  };
+
+  const hp = hoveredIdx !== null ? points[hoveredIdx] : null;
+  const tooltipOnLeft = hp && hp.x > W / 2;
+
   return (
-    <div
-      className="rounded-2xl p-6"
-      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
-    >
+    <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>New Registrations</p>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>Last 7 days</p>
         </div>
         <div className="text-right">
-          <p className="text-xl font-bold" style={{ color: 'var(--accent-primary)' }}>{totalNew}</p>
+          <p className="text-xl font-bold" style={{ color: '#6366f1' }}>{totalNew}</p>
           <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>total new users</p>
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 72 }}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ height: 220, display: 'block' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoveredIdx(null)}
+      >
         <defs>
-          <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+          <linearGradient id="regFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.22" />
             <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {/* Grid lines */}
-        {[0.25, 0.5, 0.75].map(f => (
-          <line
-            key={f}
-            x1={PADX} y1={PADY + (1 - f) * (H - PADY * 2)}
-            x2={W - PADX} y2={PADY + (1 - f) * (H - PADY * 2)}
-            stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4,4"
-          />
-        ))}
+
+        {/* Y-axis gridlines + labels */}
+        {yTicks.map(f => {
+          const cy = PADT + (1 - f) * chartH;
+          return (
+            <g key={f}>
+              <line x1={PADL} y1={cy} x2={W - PADR} y2={cy}
+                stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4,4" />
+              <text x={PADL - 6} y={cy + 3.5} textAnchor="end"
+                fontSize="10" fill="var(--text-tertiary)">
+                {fmtYReg(f * max)}
+              </text>
+            </g>
+          );
+        })}
+
         {/* Area */}
-        <path d={area} fill="url(#chartFill)" />
+        <path d={areaPath} fill="url(#regFill)" />
+
         {/* Line */}
-        <polyline
-          points={polyline}
-          fill="none"
-          stroke="#6366f1"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
+        <path d={linePath} fill="none" stroke="#6366f1" strokeWidth="2.5"
+          strokeLinejoin="round" strokeLinecap="round" />
+
         {/* Dots */}
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="#6366f1" stroke="var(--bg-secondary)" strokeWidth="2" />
+          <circle key={i} cx={p.x} cy={p.y}
+            r={hoveredIdx === i ? 5.5 : 3}
+            fill="#6366f1"
+            stroke="var(--bg-secondary)"
+            strokeWidth="2"
+            style={{ transition: 'r 0.1s' }}
+          />
         ))}
-      </svg>
 
-      <div className="flex justify-between mt-3">
-        {data.map((d, i) => (
-          <div key={i} className="text-center">
-            <p className="text-xs font-medium" style={{ color: d.count > 0 ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
-              {d.count}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{d.date.slice(5)}</p>
-          </div>
-        ))}
-      </div>
+        {/* X-axis labels */}
+        {data.map((d, i) => {
+          if (i % step !== 0 && i !== data.length - 1) return null;
+          return (
+            <text key={i} x={points[i].x} y={H - 6}
+              textAnchor="middle" fontSize="10" fill="var(--text-tertiary)">
+              {d.date.slice(5)}
+            </text>
+          );
+        })}
+
+        {/* Crosshair + Tooltip */}
+        {hp && (
+          <g>
+            <line x1={hp.x} y1={PADT} x2={hp.x} y2={H - PADB}
+              stroke="#6366f1" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.5" />
+            <g transform={`translate(${tooltipOnLeft ? hp.x - 112 : hp.x + 10}, ${Math.min(hp.y - 10, H - PADB - 52)})`}>
+              <rect width="102" height="44" rx="6"
+                fill="var(--bg-primary)" stroke="var(--border-color)" strokeWidth="1" />
+              <text x="10" y="16" fontSize="11" fontWeight="600" fill="var(--text-primary)">
+                {data[hoveredIdx].date.slice(5)}
+              </text>
+              <text x="10" y="32" fontSize="11" fill="#6366f1">
+                {data[hoveredIdx].count} new users
+              </text>
+            </g>
+          </g>
+        )}
+      </svg>
     </div>
   );
 }

@@ -108,41 +108,74 @@ function PlanCard({ plan, loading }) {
 }
 
 /* ─── Revenue Chart ───────────────────────────────────────────── */
+function smoothRevPath(pts) {
+  if (pts.length < 2) return '';
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const cp = (pts[i].x - pts[i - 1].x) * 0.35;
+    d += ` C${pts[i - 1].x + cp},${pts[i - 1].y} ${pts[i].x - cp},${pts[i].y} ${pts[i].x},${pts[i].y}`;
+  }
+  return d;
+}
+
+function fmtYRev(v) {
+  if (v >= 1000) return `$${(v / 1000).toFixed(1)}K`;
+  if (v === 0) return '$0';
+  return `$${v.toFixed(v < 10 ? 2 : 0)}`;
+}
+
+function fmtTooltipRev(v) {
+  if (v == null) return '$0.00';
+  return `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 function RevenueChart({ data, loading, totalRevenue }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
   if (loading) {
     return (
       <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
         <Skeleton className="w-40 h-4 rounded mb-6" />
-        <Skeleton className="w-full h-28 rounded" />
-        <div className="flex justify-between mt-3">
-          {[...Array(6)].map((_, i) => <Skeleton key={i} className="w-10 h-3 rounded" />)}
-        </div>
+        <Skeleton className="w-full h-48 rounded" />
       </div>
     );
   }
 
   if (!data || data.length === 0) return null;
 
-  const W = 700, H = 120, PADX = 16, PADY = 12;
+  const W = 700, H = 220, PADL = 60, PADR = 12, PADT = 16, PADB = 32;
+  const chartW = W - PADL - PADR;
+  const chartH = H - PADT - PADB;
   const max = Math.max(...data.map(d => d.revenue), 0.01);
 
-  const points = data.map((d, i) => {
-    const x = PADX + (i / (data.length - 1)) * (W - PADX * 2);
-    const y = H - PADY - (d.revenue / max) * (H - PADY * 2);
-    return { x, y, ...d };
-  });
+  const points = data.map((d, i) => ({
+    x: PADL + (data.length === 1 ? chartW / 2 : (i / (data.length - 1)) * chartW),
+    y: PADT + (1 - d.revenue / max) * chartH,
+    ...d,
+  }));
 
-  const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
-  const area =
-    `M${points[0].x},${H} ` +
-    points.map(p => `L${p.x},${p.y}`).join(' ') +
-    ` L${points[points.length - 1].x},${H} Z`;
+  const linePath = smoothRevPath(points);
+  const areaPath = linePath + ` L${points[points.length - 1].x},${H - PADB} L${points[0].x},${H - PADB} Z`;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1.0];
+  const step = data.length > 20 ? 7 : data.length > 10 ? 4 : data.length > 6 ? 3 : 1;
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = ((e.clientX - rect.left) / rect.width) * W;
+    let nearest = 0, minDist = Infinity;
+    points.forEach((p, i) => {
+      const dist = Math.abs(p.x - mx);
+      if (dist < minDist) { minDist = dist; nearest = i; }
+    });
+    setHoveredIdx(nearest);
+  };
+
+  const hp = hoveredIdx !== null ? points[hoveredIdx] : null;
+  const tooltipOnLeft = hp && hp.x > W / 2;
 
   return (
-    <div
-      className="rounded-2xl p-6"
-      style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
-    >
+    <div className="rounded-2xl p-6" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Daily Revenue</p>
@@ -154,45 +187,82 @@ function RevenueChart({ data, loading, totalRevenue }) {
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 120 }}>
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full"
+        style={{ height: 220, display: 'block' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoveredIdx(null)}
+      >
         <defs>
           <linearGradient id="revenueChartFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.25" />
+            <stop offset="0%" stopColor="#22c55e" stopOpacity="0.22" />
             <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
           </linearGradient>
         </defs>
-        {[0.25, 0.5, 0.75].map(f => (
-          <line
-            key={f}
-            x1={PADX} y1={PADY + (1 - f) * (H - PADY * 2)}
-            x2={W - PADX} y2={PADY + (1 - f) * (H - PADY * 2)}
-            stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4,4"
+
+        {/* Y-axis gridlines + labels */}
+        {yTicks.map(f => {
+          const cy = PADT + (1 - f) * chartH;
+          return (
+            <g key={f}>
+              <line x1={PADL} y1={cy} x2={W - PADR} y2={cy}
+                stroke="var(--border-color)" strokeWidth="1" strokeDasharray="4,4" />
+              <text x={PADL - 6} y={cy + 3.5} textAnchor="end"
+                fontSize="10" fill="var(--text-tertiary)">
+                {fmtYRev(f * max)}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Area */}
+        <path d={areaPath} fill="url(#revenueChartFill)" />
+
+        {/* Line */}
+        <path d={linePath} fill="none" stroke="#22c55e" strokeWidth="2.5"
+          strokeLinejoin="round" strokeLinecap="round" />
+
+        {/* Dots */}
+        {points.map((p, i) => (
+          <circle key={i} cx={p.x} cy={p.y}
+            r={hoveredIdx === i ? 5.5 : 3}
+            fill="#22c55e"
+            stroke="var(--bg-secondary)"
+            strokeWidth="2"
+            style={{ transition: 'r 0.1s' }}
           />
         ))}
-        <path d={area} fill="url(#revenueChartFill)" />
-        <polyline
-          points={polyline}
-          fill="none"
-          stroke="#22c55e"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-        {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#22c55e" stroke="var(--bg-secondary)" strokeWidth="2" />
-        ))}
-      </svg>
 
-      {/* X-axis: every 5 days */}
-      <div className="flex justify-between mt-3 px-1">
-        {data
-          .filter((_, i) => i % 5 === 0 || i === data.length - 1)
-          .map((d, i) => (
-            <p key={i} className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        {/* X-axis labels */}
+        {data.map((d, i) => {
+          if (i % step !== 0 && i !== data.length - 1) return null;
+          return (
+            <text key={i} x={points[i].x} y={H - 6}
+              textAnchor="middle" fontSize="10" fill="var(--text-tertiary)">
               {d.date.slice(5)}
-            </p>
-          ))}
-      </div>
+            </text>
+          );
+        })}
+
+        {/* Crosshair + Tooltip */}
+        {hp && (
+          <g>
+            <line x1={hp.x} y1={PADT} x2={hp.x} y2={H - PADB}
+              stroke="#22c55e" strokeWidth="1" strokeDasharray="4,3" strokeOpacity="0.5" />
+            <g transform={`translate(${tooltipOnLeft ? hp.x - 118 : hp.x + 10}, ${Math.min(hp.y - 10, H - PADB - 52)})`}>
+              <rect width="108" height="44" rx="6"
+                fill="var(--bg-primary)" stroke="var(--border-color)" strokeWidth="1" />
+              <text x="10" y="16" fontSize="11" fontWeight="600" fill="var(--text-primary)">
+                {data[hoveredIdx].date.slice(5)}
+              </text>
+              <text x="10" y="32" fontSize="11" fill="#22c55e">
+                {fmtTooltipRev(data[hoveredIdx].revenue)}
+              </text>
+            </g>
+          </g>
+        )}
+      </svg>
     </div>
   );
 }

@@ -402,8 +402,15 @@ const GalleryModal = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className={`dmodal-prompt-text-wrap${promptExpanded ? ' expanded' : ''}`}>
-                                            <p ref={promptTextRef} className="dmodal-prompt-text">
+                                        <div className="dmodal-prompt-text-wrap">
+                                            <p
+                                                ref={promptTextRef}
+                                                className="dmodal-prompt-text"
+                                                style={promptExpanded
+                                                    ? { maxHeight: 'none', overflowY: 'visible' }
+                                                    : { maxHeight: '130px', overflowY: 'hidden' }
+                                                }
+                                            >
                                                 {translatedPrompt || prompt.prompt}
                                             </p>
                                             {!promptExpanded && promptOverflows && (

@@ -1572,6 +1572,7 @@
   border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
+  flex-shrink: 0; /* 防止 flex 压缩：prompt 展开时由 right-body 滚动，而非挤压其他子元素 */
 }
 
 .dmodal-prompt-header {
@@ -1595,29 +1596,11 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 130px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
-}
-
-.dmodal-prompt-text::-webkit-scrollbar {
-  width: 3px;
-}
-
-.dmodal-prompt-text::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 2px;
 }
 
 /* ── Prompt scroll / expand wrapper ─────────────────── */
 .dmodal-prompt-text-wrap {
   position: relative;
-}
-
-.dmodal-prompt-text-wrap.expanded .dmodal-prompt-text {
-  max-height: none;
-  overflow-y: visible;
 }
 
 .dmodal-prompt-fade {
@@ -2565,12 +2548,7 @@
     height: 40px;
   }
 
-  /* Prompt text — no truncation, fully visible on mobile */
-  .dmodal-prompt-text {
-    max-height: none;
-    overflow-y: visible;
-  }
-
+  /* Prompt: mobile 不显示 show more 按钮（inline style 已无 max-height 限制） */
   .dmodal-prompt-fade,
   .dmodal-prompt-toggle {
     display: none;

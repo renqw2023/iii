@@ -89,11 +89,16 @@ const ScrollingGallery = () => {
   const colARef = useRef(null);
   const colBRef = useRef(null);
 
+  // 移动端完全跳过：消除 API 请求 + 40张图片 + will-change:transform 动画
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   const { data, isLoading } = useQuery(
     ['hero-sref-scroll'],
-    () => srefAPI.getPosts({ page: 1, limit: 40, sort: 'newest' }),
-    { staleTime: 10 * 60 * 1000, refetchOnWindowFocus: false }
+    () => srefAPI.getPosts({ page: 1, limit: 20, sort: 'newest' }),
+    { staleTime: 10 * 60 * 1000, refetchOnWindowFocus: false, enabled: !isMobile }
   );
+
+  if (isMobile) return null;
 
   const posts = data?.data?.posts || data?.data?.data || [];
 

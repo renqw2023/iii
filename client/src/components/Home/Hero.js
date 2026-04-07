@@ -402,6 +402,22 @@ const HERO_STYLES = `
     will-change: left, top;
     animation: moonRise 2.2s linear 0.9s forwards;
   }
+
+  /* ── Mobile layout (≤768px) ── */
+  @media (max-width: 768px) {
+    .split-hero { flex-direction: column; }
+    .split-hero-left {
+      width: 100%;
+      height: 100vh;
+      border-right: none;
+      background: linear-gradient(135deg, #0a0015 0%, #150025 50%, #08000f 100%) !important;
+    }
+    .split-hero-right { display: none; }
+    .hero-video-bg { display: none; }
+    .split-hero-left-content { padding: 2rem 1.5rem; }
+    .split-hero h1 { font-size: clamp(2rem, 8vw, 3.5rem); }
+    .hero-orb-sun, .hero-orb-moon { animation: none; }
+  }
 `;
 
 const Hero = () => {
@@ -535,11 +551,11 @@ const Hero = () => {
         {/* Video background */}
         <>
           <video ref={videoARef} className="hero-video-bg"
-            src="/hero-bg.mp4" muted playsInline preload="auto"
+            src="/hero-bg.mp4" muted playsInline preload="metadata"
             style={{ opacity: 1 }}
           />
           <video ref={videoBRef} className="hero-video-bg"
-            src="/hero-bg.mp4" muted playsInline preload="auto"
+            src="/hero-bg.mp4" muted playsInline preload="none"
             style={{ opacity: 0 }}
           />
           {/* Readability overlay */}

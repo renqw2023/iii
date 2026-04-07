@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const path = require('path');
 const config = require('./config');
 
@@ -32,6 +33,8 @@ const renderRoutes = require('./routes/render');
 const app = express();
 // 信任代理设置
 app.set('trust proxy', config.server.trustProxy);
+// gzip 压缩 API 响应（减少 70-90% JSON 体积）
+app.use(compression());
 // 安全中间件
 app.use(helmet(config.security.helmet));
 app.use(cors(config.cors));

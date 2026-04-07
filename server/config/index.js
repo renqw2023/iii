@@ -301,6 +301,15 @@ class Config {
         // default model key (maps to apiModelId inside videoService.js)
         modelKey: process.env.SEEDANCE_MODEL_KEY || 'seedance-1-5-pro',
       },
+      dashscope: {
+        apiKey:  process.env.DASHSCOPE_API_KEY || '',
+        baseUrl: 'https://dashscope.aliyuncs.com/api/v1',
+      },
+      vertexAi: {
+        projectId: process.env.VERTEX_AI_PROJECT_ID || '',
+        location:  process.env.VERTEX_AI_LOCATION   || 'us-central1',
+        // Auth via GOOGLE_APPLICATION_CREDENTIALS env var (service account JSON path)
+      },
     };
   }
 

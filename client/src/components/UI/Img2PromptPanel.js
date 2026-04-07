@@ -666,16 +666,28 @@ const VIDEO_RESOLUTIONS = ['480p', '720p', '1080p'];
 const VIDEO_RATIOS_T2V  = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9'];
 const VIDEO_RATIOS_I2V  = ['adaptive', '16:9', '4:3', '1:1', '3:4', '9:16', '21:9'];
 
-// Per-second credit rates (30% margin; 1 credit ≈ ¥0.0674)
-const PER_SEC_RATES = { '480p': 3.15, '720p': 6.75, '1080p': 15 };
-const getVideoCost = (res, dur, audio = false) => {
-  const base = Math.round((PER_SEC_RATES[res] ?? 15) * Number(dur));
-  return audio ? Math.round(base * 1.3) : base;
+// ── Video credit pricing ──────────────────────────────────────────────────────
+// Seedance: per-second with 30% margin
+const SEEDANCE_PER_SEC = { '480p': 3.15, '720p': 6.75, '1080p': 15 };
+// Veo 3.1: per-second (Google official price + 30% margin, 1cr=$0.00909)
+const VEO_PER_SEC = {
+  'veo-3-1':      { noAudio: 30, audio: 58 },
+  'veo-3-1-fast': { noAudio: 15, audio: 22 },
 };
+// Wan2.7: flat credits per sub-mode (fixed per generation)
+const WAN_SUB_MODES = [
+  { key: 't2v',       label: 'Text → Video',  modelKey: 'wan2-7-t2v',       creditFlat: 25, needsImage: false, comingSoon: false },
+  { key: 'i2v',       label: 'Image → Video', modelKey: 'wan2-7-i2v',       creditFlat: 30, needsImage: true,  comingSoon: false },
+  { key: 'r2v',       label: 'Ref + Video',   modelKey: 'wan2-7-r2v',       creditFlat: 40, needsImage: true,  comingSoon: true  },
+  { key: 'videoedit', label: 'Video Edit',    modelKey: 'wan2-7-videoedit', creditFlat: 40, needsImage: false, comingSoon: true  },
+];
 
 const VIDEO_MODELS = [
-  { key: 'seedance-1-5-pro', name: 'Seedance 1.5 Pro', badge: null,   comingSoon: false },
-  { key: 'seedance-2-0-pro', name: 'Seedance 2.0 Pro', badge: 'Soon', comingSoon: true  },
+  { key: 'seedance-1-5-pro', name: 'Seedance 1.5', badge: null,   comingSoon: false, provider: 'doubao'  },
+  { key: 'seedance-2-0-pro', name: 'Seedance 2.0', badge: 'Soon', comingSoon: true,  provider: 'doubao'  },
+  { key: 'wan2-7',           name: 'Wan 2.7',       badge: 'New',  comingSoon: false, provider: 'alibaba', hasSubModes: true },
+  { key: 'veo-3-1-fast',     name: 'Veo 3.1 Fast', badge: 'New',  comingSoon: false, provider: 'google'  },
+  { key: 'veo-3-1',          name: 'Veo 3.1',       badge: 'HD',   comingSoon: false, provider: 'google'  },
 ];
 
 // Small frame-image upload zone component
@@ -717,6 +729,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
 
   const [prompt, setPrompt]           = useState('');
   const [modelKey, setModelKey]       = useState('seedance-1-5-pro');
+  const [wanSubMode, setWanSubMode]   = useState('t2v'); // Wan2.7 sub-mode
   const [mode, setMode]               = useState('text'); // 'text' | 'first_frame' | 'first_last'
   const [firstFile, setFirstFile]     = useState(null);
   const [lastFile, setLastFile]       = useState(null);
@@ -755,6 +768,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
     if (!prompt.trim()) { toast.error('Please enter a prompt'); return; }
     if (mode === 'first_frame'  && !firstFile) { toast.error('Please upload the first frame image'); return; }
     if (mode === 'first_last'   && (!firstFile || !lastFile)) { toast.error('Please upload both first and last frame images'); return; }
+    if (wanNeedsImage && !firstFile) { toast.error('Please upload a reference image for this mode'); return; }
 
     setUploading(true);
     let firstFrameUrl = null;
@@ -780,15 +794,22 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
     addGeneration({
       id: jobId, status: 'loading', progress: 8,
       prompt: prompt.trim(), modelId: modelKey,
-      modelName: VIDEO_MODELS.find(m => m.key === modelKey)?.name,
+      modelName: isWan
+        ? (WAN_SUB_MODES.find(s => s.key === wanSubMode)?.label ?? 'Wan 2.7')
+        : VIDEO_MODELS.find(m => m.key === modelKey)?.name,
       aspectRatio: ratio === 'adaptive' ? '16:9' : ratio,
       mediaType: 'video', generateAudio, result: null, errorMessage: '', startedAt: new Date(),
     });
 
     onStartGeneration?.();
 
+    // Wan2.7: send actual sub-model key instead of 'wan2-7'
+    const actualModelKey = modelKey === 'wan2-7'
+      ? (WAN_SUB_MODES.find(s => s.key === wanSubMode)?.modelKey ?? 'wan2-7-t2v')
+      : modelKey;
+
     generateAPI.generateVideo({
-      prompt: prompt.trim(), modelKey, duration, resolution, ratio,
+      prompt: prompt.trim(), modelKey: actualModelKey, duration, resolution, ratio,
       generateAudio, firstFrameUrl, lastFrameUrl,
     }).then(data => {
       updateGeneration(jobId, { status: 'success', progress: 100, result: { videoUrl: data.videoUrl }, videoUrl: data.videoUrl });
@@ -802,9 +823,35 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
 
   const credits     = user?.credits ?? 0;
   const freeCredits = user?.freeCredits ?? 0;
+
+  // Credit cost calculation — differs by model provider
+  const getVideoCost = (res, dur, audio = false) => {
+    if (VEO_PER_SEC[modelKey]) {
+      const rate = audio ? VEO_PER_SEC[modelKey].audio : VEO_PER_SEC[modelKey].noAudio;
+      return Math.round(rate * Number(dur));
+    }
+    if (modelKey === 'wan2-7') {
+      const sub = WAN_SUB_MODES.find(s => s.key === wanSubMode);
+      return sub?.creditFlat ?? 25;
+    }
+    // Seedance: per-second with 30% audio surcharge
+    const base = Math.round((SEEDANCE_PER_SEC[res] ?? 15) * Number(dur));
+    return audio ? Math.round(base * 1.3) : base;
+  };
+
   const currentCost = getVideoCost(resolution, duration, generateAudio);
+
+  // Veo only supports 720p/1080p; Wan2.7 max 8s; Veo max 8s
+  const isVeo = modelKey === 'veo-3-1' || modelKey === 'veo-3-1-fast';
+  const isWan = modelKey === 'wan2-7';
+  const availableResolutions = isVeo ? ['720p', '1080p'] : ['480p', '720p', '1080p'];
+  const maxDuration = (isVeo || isWan) ? 8 : 12;
+
+  // Wan2.7 i2v sub-mode also needs frame image
+  const wanNeedsImage = isWan && WAN_SUB_MODES.find(s => s.key === wanSubMode)?.needsImage;
+
   const canGenerate = !!prompt.trim() && !uploading;
-  const ratioList   = (mode === 'text') ? VIDEO_RATIOS_T2V : VIDEO_RATIOS_I2V;
+  const ratioList   = (mode === 'text' && !wanNeedsImage) ? VIDEO_RATIOS_T2V : VIDEO_RATIOS_I2V;
 
   const SEL_BTN = (active, disabled = false) => ({
     flex: 1, height: 30, borderRadius: 8,
@@ -824,46 +871,77 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
       {/* Model */}
       <div style={{ flexShrink: 0 }}>
         <p style={LABEL}>Model</p>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
           {VIDEO_MODELS.map(m => (
-            <button key={m.key} onClick={() => !m.comingSoon && setModelKey(m.key)}
+            <button key={m.key} onClick={() => {
+              if (m.comingSoon) return;
+              setModelKey(m.key);
+              // Veo doesn't support 480p — auto-switch to 720p
+              if ((m.key === 'veo-3-1' || m.key === 'veo-3-1-fast') && resolution === '480p') {
+                setResolution('720p');
+              }
+              // Clamp duration for models with max 8s
+              if (m.key === 'veo-3-1' || m.key === 'veo-3-1-fast' || m.key === 'wan2-7') {
+                setDuration(d => Math.min(d, 8));
+              }
+            }}
               title={m.comingSoon ? 'Coming Soon' : undefined}
-              style={{ ...SEL_BTN(modelKey === m.key && !m.comingSoon, m.comingSoon), flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <span>{m.name}</span>
-              {m.badge && <span style={{ fontSize: 9, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 4px' }}>{m.badge}</span>}
+              style={{ ...SEL_BTN(modelKey === m.key && !m.comingSoon, m.comingSoon), flex: 1, minWidth: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <span style={{ whiteSpace: 'nowrap' }}>{m.name}</span>
+              {m.badge && <span style={{ fontSize: 8, fontWeight: 700, color: '#6366f1', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: 4, padding: '1px 4px', whiteSpace: 'nowrap' }}>{m.badge}</span>}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Mode selector */}
-      <div style={{ flexShrink: 0 }}>
-        <p style={LABEL}>Mode</p>
-        <div style={{ display: 'flex', gap: 4, padding: '3px', backgroundColor: MUTED, borderRadius: 10 }}>
-          {[
-            { key: 'text',        label: 'Text to Video' },
-            { key: 'first_frame', label: '1st Frame' },
-            { key: 'first_last',  label: '1st + Last' },
-          ].map(({ key, label }) => (
-            <button key={key} onClick={() => { setMode(key); if (key === 'text') { setRatio('16:9'); setGenerateAudio(false); } else setRatio('adaptive'); }}
-              style={{ flex: 1, height: 28, borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11,
-                fontWeight: mode === key ? 600 : 400,
-                backgroundColor: mode === key ? '#fff' : 'transparent',
-                color: mode === key ? '#111827' : '#9ca3af',
-                boxShadow: mode === key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 150ms', whiteSpace: 'nowrap' }}>
-              {label}
-            </button>
-          ))}
+      {/* Wan2.7 sub-mode selector */}
+      {isWan && (
+        <div style={{ flexShrink: 0 }}>
+          <p style={LABEL}>Sub Mode</p>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {WAN_SUB_MODES.map(s => (
+              <button key={s.key}
+                onClick={() => !s.comingSoon && setWanSubMode(s.key)}
+                title={s.comingSoon ? 'Coming Soon' : undefined}
+                style={{ ...SEL_BTN(wanSubMode === s.key && !s.comingSoon, s.comingSoon), flex: 1, minWidth: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                <span style={{ whiteSpace: 'nowrap', fontSize: 11 }}>{s.label}</span>
+                {s.comingSoon && <span style={{ fontSize: 8, color: '#9ca3af' }}>Soon</span>}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Frame upload zones */}
-      {mode !== 'text' && (
+      {/* Mode selector — only for non-Wan models */}
+      {!isWan && (
+        <div style={{ flexShrink: 0 }}>
+          <p style={LABEL}>Mode</p>
+          <div style={{ display: 'flex', gap: 4, padding: '3px', backgroundColor: MUTED, borderRadius: 10 }}>
+            {[
+              { key: 'text',        label: 'Text to Video' },
+              { key: 'first_frame', label: '1st Frame' },
+              { key: 'first_last',  label: '1st + Last' },
+            ].map(({ key, label }) => (
+              <button key={key} onClick={() => { setMode(key); if (key === 'text') { setRatio('16:9'); setGenerateAudio(false); } else setRatio('adaptive'); }}
+                style={{ flex: 1, height: 28, borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11,
+                  fontWeight: mode === key ? 600 : 400,
+                  backgroundColor: mode === key ? '#fff' : 'transparent',
+                  color: mode === key ? '#111827' : '#9ca3af',
+                  boxShadow: mode === key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 150ms', whiteSpace: 'nowrap' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Frame upload zones — Seedance mode or Wan2.7 i2v */}
+      {(mode !== 'text' || wanNeedsImage) && (
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <FrameZone label="First Frame" preview={firstPreview}
+          <FrameZone label={isWan ? 'Reference Image' : 'First Frame'} preview={firstPreview}
             onFile={f => setFrame('first', f)} onClear={() => clearFrame('first')} />
-          {mode === 'first_last' && (
+          {mode === 'first_last' && !isWan && (
             <FrameZone label="Last Frame" preview={lastPreview}
               onFile={f => setFrame('last', f)} onClear={() => clearFrame('last')} />
           )}
@@ -890,11 +968,11 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
           <p style={{ ...LABEL, margin: 0 }}>Duration</p>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{duration}s</span>
         </div>
-        <input type="range" min={4} max={12} step={1} value={duration} onChange={e => setDuration(Number(e.target.value))}
+        <input type="range" min={4} max={maxDuration} step={1} value={Math.min(duration, maxDuration)} onChange={e => setDuration(Number(e.target.value))}
           style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
           <span style={{ fontSize: 10, color: '#d1d5db' }}>4s</span>
-          <span style={{ fontSize: 10, color: '#d1d5db' }}>12s</span>
+          <span style={{ fontSize: 10, color: '#d1d5db' }}>{maxDuration}s</span>
         </div>
       </div>
 
@@ -902,8 +980,8 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
       <div style={{ flexShrink: 0 }}>
         <p style={LABEL}>Resolution</p>
         <div style={{ display: 'flex', gap: 6 }}>
-          {VIDEO_RESOLUTIONS.map(r => (
-            <button key={r} onClick={() => setResolution(r)} style={SEL_BTN(resolution === r)}>
+          {availableResolutions.map(r => (
+            <button key={r} onClick={() => setResolution(r)} style={SEL_BTN(resolution === r && availableResolutions.includes(resolution))}>
               {r}
               <span style={{ fontSize: 10, color: resolution === r ? '#8b92d9' : '#d1d5db', marginLeft: 2 }}>
                 {getVideoCost(r, duration, generateAudio)}
@@ -926,11 +1004,11 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         </div>
       </div>
 
-      {/* Generate Audio toggle — only available for i2v modes (API limitation) */}
-      <div style={{ display: mode === 'text' ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '2px 0' }}>
+      {/* Generate Audio toggle — i2v modes or Veo (Veo supports audio natively) */}
+      <div style={{ display: (mode === 'text' && !isVeo && !wanNeedsImage) ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '2px 0' }}>
         <div>
           <p style={{ ...LABEL, margin: 0 }}>Generate Audio</p>
-          <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>+30% credits</p>
+          <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>{isVeo ? `+${VEO_PER_SEC[modelKey]?.audio - VEO_PER_SEC[modelKey]?.noAudio ?? 0} cr/s` : '+30% credits'}</p>
         </div>
         <button onClick={() => setGenerateAudio(a => !a)} style={{
           width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',

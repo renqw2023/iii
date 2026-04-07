@@ -31,13 +31,30 @@ const CREATE_FETCH_TIMEOUT = 60000; // 60s for create task
 // ── Credit pricing (per-second, with 30% margin) ──────────────────────────────
 const PER_SEC_RATES = { '480p': 3.15, '720p': 6.75, '1080p': 15 };
 
+// Veo 3.1 per-second rates (Google official price + 30% margin, 1cr=$0.00909)
+// Veo 3.1:      no-audio $0.20/s → 30cr/s  |  audio $0.40/s → 58cr/s
+// Veo 3.1 Fast: no-audio $0.10/s → 15cr/s  |  audio $0.15/s → 22cr/s
+const VEO_RATES = {
+  'veo-3-1':      { noAudio: 30, audio: 58 },
+  'veo-3-1-fast': { noAudio: 15, audio: 22 },
+};
+
 /**
- * Dynamic credit cost for any resolution × duration × audio combination.
- * @param {string}  resolution  '480p' | '720p' | '1080p'
- * @param {number}  duration    4–12 seconds
- * @param {boolean} audio       whether generate_audio is enabled
+ * Dynamic credit cost.
+ * - Wan2.7 models: fixed flat cost per generation (model.creditFlat)
+ * - Veo 3.1 models: per-second (VEO_RATES)
+ * - Seedance models: per-second (PER_SEC_RATES)
  */
-function getCreditCost(resolution, duration, audio = false) {
+function getCreditCost(resolution, duration, audio = false, modelKey = null) {
+  if (modelKey) {
+    const m = MODELS[modelKey];
+    if (m?.creditFlat != null) return m.creditFlat;           // Wan2.7 flat
+    if (VEO_RATES[modelKey]) {
+      const rate = audio ? VEO_RATES[modelKey].audio : VEO_RATES[modelKey].noAudio;
+      return Math.round(rate * Number(duration));
+    }
+  }
+  // Default: Seedance per-second with 30% audio surcharge
   const rate = PER_SEC_RATES[resolution] ?? 15;
   const base = Math.round(rate * Number(duration));
   return audio ? Math.round(base * 1.3) : base;
@@ -55,34 +72,154 @@ const CREDIT_COST_MAP = {
 
 // ── Supported models ──────────────────────────────────────────────────────────
 const MODELS = {
+  // ── ByteDance Seedance (Volcano Ark) ──────────────────────────────────────
   'seedance-1-5-pro': {
-    apiModelId:   'doubao-seedance-1-5-pro-251215',
-    name:         'Seedance 1.5 Pro',
-    comingSoon:   false,
-    minDuration:  4,
-    maxDuration:  12,
+    apiModelId:  'doubao-seedance-1-5-pro-251215',
+    name:        'Seedance 1.5 Pro',
+    provider:    'seedance',
+    comingSoon:  false,
+    minDuration: 4, maxDuration: 12,
   },
   'seedance-2-0-pro': {
-    apiModelId:   'doubao-seedance-2-0-pro',  // placeholder
-    name:         'Seedance 2.0 Pro',
-    comingSoon:   true,
-    minDuration:  4,
-    maxDuration:  12,
+    apiModelId:  'doubao-seedance-2-0-pro',
+    name:        'Seedance 2.0 Pro',
+    provider:    'seedance',
+    comingSoon:  true,
+    minDuration: 4, maxDuration: 12,
+  },
+  // ── Alibaba DashScope Wan2.7 Video ────────────────────────────────────────
+  // creditFlat: fixed credits per generation (regardless of duration)
+  // Pricing est: t2v ~$0.069, i2v ~$0.093, r2v/edit ~$0.138 (per generation ~5s)
+  'wan2-7-t2v': {
+    apiModelId:  'wan2.7-t2v',
+    name:        'Wan 2.7 · Text to Video',
+    provider:    'dashscope',
+    comingSoon:  false,
+    creditFlat:  25,
+    minDuration: 3, maxDuration: 8,
+  },
+  'wan2-7-i2v': {
+    apiModelId:  'wan2.7-i2v',
+    name:        'Wan 2.7 · Image to Video',
+    provider:    'dashscope',
+    comingSoon:  false,
+    creditFlat:  30,
+    minDuration: 3, maxDuration: 8,
+  },
+  'wan2-7-r2v': {
+    apiModelId:  'wan2.7-r2v',
+    name:        'Wan 2.7 · Reference Video',
+    provider:    'dashscope',
+    comingSoon:  true,   // Phase 2: requires video upload UI
+    creditFlat:  40,
+    minDuration: 3, maxDuration: 8,
+  },
+  'wan2-7-videoedit': {
+    apiModelId:  'wan2.7-videoedit',
+    name:        'Wan 2.7 · Video Edit',
+    provider:    'dashscope',
+    comingSoon:  true,   // Phase 2: requires video upload UI
+    creditFlat:  40,
+    minDuration: 3, maxDuration: 8,
+  },
+  // ── Google Vertex AI Veo 3.1 ──────────────────────────────────────────────
+  // Per-second pricing. Veo 3.1: $0.20/s no-audio, $0.40/s audio (720p/1080p)
+  // Veo 3.1 Fast: $0.10/s no-audio, $0.15/s audio
+  'veo-3-1': {
+    apiModelId:  'veo-3.1-generate-001',
+    name:        'Veo 3.1',
+    provider:    'vertexai',
+    comingSoon:  false,
+    minDuration: 4, maxDuration: 8,
+  },
+  'veo-3-1-fast': {
+    apiModelId:  'veo-3.1-fast-generate-001',
+    name:        'Veo 3.1 Fast',
+    provider:    'vertexai',
+    comingSoon:  false,
+    minDuration: 4, maxDuration: 8,
   },
 };
 
 /**
- * Generate a video using the Volcano Ark API.
+ * Generate a video using the DashScope Wan2.7 API.
+ * Async task: POST (create) → GET poll until SUCCEEDED.
+ */
+async function generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl }) {
+  const DSKEY = process.env.DASHSCOPE_API_KEY;
+  if (!DSKEY) throw new Error('DASHSCOPE_API_KEY not configured');
+
+  const model = MODELS[modelKey];
+  const sizeMap = { '720p': '1280*720', '1080p': '1920*1080', '480p': '854*480' };
+
+  const body = {
+    model: model.apiModelId,
+    input: {
+      prompt,
+      ...(imgUrl ? { img_url: imgUrl } : {}),
+    },
+    parameters: {
+      resolution: sizeMap[resolution] || '1280*720',
+      duration: Number(duration),
+    },
+  };
+
+  const createRes = await fetch(
+    'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${DSKEY}`,
+        'Content-Type': 'application/json',
+        'X-DashScope-Async': 'enable',
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(60000),
+    }
+  );
+  if (!createRes.ok) {
+    const e = await createRes.json().catch(() => ({}));
+    throw new Error(`Wan2.7 video create failed [${createRes.status}]: ${e.message || JSON.stringify(e)}`);
+  }
+  const createData = await createRes.json();
+  const taskId = createData.output?.task_id;
+  if (!taskId) throw new Error('Wan2.7 video API did not return task_id');
+
+  // Poll until SUCCEEDED (6min timeout, 4s interval)
+  const deadline = Date.now() + TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, 4000));
+    const pollRes = await fetch(
+      `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+      { headers: { 'Authorization': `Bearer ${DSKEY}` }, signal: AbortSignal.timeout(POLL_FETCH_TIMEOUT) }
+    );
+    const data   = await pollRes.json();
+    const status = data.output?.task_status;
+    if (status === 'SUCCEEDED') {
+      const videoUrl = data.output?.video_url;
+      if (!videoUrl) throw new Error('Wan2.7 succeeded but no video_url in response');
+      return { videoUrl, taskId };
+    }
+    if (status === 'FAILED') {
+      throw new Error(`Wan2.7 video generation failed: ${data.output?.message || 'unknown error'}`);
+    }
+    // PENDING / RUNNING → keep polling
+  }
+  throw new Error('Wan2.7 video generation timed out after 6 minutes');
+}
+
+/**
+ * Generate a video. Dispatches to the correct provider based on model.provider.
  *
  * @param {object}  opts
  * @param {string}  opts.prompt
- * @param {string}  opts.modelKey       — 'seedance-1-5-pro'
- * @param {number}  opts.duration       — 4–12 seconds
+ * @param {string}  opts.modelKey       — e.g. 'seedance-1-5-pro' | 'wan2-7-t2v' | 'veo-3-1'
+ * @param {number}  opts.duration       — seconds
  * @param {string}  opts.resolution     — '480p' | '720p' | '1080p'
  * @param {string}  opts.ratio          — '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '21:9' | 'adaptive'
- * @param {boolean} opts.generateAudio  — whether to generate audio
- * @param {string}  [opts.firstFrameUrl]  — public URL of first-frame reference image
- * @param {string}  [opts.lastFrameUrl]   — public URL of last-frame reference image
+ * @param {boolean} opts.generateAudio
+ * @param {string}  [opts.firstFrameUrl]
+ * @param {string}  [opts.lastFrameUrl]
  * @returns {Promise<{ videoUrl: string, taskId: string }>}
  */
 async function generateVideo({
@@ -95,13 +232,24 @@ async function generateVideo({
   firstFrameUrl = null,
   lastFrameUrl  = null,
 }) {
-  const { apiKey, baseUrl } = config.services.seedance;
-
-  if (!apiKey) throw new Error('SEEDANCE_API_KEY not configured');
-
   const model = MODELS[modelKey];
   if (!model) throw new Error(`Unknown video model key: ${modelKey}`);
   if (model.comingSoon) throw new Error(`${model.name} is not yet available via API`);
+
+  // ── DashScope (Wan2.7) ──
+  if (model.provider === 'dashscope') {
+    return generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl: firstFrameUrl });
+  }
+
+  // ── Vertex AI (Veo 3.1) ──
+  if (model.provider === 'vertexai') {
+    const { generateVeoVideo } = require('./veoService');
+    return generateVeoVideo({ prompt, modelKey, duration, resolution, generateAudio, firstFrameUrl });
+  }
+
+  // ── ByteDance Seedance (Volcano Ark) — default ──
+  const { apiKey, baseUrl } = config.services.seedance;
+  if (!apiKey) throw new Error('SEEDANCE_API_KEY not configured');
 
   const headers = {
     'Content-Type':  'application/json',

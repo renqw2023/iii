@@ -39,14 +39,15 @@ const {
 } = require('../utils/referralUtils');
 
 // ── 全局并发限制：每个 provider 同时最多 N 个 AI 请求 ──
-const activeConcurrency = { google: 0, openai: 0, zhipu: 0, doubao: 0 };
-const MAX_CONCURRENCY   = { google: 5, openai: 3, zhipu: 5, doubao: 5 };
+const activeConcurrency = { google: 0, openai: 0, zhipu: 0, doubao: 0, alibaba: 0 };
+const MAX_CONCURRENCY   = { google: 5, openai: 3, zhipu: 5, doubao: 5, alibaba: 3 };
 const PROVIDER_MAP = {
   'gemini3-pro':   'google', 'gemini3-flash': 'google', 'gemini25-flash': 'google',
   'imagen4-pro':   'google', 'imagen4-fast':  'google',
   'gpt-image-1':   'openai', 'dall-e-3':      'openai',
   'cogview-flash': 'zhipu',
   'seedream-5-0':  'doubao',
+  'wan2-7-img':    'alibaba',
 };
 
 // ── 429 自动重试：等 2s 后重试一次 ──
@@ -150,6 +151,17 @@ const MODELS = [
     available: () => !!process.env.ARK_API_KEY,
     description: 'Seedream 5.0 · 字节豆包旗舰图像模型',
     badge: 'New',
+  },
+  // ── Alibaba DashScope — Wan2.7 ──
+  {
+    id:          'wan2-7-img',
+    name:        'Wan 2.7',
+    provider:    'Alibaba',
+    apiModel:    'wan2.7-image',
+    creditCost:  5,
+    available:   () => !!process.env.DASHSCOPE_API_KEY,
+    description: 'Wan 2.7 · 阿里通义万象高质量文生图',
+    badge:       'New',
   },
   // ── Coming Soon ──
   {
@@ -506,6 +518,75 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       }
       fs.writeFileSync(filePath, Buffer.from(await imgFetch.arrayBuffer()));
 
+    // ── Alibaba DashScope Wan2.7 Image（异步任务：create → poll）──
+    } else if (modelId === 'wan2-7-img') {
+      const DSKEY = process.env.DASHSCOPE_API_KEY;
+      const sizeMap = { '1:1': '1024*1024', '4:3': '1365*1024', '3:4': '1024*1365', '16:9': '1280*720' };
+
+      // Step 1: 创建异步任务
+      const wanCreateRes = await retryFetch(
+        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${DSKEY}`,
+            'Content-Type': 'application/json',
+            'X-DashScope-Async': 'enable',
+          },
+          signal: AbortSignal.timeout(30000),
+          body: JSON.stringify({
+            model: 'wan2.7-image',
+            input: { prompt },
+            parameters: { size: sizeMap[aspectRatio] || '1024*1024', n: 1 },
+          }),
+        }
+      );
+      if (!wanCreateRes.ok) {
+        const e = await wanCreateRes.json().catch(() => ({}));
+        console.error('Wan2.7 create task error:', e);
+        return res.status(502).json({ message: t(req, `Wan2.7 创建任务失败: ${e.message || wanCreateRes.status}`, `Wan2.7 task creation failed: ${e.message || wanCreateRes.status}`) });
+      }
+      const wanCreateData = await wanCreateRes.json();
+      const wanTaskId = wanCreateData.output?.task_id;
+      if (!wanTaskId) {
+        console.error('Wan2.7 no task_id:', JSON.stringify(wanCreateData).slice(0, 300));
+        return res.status(502).json({ message: t(req, 'Wan2.7 未返回 task_id', 'Wan2.7 did not return task_id') });
+      }
+
+      // Step 2: 轮询直到 SUCCEEDED（最多 2 分钟）
+      const wanDeadline = Date.now() + 120000;
+      let wanDone = false;
+      while (Date.now() < wanDeadline) {
+        await sleep(3000);
+        const wanPollRes = await fetch(
+          `https://dashscope.aliyuncs.com/api/v1/tasks/${wanTaskId}`,
+          { headers: { 'Authorization': `Bearer ${DSKEY}` }, signal: AbortSignal.timeout(30000) }
+        );
+        const wanPollData = await wanPollRes.json();
+        const wanStatus = wanPollData.output?.task_status;
+        if (wanStatus === 'SUCCEEDED') {
+          const wanImgUrl = wanPollData.output?.results?.[0]?.url;
+          if (!wanImgUrl) {
+            return res.status(502).json({ message: t(req, 'Wan2.7 任务成功但无图片 URL', 'Wan2.7 succeeded but no image URL') });
+          }
+          const wanImgFetch = await fetch(wanImgUrl, { signal: AbortSignal.timeout(60000) });
+          if (!wanImgFetch.ok) {
+            return res.status(502).json({ message: t(req, 'Wan2.7 图片下载失败', 'Wan2.7 image download failed') });
+          }
+          fs.writeFileSync(filePath, Buffer.from(await wanImgFetch.arrayBuffer()));
+          wanDone = true;
+          break;
+        }
+        if (wanStatus === 'FAILED') {
+          const errMsg = wanPollData.output?.message || '未知错误';
+          return res.status(502).json({ message: t(req, `Wan2.7 生成失败: ${errMsg}`, `Wan2.7 generation failed: ${errMsg}`) });
+        }
+        // PENDING / RUNNING → continue polling
+      }
+      if (!wanDone) {
+        return res.status(504).json({ message: t(req, 'Wan2.7 生成超时，请稍后重试', 'Wan2.7 generation timed out. Please try again.') });
+      }
+
     } else {
       return res.status(400).json({ message: t(req, '不支持的模型 ID', 'Unsupported model ID.') });
     }
@@ -650,10 +731,6 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
     const { generateVideo, getCreditCost, MODELS } = require('../services/videoService');
     const config = require('../config');
 
-    if (!config.services.seedance.apiKey) {
-      return res.status(503).json({ message: 'Video generation is not configured. Add SEEDANCE_API_KEY to server.' });
-    }
-
     const {
       prompt,
       modelKey      = config.services.seedance.modelKey || 'seedance-1-5-pro',
@@ -674,15 +751,33 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
     if (!model) return res.status(400).json({ message: `无效的模型 ID: ${modelKey}` });
     if (model.comingSoon) return res.status(503).json({ message: `${model.name} 即将上线，敬请期待` });
 
-    // Validate & sanitise params
-    const dur = Number(duration);
-    const validDuration   = (dur >= 4 && dur <= 12) ? dur : 5;
+    // Provider-aware availability check
+    if (model.provider === 'vertexai') {
+      if (!config.services.vertexAi.projectId) {
+        return res.status(503).json({ message: 'Veo 视频生成未配置，请添加 VERTEX_AI_PROJECT_ID 环境变量' });
+      }
+    } else if (model.provider === 'dashscope') {
+      if (!config.services.dashscope.apiKey) {
+        return res.status(503).json({ message: 'Wan2.7 视频生成未配置，请添加 DASHSCOPE_API_KEY 环境变量' });
+      }
+    } else {
+      // Seedance (default)
+      if (!config.services.seedance.apiKey) {
+        return res.status(503).json({ message: 'Video generation is not configured. Add SEEDANCE_API_KEY to server.' });
+      }
+    }
+
+    // Validate & sanitise params (per-model min/max duration)
+    const dur    = Number(duration);
+    const minDur = model.minDuration ?? 4;
+    const maxDur = model.maxDuration ?? 12;
+    const validDuration   = (dur >= minDur && dur <= maxDur) ? dur : Math.min(maxDur, Math.max(minDur, dur));
     const validResolution = ['480p', '720p', '1080p'].includes(resolution) ? resolution : '720p';
     const validRatios     = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9', 'adaptive'];
     const validRatio      = validRatios.includes(ratio) ? ratio : '16:9';
 
-    // Compute credit cost dynamically (includes audio surcharge if enabled)
-    const creditCost = getCreditCost(validResolution, validDuration, Boolean(generateAudio));
+    // Compute credit cost (Wan2.7: flat; Veo: per-second; Seedance: per-second)
+    const creditCost = getCreditCost(validResolution, validDuration, Boolean(generateAudio), modelKey);
 
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: t(req, '用户不存在', 'User not found.') });

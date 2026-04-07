@@ -672,12 +672,13 @@ const SEEDANCE_PER_SEC = { '480p': 3.15, '720p': 6.75, '1080p': 15 };
 // Wan2.7 video: per-second (DashScope official price + ~35% margin, 1cr=¥0.066)
 // 720p: ¥0.6/s → 13cr/s  |  1080p: ¥1/s → 22cr/s
 const WAN_VIDEO_RATES = { '480p': 13, '720p': 13, '1080p': 22 };
-// Veo 3.1: per-second with audio option
-// Veo 3.1:      no-audio $0.20/s → 30cr/s  |  audio $0.40/s → 58cr/s
-// Veo 3.1 Fast: no-audio $0.10/s → 15cr/s  |  audio $0.15/s → 22cr/s
+// Veo per-second rates (Google official + ~30% margin, 1cr=$0.00909)
+// Veo 3.1 / Fast: 720p = 1080p (Google charges same for both resolutions)
+// Veo 3.1 Lite:   720p ≠ 1080p (different Google pricing tiers)
 const VEO_PER_SEC = {
   'veo-3-1':      { noAudio: 30, audio: 58 },
   'veo-3-1-fast': { noAudio: 15, audio: 22 },
+  'veo-3-1-lite': { '720p': { noAudio: 5, audio: 8 }, '1080p': { noAudio: 8, audio: 13 } },
 };
 // Wan2.7: flat credits per sub-mode (fixed per generation)
 const WAN_SUB_MODES = [
@@ -691,7 +692,8 @@ const VIDEO_MODELS = [
   { key: 'seedance-1-5-pro', name: 'Seedance 1.5', badge: null,   comingSoon: false, provider: 'doubao'  },
   { key: 'seedance-2-0-pro', name: 'Seedance 2.0', badge: 'Soon', comingSoon: true,  provider: 'doubao'  },
   { key: 'wan2-7',           name: 'Wan 2.7',       badge: 'New',  comingSoon: false, provider: 'alibaba', hasSubModes: true },
-  { key: 'veo-3-1-fast',     name: 'Veo 3.1 Fast', badge: 'New',  comingSoon: false, provider: 'google'  },
+  { key: 'veo-3-1-lite',     name: 'Veo 3.1 Lite', badge: 'New',  comingSoon: false, provider: 'google'  },
+  { key: 'veo-3-1-fast',     name: 'Veo 3.1 Fast', badge: null,   comingSoon: false, provider: 'google'  },
   { key: 'veo-3-1',          name: 'Veo 3.1',       badge: 'HD',   comingSoon: false, provider: 'google'  },
 ];
 
@@ -874,7 +876,10 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   // Credit cost calculation — differs by model provider
   const getVideoCost = (res, dur, audio = false) => {
     if (VEO_PER_SEC[modelKey]) {
-      const rate = audio ? VEO_PER_SEC[modelKey].audio : VEO_PER_SEC[modelKey].noAudio;
+      const rates = VEO_PER_SEC[modelKey];
+      // Lite has per-resolution sub-keys; 3.1/Fast have flat rates
+      const tier = rates['720p'] ? (rates[res] ?? rates['720p']) : rates;
+      const rate = audio ? tier.audio : tier.noAudio;
       return Math.round(rate * Number(dur));
     }
     if (modelKey === 'wan2-7') {
@@ -889,7 +894,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const currentCost = getVideoCost(resolution, duration, generateAudio);
 
   // Veo: 720p/1080p; Wan2.7: 720p/1080p (no 480p pricing); Seedance: all
-  const isVeo = modelKey === 'veo-3-1' || modelKey === 'veo-3-1-fast';
+  const isVeo = modelKey === 'veo-3-1' || modelKey === 'veo-3-1-fast' || modelKey === 'veo-3-1-lite';
   const isWan = modelKey === 'wan2-7';
   const availableResolutions = (isVeo || isWan) ? ['720p', '1080p'] : ['480p', '720p', '1080p'];
   const maxDuration = (isVeo || isWan) ? 8 : 12;
@@ -925,11 +930,11 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
               if (m.comingSoon) return;
               setModelKey(m.key);
               // Veo doesn't support 480p — auto-switch to 720p
-              if ((m.key === 'veo-3-1' || m.key === 'veo-3-1-fast') && resolution === '480p') {
+              if ((m.key === 'veo-3-1' || m.key === 'veo-3-1-fast' || m.key === 'veo-3-1-lite') && resolution === '480p') {
                 setResolution('720p');
               }
               // Clamp duration for models with max 8s
-              if (m.key === 'veo-3-1' || m.key === 'veo-3-1-fast' || m.key === 'wan2-7') {
+              if (m.key === 'veo-3-1' || m.key === 'veo-3-1-fast' || m.key === 'veo-3-1-lite' || m.key === 'wan2-7') {
                 setDuration(d => Math.min(d, 8));
               }
             }}
@@ -1077,7 +1082,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
       <div style={{ display: (mode === 'text' && !isVeo && !wanNeedsImage) ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '2px 0' }}>
         <div>
           <p style={{ ...LABEL, margin: 0 }}>Generate Audio</p>
-          <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>{isVeo ? `+${(VEO_PER_SEC[modelKey]?.audio ?? 0) - (VEO_PER_SEC[modelKey]?.noAudio ?? 0)} cr/s` : '+30% credits'}</p>
+          <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>{isVeo ? `+${getVideoCost(resolution, 1, true) - getVideoCost(resolution, 1, false)} cr/s` : '+30% credits'}</p>
         </div>
         <button onClick={() => setGenerateAudio(a => !a)} style={{
           width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',

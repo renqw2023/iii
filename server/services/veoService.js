@@ -1,30 +1,39 @@
 /**
  * veoService.js — Google Vertex AI Veo 3.1
  *
- * 官方定价 (2026-04):
+ * 官方定价 (2026-04, source: https://cloud.google.com/vertex-ai/generative-ai/pricing#veo):
  *   Veo 3.1         720p/1080p  no-audio: $0.20/s   with-audio: $0.40/s
+ *   Veo 3.1         4K          no-audio: $0.40/s   with-audio: $0.60/s
  *   Veo 3.1 Fast    720p/1080p  no-audio: $0.10/s   with-audio: $0.15/s
+ *   Veo 3.1 Fast    4K          no-audio: $0.30/s   with-audio: $0.35/s
+ *   Veo 3.1 Lite    720p        no-audio: $0.03/s   with-audio: $0.05/s
+ *   Veo 3.1 Lite    1080p       no-audio: $0.05/s   with-audio: $0.08/s
+ *
+ * 注意: Veo 3.1 / Fast 的 720p 与 1080p 在 Google 定价中相同；
+ *       Veo 3.1 Lite 720p 与 1080p 不同。
  *
  * 积分定价 (1 cr = $0.00909, 目标 ~30% 利润率):
  *   Veo 3.1         no-audio: 30 cr/s   with-audio: 58 cr/s
  *   Veo 3.1 Fast    no-audio: 15 cr/s   with-audio: 22 cr/s
+ *   Veo 3.1 Lite    720p no-audio: 5 cr/s   720p audio: 8 cr/s
+ *   Veo 3.1 Lite    1080p no-audio: 8 cr/s  1080p audio: 13 cr/s
  *
  * 所需环境变量:
  *   VERTEX_AI_PROJECT_ID           — Google Cloud 项目 ID
  *   VERTEX_AI_LOCATION             — 区域 (default: us-central1)
- *   GOOGLE_APPLICATION_CREDENTIALS — service account JSON 文件路径
+ *   GOOGLE_SERVICE_ACCOUNT_JSON    — 服务账号 JSON 字符串（推荐生产环境）
+ *   GOOGLE_APPLICATION_CREDENTIALS — 服务账号 JSON 文件路径（本地开发）
  *
- * API 流程:
- *   1. POST .../veo-3.1-generate-001:generateVideo → 返回 Long-Running Operation name
+ * API 流程 (v1 + :predictLongRunning):
+ *   1. POST .../models/{model}:predictLongRunning → 返回 Long-Running Operation name
  *   2. GET  .../operations/{id} 轮询直到 done: true
  *   3. 从 response.generateVideoResponse.generatedSamples[0].video.uri 获取 GCS URI
  *   4. 通过 GCS JSON API 下载到本地 uploads/generated/ 目录
- *
- * 参考文档: https://cloud.google.com/vertex-ai/generative-ai/docs/models/veo/3-1-generate
  */
 const { GoogleAuth } = require('google-auth-library');
-const fs   = require('fs');
-const path = require('path');
+const fs            = require('fs');
+const path          = require('path');
+const { execFile }  = require('child_process');
 
 const VEO_MODELS = {
   'veo-3-1': {
@@ -35,6 +44,11 @@ const VEO_MODELS = {
   'veo-3-1-fast': {
     apiId:      'veo-3.1-fast-generate-001',
     name:       'Veo 3.1 Fast',
+    comingSoon: false,
+  },
+  'veo-3-1-lite': {
+    apiId:      'veo-3.1-lite-generate-001',
+    name:       'Veo 3.1 Lite',
     comingSoon: false,
   },
 };
@@ -105,30 +119,50 @@ async function generateVeoVideo({ prompt, modelKey, duration, resolution, genera
     resolution:      validResolution,
   };
 
+  // Vertex AI Veo uses v1 + :predictLongRunning (not v1beta1 + :generateVideo)
   const endpoint = [
-    `https://${location}-aiplatform.googleapis.com/v1beta1`,
+    `https://${location}-aiplatform.googleapis.com/v1`,
     `projects/${projectId}/locations/${location}`,
-    `publishers/google/models/${veoModel.apiId}:generateVideo`,
+    `publishers/google/models/${veoModel.apiId}:predictLongRunning`,
   ].join('/');
+
+  const requestBody = {
+    instances:  [instance],
+    parameters: { ...parameters, sampleCount: 1 },
+  };
+
+  console.log(`[veoService] POST ${endpoint}`);
 
   const createRes = await fetch(endpoint, {
     method: 'POST',
     headers,
-    body:   JSON.stringify({ instances: [instance], parameters }),
+    body:   JSON.stringify(requestBody),
     signal: AbortSignal.timeout(60000),
   });
 
   if (!createRes.ok) {
-    const e = await createRes.json().catch(() => ({}));
-    throw new Error(`Veo create failed [${createRes.status}]: ${e.error?.message || JSON.stringify(e)}`);
+    const rawText = await createRes.text().catch(() => '');
+    const e = (() => { try { return JSON.parse(rawText); } catch { return {}; } })();
+    console.error(`[veoService] create failed ${createRes.status}:`, rawText.slice(0, 500));
+    throw new Error(`Veo create failed [${createRes.status}]: ${e.error?.message || rawText.slice(0, 200) || 'unknown'}`);
   }
 
   const operation = await createRes.json();
   const opName = operation.name;
   if (!opName) throw new Error('Veo API did not return an operation name');
 
-  // Poll long-running operation
-  const opEndpoint = `https://${location}-aiplatform.googleapis.com/v1beta1/${opName}`;
+  console.log(`[veoService] operation started: ${opName}`);
+
+  // predictLongRunning returns a PredictLongRunningOperation (UUID-based).
+  // It CANNOT be polled via the standard /operations/{Long} GET endpoint.
+  // Must use the paired :fetchPredictOperation POST method on the same model endpoint.
+  // Docs: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/projects.locations.publishers.models/fetchPredictOperation
+  const fetchEndpoint = [
+    `https://${location}-aiplatform.googleapis.com/v1`,
+    `projects/${projectId}/locations/${location}`,
+    `publishers/google/models/${veoModel.apiId}:fetchPredictOperation`,
+  ].join('/');
+  console.log(`[veoService] polling via fetchPredictOperation: ${fetchEndpoint}`);
   const deadline   = Date.now() + TIMEOUT_MS;
 
   while (Date.now() < deadline) {
@@ -138,8 +172,11 @@ async function generateVeoVideo({ prompt, modelKey, duration, resolution, genera
     const freshToken = await getAccessToken();
     let pollRes;
     try {
-      pollRes = await fetch(opEndpoint, {
-        headers: { 'Authorization': `Bearer ${freshToken}` },
+      // fetchPredictOperation: POST with operationName in body
+      pollRes = await fetch(fetchEndpoint, {
+        method:  'POST',
+        headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ operationName: opName }),
         signal:  AbortSignal.timeout(30000),
       });
     } catch (fetchErr) {
@@ -147,38 +184,49 @@ async function generateVeoVideo({ prompt, modelKey, duration, resolution, genera
       continue;
     }
 
-    const data = await pollRes.json();
+    const rawPoll = await pollRes.text().catch(() => '{}');
+    const data = (() => { try { return JSON.parse(rawPoll); } catch { return {}; } })();
+    if (!pollRes.ok) {
+      console.warn(`[veoService] poll ${pollRes.status}: ${rawPoll.slice(0, 300)}`);
+      continue;
+    }
+    console.log(`[veoService] poll status: done=${data.done}`);
 
     if (data.done) {
-      if (data.error) throw new Error(`Veo operation failed: ${data.error.message}`);
+      if (data.error) throw new Error(`Veo operation failed: ${JSON.stringify(data.error)}`);
 
-      // Extract GCS URI from response
-      const samples = data.response?.generateVideoResponse?.generatedSamples
-                   || data.response?.generatedSamples
-                   || [];
-      const gcsUri = samples[0]?.video?.uri;
-      if (!gcsUri) throw new Error('Veo succeeded but no video URI in response');
+      // Response structure (fetchPredictOperation):
+      // data.response.videos[0].bytesBase64Encoded — video is embedded as base64, no GCS URI
+      const videoB64 = data.response?.videos?.[0]?.bytesBase64Encoded;
+      if (!videoB64) {
+        throw new Error(`Veo succeeded but no video data. Response keys: ${Object.keys(data.response ?? {}).join(', ')}`);
+      }
 
-      // Download video from GCS via JSON API
-      // gs://bucket/path/to/video.mp4 → storage.googleapis.com REST API
-      const gcsPath = gcsUri.replace(/^gs:\/\//, '');
-      const slashIdx = gcsPath.indexOf('/');
-      const bucket = gcsPath.slice(0, slashIdx);
-      const obj    = gcsPath.slice(slashIdx + 1);
-
-      const dlToken = await getAccessToken();
-      const gcsRes  = await fetch(
-        `https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(obj)}?alt=media`,
-        { headers: { 'Authorization': `Bearer ${dlToken}` }, signal: AbortSignal.timeout(120000) }
-      );
-      if (!gcsRes.ok) throw new Error(`GCS download failed [${gcsRes.status}]: ${gcsUri}`);
-
-      // Save to uploads/generated/
+      // Decode base64 and save to uploads/generated/
       const genDir   = path.join(__dirname, '../../uploads/generated');
       fs.mkdirSync(genDir, { recursive: true });
       const filename = `veo_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.mp4`;
       const filePath = path.join(genDir, filename);
-      fs.writeFileSync(filePath, Buffer.from(await gcsRes.arrayBuffer()));
+      fs.writeFileSync(filePath, Buffer.from(videoB64, 'base64'));
+
+      console.log(`[veoService] saved ${filename} (${(videoB64.length * 0.75 / 1024 / 1024).toFixed(1)} MB)`);
+
+      // Move moov atom to front (faststart) so browsers can show duration & seek
+      // Without this, Veo base64 videos show 0:00 and can't be seeked
+      const fastFile = filePath.replace('.mp4', '_fs.mp4');
+      await new Promise((resolve) => {
+        execFile('ffmpeg', ['-i', filePath, '-c', 'copy', '-movflags', '+faststart', '-y', fastFile],
+          (err) => {
+            if (err) {
+              console.warn('[veoService] ffmpeg faststart failed, using raw file:', err.message);
+            } else {
+              fs.renameSync(fastFile, filePath); // replace with faststart version
+              console.log('[veoService] faststart applied');
+            }
+            resolve();
+          }
+        );
+      });
 
       const serverBase = (process.env.SERVER_PUBLIC_URL || 'http://localhost:5500').replace(/\/$/, '');
       return { videoUrl: `${serverBase}/uploads/generated/${filename}`, taskId: opName };

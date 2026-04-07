@@ -65,9 +65,10 @@ app.use((req, res, next) => {
   express.urlencoded({ extended: true, limit: config.server.bodyLimit })(req, res, next);
 });
 
-// 添加静态文件缓存头
+// 添加静态文件缓存头 + 跨域资源策略（允许跨源 <img> 加载）
 app.use('/uploads', (req, res, next) => {
-  res.set('Cache-Control', 'public, max-age=86400'); // 24小时缓存
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
 app.use('/Circle', (req, res, next) => {

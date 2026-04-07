@@ -518,74 +518,50 @@ router.post('/image', auth, generateLimiter, async (req, res) => {
       }
       fs.writeFileSync(filePath, Buffer.from(await imgFetch.arrayBuffer()));
 
-    // ── Alibaba DashScope Wan2.7 Image（异步任务：create → poll）──
+    // ── Alibaba DashScope Wan2.7 Image（同步调用，直接返回结果）──
+    // NOTE: multimodal-generation/generation does NOT support X-DashScope-Async.
+    // It is a synchronous API — the image URL is in the response body directly.
     } else if (modelId === 'wan2-7-img') {
       const DSKEY = process.env.DASHSCOPE_API_KEY;
-      const sizeMap = { '1:1': '1024*1024', '4:3': '1365*1024', '3:4': '1024*1365', '16:9': '1280*720' };
+      // Size format: "WIDTH*HEIGHT" (768–2048 px each dim, asterisk separator)
+      const sizeMap = { '1:1': '1024*1024', '4:3': '1024*768', '3:4': '768*1024', '16:9': '1365*768' };
 
-      // Step 1: 创建异步任务
-      const wanCreateRes = await retryFetch(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis',
+      const wanRes = await retryFetch(
+        'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${DSKEY}`,
             'Content-Type': 'application/json',
-            'X-DashScope-Async': 'enable',
+            // NO X-DashScope-Async — this endpoint is synchronous only
           },
-          signal: AbortSignal.timeout(30000),
+          signal: AbortSignal.timeout(120000), // 2 min — generation can take ~30-60s
           body: JSON.stringify({
             model: 'wan2.7-image',
-            input: { prompt },
-            parameters: { size: sizeMap[aspectRatio] || '1024*1024', n: 1 },
+            input: { messages: [{ role: 'user', content: [{ text: prompt }] }] },
+            parameters: { size: sizeMap[aspectRatio] || '1024x1024', n: 1 },
           }),
         }
       );
-      if (!wanCreateRes.ok) {
-        const e = await wanCreateRes.json().catch(() => ({}));
-        console.error('Wan2.7 create task error:', e);
-        return res.status(502).json({ message: t(req, `Wan2.7 创建任务失败: ${e.message || wanCreateRes.status}`, `Wan2.7 task creation failed: ${e.message || wanCreateRes.status}`) });
+      if (!wanRes.ok) {
+        const e = await wanRes.json().catch(() => ({}));
+        console.error('Wan2.7 image error:', e);
+        return res.status(502).json({ message: t(req, `Wan2.7 生成失败: ${e.message || wanRes.status}`, `Wan2.7 generation failed: ${e.message || wanRes.status}`) });
       }
-      const wanCreateData = await wanCreateRes.json();
-      const wanTaskId = wanCreateData.output?.task_id;
-      if (!wanTaskId) {
-        console.error('Wan2.7 no task_id:', JSON.stringify(wanCreateData).slice(0, 300));
-        return res.status(502).json({ message: t(req, 'Wan2.7 未返回 task_id', 'Wan2.7 did not return task_id') });
+      const wanData = await wanRes.json();
+      // Response: output.choices[0].message.content[0].image (URL string)
+      const choices = wanData.output?.choices;
+      const wanImgUrl = choices?.[0]?.message?.content?.[0]?.image
+                     || wanData.output?.results?.[0]?.url;
+      if (!wanImgUrl) {
+        console.error('Wan2.7 no image URL:', JSON.stringify(wanData).slice(0, 400));
+        return res.status(502).json({ message: t(req, 'Wan2.7 未返回图片 URL', 'Wan2.7 did not return image URL') });
       }
-
-      // Step 2: 轮询直到 SUCCEEDED（最多 2 分钟）
-      const wanDeadline = Date.now() + 120000;
-      let wanDone = false;
-      while (Date.now() < wanDeadline) {
-        await sleep(3000);
-        const wanPollRes = await fetch(
-          `https://dashscope.aliyuncs.com/api/v1/tasks/${wanTaskId}`,
-          { headers: { 'Authorization': `Bearer ${DSKEY}` }, signal: AbortSignal.timeout(30000) }
-        );
-        const wanPollData = await wanPollRes.json();
-        const wanStatus = wanPollData.output?.task_status;
-        if (wanStatus === 'SUCCEEDED') {
-          const wanImgUrl = wanPollData.output?.results?.[0]?.url;
-          if (!wanImgUrl) {
-            return res.status(502).json({ message: t(req, 'Wan2.7 任务成功但无图片 URL', 'Wan2.7 succeeded but no image URL') });
-          }
-          const wanImgFetch = await fetch(wanImgUrl, { signal: AbortSignal.timeout(60000) });
-          if (!wanImgFetch.ok) {
-            return res.status(502).json({ message: t(req, 'Wan2.7 图片下载失败', 'Wan2.7 image download failed') });
-          }
-          fs.writeFileSync(filePath, Buffer.from(await wanImgFetch.arrayBuffer()));
-          wanDone = true;
-          break;
-        }
-        if (wanStatus === 'FAILED') {
-          const errMsg = wanPollData.output?.message || '未知错误';
-          return res.status(502).json({ message: t(req, `Wan2.7 生成失败: ${errMsg}`, `Wan2.7 generation failed: ${errMsg}`) });
-        }
-        // PENDING / RUNNING → continue polling
+      const wanImgFetch = await fetch(wanImgUrl, { signal: AbortSignal.timeout(60000) });
+      if (!wanImgFetch.ok) {
+        return res.status(502).json({ message: t(req, 'Wan2.7 图片下载失败', 'Wan2.7 image download failed') });
       }
-      if (!wanDone) {
-        return res.status(504).json({ message: t(req, 'Wan2.7 生成超时，请稍后重试', 'Wan2.7 generation timed out. Please try again.') });
-      }
+      fs.writeFileSync(filePath, Buffer.from(await wanImgFetch.arrayBuffer()));
 
     } else {
       return res.status(400).json({ message: t(req, '不支持的模型 ID', 'Unsupported model ID.') });

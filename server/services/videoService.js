@@ -40,12 +40,17 @@ const WAN_VIDEO_RATES = {
   '1080p': 22,
 };
 
-// Veo 3.1 per-second rates (Google official price + 30% margin, 1cr=$0.00909)
-// Veo 3.1:      no-audio $0.20/s → 30cr/s  |  with-audio $0.40/s → 58cr/s
-// Veo 3.1 Fast: no-audio $0.10/s → 15cr/s  |  with-audio $0.15/s → 22cr/s
+// Veo 3.1 per-second rates (Google official price + ~30% margin, 1cr=$0.00909)
+// Veo 3.1/Fast: 720p = 1080p (Google charges the same for both)
+// Veo 3.1 Lite: 720p ≠ 1080p (different Google pricing tiers)
+// Source: https://cloud.google.com/vertex-ai/generative-ai/pricing#veo
 const VEO_RATES = {
-  'veo-3-1':      { noAudio: 30, audio: 58 },
-  'veo-3-1-fast': { noAudio: 15, audio: 22 },
+  'veo-3-1':      { noAudio: 30, audio: 58 },          // $0.20/s → 30cr | $0.40/s → 58cr
+  'veo-3-1-fast': { noAudio: 15, audio: 22 },          // $0.10/s → 15cr | $0.15/s → 22cr
+  'veo-3-1-lite': {                                     // 720p/1080p differ:
+    '720p':  { noAudio: 5,  audio: 8  },               //   $0.03/s → 5cr | $0.05/s → 8cr
+    '1080p': { noAudio: 8,  audio: 13 },               //   $0.05/s → 8cr | $0.08/s → 13cr
+  },
 };
 
 /**
@@ -62,9 +67,12 @@ function getCreditCost(resolution, duration, audio = false, modelKey = null) {
       const rate = WAN_VIDEO_RATES[resolution] ?? WAN_VIDEO_RATES['720p'];
       return Math.round(rate * Number(duration));
     }
-    // Veo 3.1: per-second with optional audio surcharge
+    // Veo 3.1 / Fast: flat rate regardless of resolution (Google charges same for 720p & 1080p)
+    // Veo 3.1 Lite: per-resolution pricing (different Google tiers)
     if (VEO_RATES[modelKey]) {
-      const rate = audio ? VEO_RATES[modelKey].audio : VEO_RATES[modelKey].noAudio;
+      const rates = VEO_RATES[modelKey];
+      const tier = rates['720p'] ? (rates[resolution] ?? rates['720p']) : rates; // Lite has sub-keys
+      const rate = audio ? tier.audio : tier.noAudio;
       return Math.round(rate * Number(duration));
     }
   }
@@ -150,6 +158,14 @@ const MODELS = {
     comingSoon:  false,
     minDuration: 4, maxDuration: 8,
   },
+  // Veo 3.1 Lite: cheapest Veo option, 720p/1080p have different Google pricing
+  'veo-3-1-lite': {
+    apiModelId:  'veo-3.1-lite-generate-001',
+    name:        'Veo 3.1 Lite',
+    provider:    'vertexai',
+    comingSoon:  false,
+    minDuration: 4, maxDuration: 8,
+  },
 };
 
 /**
@@ -161,7 +177,7 @@ async function generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl
   if (!DSKEY) throw new Error('DASHSCOPE_API_KEY not configured');
 
   const model = MODELS[modelKey];
-  const sizeMap = { '720p': '1280*720', '1080p': '1920*1080', '480p': '854*480' };
+  const sizeMap = { '720p': '720P', '1080p': '1080P', '480p': '480P' };
 
   // videoedit does not use duration (editing existing video length)
   const isEdit = modelKey === 'wan2-7-videoedit';

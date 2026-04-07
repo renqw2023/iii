@@ -260,14 +260,26 @@ const GenerationCard = ({ job, isActive, onRetry, onDownload, onCopyUrl, onDismi
 
   /* ── Success ── */
   const isVideo   = job.mediaType === 'video';
-  // Resolve relative URLs → absolute (handles old DB records stored before SERVER_PUBLIC_URL fix)
+  // Resolve image/video URLs:
+  // - Server upload URLs (any origin, /uploads/... path) → relative path so CRA proxy handles them
+  // - External CDN URLs (replicate, dashscope, etc.) → pass through unchanged
+  // - Already-relative paths → prepend server base
   const _resolveUrl = (url) => {
-    if (!url || url.startsWith('http')) return url;
+    if (!url) return url;
+    // In development: convert /uploads/ absolute URLs to relative paths so CRA proxy
+    // (package.json "proxy": "http://localhost:5500") can route them to the backend,
+    // avoiding cross-origin CORP blocks across different ports/domains.
+    // In production: keep absolute URLs as-is — they point to the correct server.
+    const isDev = process.env.NODE_ENV === 'development';
+    if (isDev && /^https?:\/\/[^/]+\/uploads\//.test(url)) {
+      return url.replace(/^https?:\/\/[^/]+/, '');
+    }
+    if (url.startsWith('http')) return url;
     const base = (process.env.REACT_APP_API_URL || '/api').replace(/\/api\/?$/, '');
     return base + url;
   };
   const imageUrl  = _resolveUrl(job.result?.imageUrl || job.imageUrl);
-  const videoUrl  = job.result?.videoUrl || job.videoUrl;
+  const videoUrl  = _resolveUrl(job.result?.videoUrl || job.videoUrl);
   return (
     <div
       style={cardStyle}

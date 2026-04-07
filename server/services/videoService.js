@@ -31,9 +31,18 @@ const CREATE_FETCH_TIMEOUT = 60000; // 60s for create task
 // ── Credit pricing (per-second, with 30% margin) ──────────────────────────────
 const PER_SEC_RATES = { '480p': 3.15, '720p': 6.75, '1080p': 15 };
 
+// Wan2.7 video per-second rates (DashScope official price + ~35% margin, 1cr=$0.00909=¥0.066)
+// 720p: ¥0.6/s → 9.1cr/s cost → 13cr/s charged
+// 1080p: ¥1/s → 15.2cr/s cost → 22cr/s charged
+const WAN_VIDEO_RATES = {
+  '480p': 13,   // No 480p pricing listed; use 720p rate as fallback
+  '720p': 13,
+  '1080p': 22,
+};
+
 // Veo 3.1 per-second rates (Google official price + 30% margin, 1cr=$0.00909)
-// Veo 3.1:      no-audio $0.20/s → 30cr/s  |  audio $0.40/s → 58cr/s
-// Veo 3.1 Fast: no-audio $0.10/s → 15cr/s  |  audio $0.15/s → 22cr/s
+// Veo 3.1:      no-audio $0.20/s → 30cr/s  |  with-audio $0.40/s → 58cr/s
+// Veo 3.1 Fast: no-audio $0.10/s → 15cr/s  |  with-audio $0.15/s → 22cr/s
 const VEO_RATES = {
   'veo-3-1':      { noAudio: 30, audio: 58 },
   'veo-3-1-fast': { noAudio: 15, audio: 22 },
@@ -42,13 +51,18 @@ const VEO_RATES = {
 /**
  * Dynamic credit cost.
  * - Wan2.7 models: fixed flat cost per generation (model.creditFlat)
- * - Veo 3.1 models: per-second (VEO_RATES)
- * - Seedance models: per-second (PER_SEC_RATES)
+ * - Veo 3.1 models: per-second with optional audio surcharge
+ * - Seedance models: per-second (PER_SEC_RATES), +30% for audio
  */
 function getCreditCost(resolution, duration, audio = false, modelKey = null) {
   if (modelKey) {
     const m = MODELS[modelKey];
-    if (m?.creditFlat != null) return m.creditFlat;           // Wan2.7 flat
+    // Wan2.7: per-second billing (720p ¥0.6/s → 13cr/s, 1080p ¥1/s → 22cr/s)
+    if (m?.provider === 'dashscope') {
+      const rate = WAN_VIDEO_RATES[resolution] ?? WAN_VIDEO_RATES['720p'];
+      return Math.round(rate * Number(duration));
+    }
+    // Veo 3.1: per-second with optional audio surcharge
     if (VEO_RATES[modelKey]) {
       const rate = audio ? VEO_RATES[modelKey].audio : VEO_RATES[modelKey].noAudio;
       return Math.round(rate * Number(duration));
@@ -90,12 +104,12 @@ const MODELS = {
   // ── Alibaba DashScope Wan2.7 Video ────────────────────────────────────────
   // creditFlat: fixed credits per generation (regardless of duration)
   // Pricing est: t2v ~$0.069, i2v ~$0.093, r2v/edit ~$0.138 (per generation ~5s)
+  // Wan2.7 video: per-second billing (720p ¥0.6/s → 13cr/s, 1080p ¥1/s → 22cr/s)
   'wan2-7-t2v': {
     apiModelId:  'wan2.7-t2v',
     name:        'Wan 2.7 · Text to Video',
     provider:    'dashscope',
     comingSoon:  false,
-    creditFlat:  25,
     minDuration: 3, maxDuration: 8,
   },
   'wan2-7-i2v': {
@@ -103,23 +117,20 @@ const MODELS = {
     name:        'Wan 2.7 · Image to Video',
     provider:    'dashscope',
     comingSoon:  false,
-    creditFlat:  30,
     minDuration: 3, maxDuration: 8,
   },
   'wan2-7-r2v': {
     apiModelId:  'wan2.7-r2v',
     name:        'Wan 2.7 · Reference Video',
     provider:    'dashscope',
-    comingSoon:  true,   // Phase 2: requires video upload UI
-    creditFlat:  40,
+    comingSoon:  false,
     minDuration: 3, maxDuration: 8,
   },
   'wan2-7-videoedit': {
     apiModelId:  'wan2.7-videoedit',
     name:        'Wan 2.7 · Video Edit',
     provider:    'dashscope',
-    comingSoon:  true,   // Phase 2: requires video upload UI
-    creditFlat:  40,
+    comingSoon:  false,
     minDuration: 3, maxDuration: 8,
   },
   // ── Google Vertex AI Veo 3.1 ──────────────────────────────────────────────
@@ -145,22 +156,26 @@ const MODELS = {
  * Generate a video using the DashScope Wan2.7 API.
  * Async task: POST (create) → GET poll until SUCCEEDED.
  */
-async function generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl }) {
+async function generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl, videoUrl }) {
   const DSKEY = process.env.DASHSCOPE_API_KEY;
   if (!DSKEY) throw new Error('DASHSCOPE_API_KEY not configured');
 
   const model = MODELS[modelKey];
   const sizeMap = { '720p': '1280*720', '1080p': '1920*1080', '480p': '854*480' };
 
+  // videoedit does not use duration (editing existing video length)
+  const isEdit = modelKey === 'wan2-7-videoedit';
+
   const body = {
     model: model.apiModelId,
     input: {
       prompt,
-      ...(imgUrl ? { img_url: imgUrl } : {}),
+      ...(imgUrl    ? { img_url:   imgUrl   } : {}),
+      ...(videoUrl  ? { video_url: videoUrl } : {}),
     },
     parameters: {
       resolution: sizeMap[resolution] || '1280*720',
-      duration: Number(duration),
+      ...(!isEdit ? { duration: Number(duration) } : {}),
     },
   };
 
@@ -231,6 +246,7 @@ async function generateVideo({
   generateAudio = false,
   firstFrameUrl = null,
   lastFrameUrl  = null,
+  videoUrl      = null,
 }) {
   const model = MODELS[modelKey];
   if (!model) throw new Error(`Unknown video model key: ${modelKey}`);
@@ -238,7 +254,7 @@ async function generateVideo({
 
   // ── DashScope (Wan2.7) ──
   if (model.provider === 'dashscope') {
-    return generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl: firstFrameUrl });
+    return generateWanVideo({ prompt, modelKey, duration, resolution, imgUrl: firstFrameUrl, videoUrl });
   }
 
   // ── Vertex AI (Veo 3.1) ──

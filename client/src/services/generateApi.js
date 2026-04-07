@@ -17,4 +17,12 @@ export const generateAPI = {
       timeout: 30000,
     }).then(r => r.data);
   },
+  uploadVideo: (file) => {
+    const form = new FormData();
+    form.append('video', file);
+    return api.post('/generate/video/upload-video', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    }).then(r => r.data);
+  },
 };

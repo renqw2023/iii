@@ -14,7 +14,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   X, Copy, Check, Loader2, Image as ImageIcon, Plus,
   ChevronLeft, ChevronRight, ChevronDown,
-  Zap, Wand2,
+  Zap, Wand2, Film,
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -669,17 +669,22 @@ const VIDEO_RATIOS_I2V  = ['adaptive', '16:9', '4:3', '1:1', '3:4', '9:16', '21:
 // ── Video credit pricing ──────────────────────────────────────────────────────
 // Seedance: per-second with 30% margin
 const SEEDANCE_PER_SEC = { '480p': 3.15, '720p': 6.75, '1080p': 15 };
-// Veo 3.1: per-second (Google official price + 30% margin, 1cr=$0.00909)
+// Wan2.7 video: per-second (DashScope official price + ~35% margin, 1cr=¥0.066)
+// 720p: ¥0.6/s → 13cr/s  |  1080p: ¥1/s → 22cr/s
+const WAN_VIDEO_RATES = { '480p': 13, '720p': 13, '1080p': 22 };
+// Veo 3.1: per-second with audio option
+// Veo 3.1:      no-audio $0.20/s → 30cr/s  |  audio $0.40/s → 58cr/s
+// Veo 3.1 Fast: no-audio $0.10/s → 15cr/s  |  audio $0.15/s → 22cr/s
 const VEO_PER_SEC = {
   'veo-3-1':      { noAudio: 30, audio: 58 },
   'veo-3-1-fast': { noAudio: 15, audio: 22 },
 };
 // Wan2.7: flat credits per sub-mode (fixed per generation)
 const WAN_SUB_MODES = [
-  { key: 't2v',       label: 'Text → Video',  modelKey: 'wan2-7-t2v',       creditFlat: 25, needsImage: false, comingSoon: false },
-  { key: 'i2v',       label: 'Image → Video', modelKey: 'wan2-7-i2v',       creditFlat: 30, needsImage: true,  comingSoon: false },
-  { key: 'r2v',       label: 'Ref + Video',   modelKey: 'wan2-7-r2v',       creditFlat: 40, needsImage: true,  comingSoon: true  },
-  { key: 'videoedit', label: 'Video Edit',    modelKey: 'wan2-7-videoedit', creditFlat: 40, needsImage: false, comingSoon: true  },
+  { key: 't2v',       label: 'Text → Video',  modelKey: 'wan2-7-t2v',       needsImage: false, needsVideo: false, comingSoon: false },
+  { key: 'i2v',       label: 'Image → Video', modelKey: 'wan2-7-i2v',       needsImage: true,  needsVideo: false, comingSoon: false },
+  { key: 'r2v',       label: 'Ref + Video',   modelKey: 'wan2-7-r2v',       needsImage: true,  needsVideo: false, comingSoon: false },
+  { key: 'videoedit', label: 'Video Edit',    modelKey: 'wan2-7-videoedit', needsImage: false, needsVideo: true,  comingSoon: false },
 ];
 
 const VIDEO_MODELS = [
@@ -723,6 +728,39 @@ const FrameZone = ({ label, preview, onFile, onClear }) => {
   );
 };
 
+// Video file upload zone (for Wan2.7 videoedit)
+const VideoZone = ({ label, preview, onFile, onClear }) => {
+  const ref = useRef(null);
+  return (
+    <div style={{ flex: 1, flexShrink: 0 }}>
+      <p style={{ fontSize: 10, color: '#9ca3af', margin: '0 0 4px 2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+      <input ref={ref} type="file" accept="video/*" style={{ display: 'none' }}
+        onChange={e => e.target.files[0] && onFile(e.target.files[0])} />
+      {preview ? (
+        <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', paddingBottom: '56.25%', backgroundColor: '#000' }}>
+          <video src={preview} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} muted />
+          <button onClick={onClear} style={{
+            position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%',
+            backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+          }}><X size={10} /></button>
+        </div>
+      ) : (
+        <button onClick={() => ref.current?.click()} style={{
+          width: '100%', paddingBottom: '56.25%', position: 'relative',
+          borderRadius: 10, border: '1.5px dashed rgba(0,0,0,0.12)',
+          backgroundColor: MUTED, cursor: 'pointer',
+        }}>
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, color: '#9ca3af' }}>
+            <Film size={16} />
+            <span style={{ fontSize: 10, fontWeight: 500 }}>Upload Video</span>
+          </span>
+        </button>
+      )}
+    </div>
+  );
+};
+
 const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
   const { addGeneration, updateGeneration } = useGeneration();
@@ -735,6 +773,9 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
   const [lastFile, setLastFile]       = useState(null);
   const [firstPreview, setFirstPreview] = useState(null);
   const [lastPreview, setLastPreview]   = useState(null);
+  // Wan2.7 videoedit: video file upload
+  const [wanVideoFile, setWanVideoFile]       = useState(null);
+  const [wanVideoPreview, setWanVideoPreview] = useState(null);
   const [duration, setDuration]       = useState(5);
   const [resolution, setResolution]   = useState('720p');
   const [ratio, setRatio]             = useState('16:9');
@@ -769,10 +810,12 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
     if (mode === 'first_frame'  && !firstFile) { toast.error('Please upload the first frame image'); return; }
     if (mode === 'first_last'   && (!firstFile || !lastFile)) { toast.error('Please upload both first and last frame images'); return; }
     if (wanNeedsImage && !firstFile) { toast.error('Please upload a reference image for this mode'); return; }
+    if (wanNeedsVideo && !wanVideoFile) { toast.error('Please upload a video for Video Edit mode'); return; }
 
     setUploading(true);
     let firstFrameUrl = null;
     let lastFrameUrl  = null;
+    let uploadedVideoUrl = null;
 
     try {
       if (firstFile) {
@@ -783,8 +826,12 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         const res = await generateAPI.uploadVideoFrame(lastFile);
         lastFrameUrl = res.url;
       }
+      if (wanVideoFile) {
+        const res = await generateAPI.uploadVideo(wanVideoFile);
+        uploadedVideoUrl = res.url;
+      }
     } catch (err) {
-      toast.error('Frame image upload failed: ' + (err.response?.data?.message || err.message));
+      toast.error('File upload failed: ' + (err.response?.data?.message || err.message));
       setUploading(false);
       return;
     }
@@ -810,7 +857,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
 
     generateAPI.generateVideo({
       prompt: prompt.trim(), modelKey: actualModelKey, duration, resolution, ratio,
-      generateAudio, firstFrameUrl, lastFrameUrl,
+      generateAudio, firstFrameUrl, lastFrameUrl, videoUrl: uploadedVideoUrl,
     }).then(data => {
       updateGeneration(jobId, { status: 'success', progress: 100, result: { videoUrl: data.videoUrl }, videoUrl: data.videoUrl });
       updateUser({ credits: data.creditsLeft, freeCredits: data.freeCreditsLeft });
@@ -831,8 +878,8 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
       return Math.round(rate * Number(dur));
     }
     if (modelKey === 'wan2-7') {
-      const sub = WAN_SUB_MODES.find(s => s.key === wanSubMode);
-      return sub?.creditFlat ?? 25;
+      // Per-second: 720p ¥0.6/s → 13cr/s, 1080p ¥1/s → 22cr/s
+      return Math.round((WAN_VIDEO_RATES[res] ?? 13) * Number(dur));
     }
     // Seedance: per-second with 30% audio surcharge
     const base = Math.round((SEEDANCE_PER_SEC[res] ?? 15) * Number(dur));
@@ -841,14 +888,15 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
 
   const currentCost = getVideoCost(resolution, duration, generateAudio);
 
-  // Veo only supports 720p/1080p; Wan2.7 max 8s; Veo max 8s
+  // Veo: 720p/1080p; Wan2.7: 720p/1080p (no 480p pricing); Seedance: all
   const isVeo = modelKey === 'veo-3-1' || modelKey === 'veo-3-1-fast';
   const isWan = modelKey === 'wan2-7';
-  const availableResolutions = isVeo ? ['720p', '1080p'] : ['480p', '720p', '1080p'];
+  const availableResolutions = (isVeo || isWan) ? ['720p', '1080p'] : ['480p', '720p', '1080p'];
   const maxDuration = (isVeo || isWan) ? 8 : 12;
 
-  // Wan2.7 i2v sub-mode also needs frame image
+  // Wan2.7 sub-mode input requirements
   const wanNeedsImage = isWan && WAN_SUB_MODES.find(s => s.key === wanSubMode)?.needsImage;
+  const wanNeedsVideo = isWan && WAN_SUB_MODES.find(s => s.key === wanSubMode)?.needsVideo;
 
   const canGenerate = !!prompt.trim() && !uploading;
   const ratioList   = (mode === 'text' && !wanNeedsImage) ? VIDEO_RATIOS_T2V : VIDEO_RATIOS_I2V;
@@ -936,7 +984,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         </div>
       )}
 
-      {/* Frame upload zones — Seedance mode or Wan2.7 i2v */}
+      {/* Frame upload zones — Seedance mode or Wan2.7 i2v / r2v */}
       {(mode !== 'text' || wanNeedsImage) && (
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <FrameZone label={isWan ? 'Reference Image' : 'First Frame'} preview={firstPreview}
@@ -945,6 +993,15 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
             <FrameZone label="Last Frame" preview={lastPreview}
               onFile={f => setFrame('last', f)} onClear={() => clearFrame('last')} />
           )}
+        </div>
+      )}
+
+      {/* Video upload zone — Wan2.7 videoedit */}
+      {wanNeedsVideo && (
+        <div style={{ flexShrink: 0 }}>
+          <VideoZone label="Source Video" preview={wanVideoPreview}
+            onFile={f => { setWanVideoFile(f); setWanVideoPreview(URL.createObjectURL(f)); }}
+            onClear={() => { setWanVideoFile(null); setWanVideoPreview(null); }} />
         </div>
       )}
 
@@ -962,18 +1019,30 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
           style={{ width: '100%', minHeight: 72, border: 'none', outline: 'none', backgroundColor: 'transparent', resize: 'none', fontSize: 13, lineHeight: 1.6, color: '#374151', fontFamily: 'inherit' }} />
       </div>
 
-      {/* Duration slider */}
+      {/* Duration — discrete buttons for Veo (4/6/8s only), slider for Seedance/Wan */}
       <div style={{ flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <p style={{ ...LABEL, margin: 0 }}>Duration</p>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{duration}s</span>
         </div>
-        <input type="range" min={4} max={maxDuration} step={1} value={Math.min(duration, maxDuration)} onChange={e => setDuration(Number(e.target.value))}
-          style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
-          <span style={{ fontSize: 10, color: '#d1d5db' }}>4s</span>
-          <span style={{ fontSize: 10, color: '#d1d5db' }}>{maxDuration}s</span>
-        </div>
+        {isVeo ? (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[4, 6, 8].map(d => (
+              <button key={d} onClick={() => setDuration(d)} style={SEL_BTN(duration === d)}>
+                {d}s
+              </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            <input type="range" min={4} max={maxDuration} step={1} value={Math.min(duration, maxDuration)} onChange={e => setDuration(Number(e.target.value))}
+              style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
+              <span style={{ fontSize: 10, color: '#d1d5db' }}>4s</span>
+              <span style={{ fontSize: 10, color: '#d1d5db' }}>{maxDuration}s</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Resolution */}
@@ -1004,11 +1073,11 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
         </div>
       </div>
 
-      {/* Generate Audio toggle — i2v modes or Veo (Veo supports audio natively) */}
+      {/* Generate Audio toggle — i2v modes or Veo */}
       <div style={{ display: (mode === 'text' && !isVeo && !wanNeedsImage) ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, padding: '2px 0' }}>
         <div>
           <p style={{ ...LABEL, margin: 0 }}>Generate Audio</p>
-          <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>{isVeo ? `+${VEO_PER_SEC[modelKey]?.audio - VEO_PER_SEC[modelKey]?.noAudio ?? 0} cr/s` : '+30% credits'}</p>
+          <p style={{ fontSize: 10, color: '#d1d5db', margin: '2px 0 0' }}>{isVeo ? `+${(VEO_PER_SEC[modelKey]?.audio ?? 0) - (VEO_PER_SEC[modelKey]?.noAudio ?? 0)} cr/s` : '+30% credits'}</p>
         </div>
         <button onClick={() => setGenerateAudio(a => !a)} style={{
           width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',

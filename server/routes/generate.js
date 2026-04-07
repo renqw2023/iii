@@ -159,7 +159,7 @@ const MODELS = [
     provider:    'Alibaba',
     apiModel:    'wan2.7-image',
     creditCost:  5,
-    available:   () => !!process.env.DASHSCOPE_API_KEY,
+    available:   () => true,   // always show; missing key surfaced at generation time
     description: 'Wan 2.7 · 阿里通义万象高质量文生图',
     badge:       'New',
   },
@@ -721,6 +721,34 @@ router.post('/video/upload-frame', auth, frameUpload.single('frame'), (req, res)
   res.json({ url: publicUrl });
 });
 
+// ── Video file upload (for Wan2.7 videoedit / r2v) ──
+const videoFileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../../uploads/video-uploads');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.mp4';
+    cb(null, `${uuidv4()}${ext}`);
+  },
+});
+const videoFileUpload = multer({
+  storage: videoFileStorage,
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Only video files are allowed'));
+  },
+});
+
+router.post('/video/upload-video', auth, videoFileUpload.single('video'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No video file received' });
+  const config = require('../config');
+  const publicUrl = `${config.app.baseUrl}/uploads/video-uploads/${req.file.filename}`;
+  res.json({ url: publicUrl });
+});
+
 /**
  * POST /api/generate/video
  * Body: { prompt, modelKey, duration, resolution, ratio, generateAudio, firstFrameUrl, lastFrameUrl }
@@ -740,6 +768,7 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
       generateAudio = false,
       firstFrameUrl = null,
       lastFrameUrl  = null,
+      videoUrl      = null,
     } = req.body;
 
     if (!prompt || !prompt.trim()) {
@@ -789,8 +818,8 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
       return res.status(402).json({ message: t(req, `积分不足，需要 ${creditCost} 积分（当前 ${totalAvail}）`, `Insufficient credits. Need ${creditCost}, you have ${totalAvail}.`) });
     }
 
-    // ── Call Seedance API ──
-    const { videoUrl, taskId } = await generateVideo({
+    // ── Call video generation ──
+    const { videoUrl: resultVideoUrl, taskId } = await generateVideo({
       prompt:        prompt.trim(),
       modelKey,
       duration:      validDuration,
@@ -799,6 +828,7 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
       generateAudio: Boolean(generateAudio),
       firstFrameUrl: firstFrameUrl || null,
       lastFrameUrl:  lastFrameUrl  || null,
+      videoUrl:      videoUrl      || null,
     });
 
     // ── Deduct credits ──
@@ -820,7 +850,7 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
         prompt:     prompt.slice(0, 500),
         modelId:    modelKey,
         modelName:  model.name,
-        videoUrl,
+        videoUrl:  resultVideoUrl,
         mediaType:  'video',
         generateAudio: Boolean(generateAudio),
         aspectRatio: validRatio,
@@ -833,7 +863,7 @@ router.post('/video', auth, generateLimiter, async (req, res) => {
     }
 
     res.json({
-      videoUrl,
+      videoUrl: resultVideoUrl,
       taskId,
       creditCost,
       creditsLeft:     user.credits,

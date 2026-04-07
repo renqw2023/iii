@@ -43,11 +43,16 @@ const POLL_INTERVAL_MS = 10000;  // 10s — Veo generation takes 1-3 min
 const TIMEOUT_MS       = 600000; // 10 min total timeout
 
 /**
- * Get a fresh Google Cloud OAuth2 access token via Application Default Credentials.
- * Reads GOOGLE_APPLICATION_CREDENTIALS env var automatically.
+ * Get a fresh Google Cloud OAuth2 access token.
+ *
+ * 支持两种认证方式（优先使用 JSON 字符串）：
+ *   1. GOOGLE_SERVICE_ACCOUNT_JSON — 把服务账号 JSON 文件的内容粘贴为环境变量值（推荐生产环境）
+ *   2. GOOGLE_APPLICATION_CREDENTIALS — 服务账号 JSON 文件的本地绝对路径（本地开发）
  */
 async function getAccessToken() {
+  const jsonStr = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
   const auth = new GoogleAuth({
+    ...(jsonStr ? { credentials: JSON.parse(jsonStr) } : {}),
     scopes: ['https://www.googleapis.com/auth/cloud-platform'],
   });
   const client = await auth.getClient();

@@ -261,7 +261,18 @@ export const useImg2PromptSEO = () => {
     title: 'AI Image Generator & Reverse Prompt Tool — III.PICS',
     description: 'Generate AI images from text prompts, or upload any image to instantly extract its prompt. Free AI art generator powered by Gemini, DALL·E, and more.',
     keywords: 'AI image generator, image to prompt, reverse prompt, img2prompt, text to image AI, AI art generator free, Gemini image, DALL-E prompts, AI prompt extractor, III.PICS generate',
-    type: 'website'
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      'name': 'III.PICS AI Image Generator',
+      'description': 'Free AI image generator and reverse prompt tool. Generate images from text with Gemini, DALL·E, and more. Upload any image to extract its AI prompt.',
+      'url': 'https://iii.pics/create',
+      'applicationCategory': 'MultimediaApplication',
+      'operatingSystem': 'Web',
+      'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' },
+      'provider': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' }
+    }
   });
 };
 

@@ -201,7 +201,7 @@ const GalleryModal = () => {
                         '@type': 'ImageObject',
                         name: prompt.title || prompt.prompt?.substring(0, 60) || 'AI Gallery Prompt',
                         description: prompt.description || prompt.prompt?.substring(0, 200) || '',
-                        contentUrl: prompt.previewImage || '',
+                        contentUrl: prompt.previewImage ? (prompt.previewImage.startsWith('http') ? prompt.previewImage : `https://iii.pics${prompt.previewImage}`) : '',
                         url: `https://iii.pics/gallery/${prompt._id}`,
                         keywords: prompt.tags?.join(', ') || '',
                         creator: { '@type': 'Organization', name: 'III.PICS' },

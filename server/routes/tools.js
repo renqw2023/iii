@@ -175,6 +175,158 @@ router.post(
   }
 );
 
+/* ───────────────────────────────────────────────────────────────
+   POST /api/tools/json-prompt
+   Build a structured Nano Banana Pro JSON prompt from text (+ optional image).
+   Uses Gemini 2.5 Flash (text / vision).  Cost: 3 credits.
+   Body (JSON):        { text }
+   Body (multipart):   { text?, image: File }
+   Response: { explanation, jsonPrompt, creditsLeft, freeCreditsLeft }
+─────────────────────────────────────────────────────────────── */
+const JSON_PROMPT_COST  = 3;
+const JSON_PROMPT_MODEL = 'gemini-2.5-flash';
+
+const JSON_SYSTEM_PROMPT = `You are an expert prompt engineer for Nano Banana Pro (a high-quality AI image generation model).
+Convert the user's input into a detailed, valid JSON prompt. Follow these rules strictly:
+
+OUTPUT FORMAT — always two parts in order:
+1. A short explanation (1-3 sentences) of the subject, style, and lighting choices. No JSON here.
+2. A single valid JSON object (no markdown fences, no trailing comments).
+
+JSON SCHEMA (adapt fields to the subject; remove fields that don't apply):
+{
+  "subject": { "main": "" },
+  "background": { "type": "", "color": "", "texture": "" },
+  "style": { "medium": "", "references": "", "palette": "" },
+  "lighting": { "type": "", "source": "", "details": "" },
+  "aesthetic_fidelity": { "vibe": "", "visual_qualities": [] },
+  "constraints": { "must_keep": [], "avoid": [] },
+  "negative_prompt": []
+}
+
+For PEOPLE, also add: subject.demographics, face (skin/eyes/mouth/details), hair, pose, attire.
+For VEHICLES: chassis, paint_finish, wheels, interior.
+For FOOD: plating_style, ingredients, garnish.
+For photorealistic output: add photography.camera_gear (lens, aperture).
+
+RULES:
+- Always include constraints.must_keep, constraints.avoid, and negative_prompt.
+- Use English keys. Preserve proper nouns and on-image text in the original language.
+- For collage/grid images: add composition.layout, composition.panel_count, composition.panels.
+- Be precise about materials (felt vs smooth 3D vs photography).
+- Remove irrelevant fields entirely rather than setting them to empty strings.`;
+
+router.post(
+  '/json-prompt',
+  auth,
+  (req, res, next) => {
+    if (req.headers['content-type']?.includes('application/json')) return next();
+    upload.single('image')(req, res, next);
+  },
+  async (req, res) => {
+    try {
+      const text     = req.body?.text?.trim() || '';
+      const hasFile  = !!req.file;
+
+      if (!text && !hasFile) {
+        return res.status(400).json({ message: 'Please provide a text description or upload an image.' });
+      }
+
+      const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+      if (!GEMINI_API_KEY) {
+        return res.status(503).json({ message: 'Gemini API not configured.' });
+      }
+
+      // Check credits
+      const user = await User.findById(req.userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+      await refreshFreeCreditsIfNeeded(user);
+
+      const totalAvail = (user.freeCredits ?? 0) + (user.credits ?? 0);
+      if (totalAvail < JSON_PROMPT_COST) {
+        return res.status(402).json({ message: `Insufficient credits — need ${JSON_PROMPT_COST}` });
+      }
+
+      // Build Gemini contents
+      const userParts = [];
+
+      if (hasFile) {
+        userParts.push({ inlineData: { mimeType: req.file.mimetype, data: req.file.buffer.toString('base64') } });
+      }
+      userParts.push({ text: text || 'Analyze this image and build a JSON prompt for it.' });
+
+      const geminiBody = {
+        system_instruction: { parts: [{ text: JSON_SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: userParts }],
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.4 },
+      };
+
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${JSON_PROMPT_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(60000),
+          body: JSON.stringify(geminiBody),
+        }
+      );
+
+      if (!geminiRes.ok) {
+        const errBody = await geminiRes.json().catch(() => ({}));
+        console.error('json-prompt Gemini error:', errBody);
+        return res.status(502).json({ message: 'AI service unavailable, please retry.' });
+      }
+
+      const data  = await geminiRes.json();
+      const parts = data.candidates?.[0]?.content?.parts ?? [];
+      const raw   = parts.map(p => p.text ?? '').join('').trim();
+
+      if (!raw) {
+        return res.status(502).json({ message: 'AI returned empty response, please retry.' });
+      }
+
+      // Strip markdown fences if present
+      const cleaned = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+
+      // Split explanation (text before first '{') and JSON (first '{' to last '}')
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd   = cleaned.lastIndexOf('}');
+      let explanation = '';
+      let jsonPrompt  = null;
+
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        explanation = cleaned.slice(0, jsonStart).trim();
+        const jsonStr = cleaned.slice(jsonStart, jsonEnd + 1);
+        try {
+          jsonPrompt = JSON.parse(jsonStr);
+        } catch {
+          // If JSON parse fails, return the raw text so user can still see it
+          return res.json({
+            explanation: 'Could not parse JSON — raw output shown below.',
+            rawText: raw,
+            creditsLeft: user.credits,
+            freeCreditsLeft: user.freeCredits,
+          });
+        }
+      } else {
+        explanation = raw;
+      }
+
+      // Deduct credits
+      const { ok, freeDeducted, paidDeducted } = await deductCredits(user, JSON_PROMPT_COST);
+      if (!ok) {
+        return res.status(402).json({ message: `Insufficient credits — need ${JSON_PROMPT_COST}` });
+      }
+      await recordDeductTransactions(user._id, 'json-prompt', `JSON Prompt Builder — ${JSON_PROMPT_MODEL}`, freeDeducted, paidDeducted, user.freeCredits, user.credits);
+
+      res.json({ explanation, jsonPrompt, creditsLeft: user.credits, freeCreditsLeft: user.freeCredits });
+    } catch (error) {
+      console.error('json-prompt error:', error);
+      res.status(500).json({ message: 'Processing failed, please retry.' });
+    }
+  }
+);
+
 // Image proxy — lets html2canvas capture cross-origin images without CORS errors.
 // Serves local /output/ files directly; fetches external URLs server-side.
 // No auth required (images are already public); rate-limited by the global limiter.

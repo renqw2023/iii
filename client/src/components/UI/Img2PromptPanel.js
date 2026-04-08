@@ -27,6 +27,7 @@ import {
   RATIOS_IMG as RATIOS, RESOLUTIONS, REVERSE_MODELS,
   SparklesIcon,
 } from '../Generation/constants';
+import JsonPromptTab from '../Generation/JsonPromptTab';
 
 /* ═══════════════════════════════════════════════
    Tab 1 — Reverse Prompt（图生文 → 文生图）
@@ -1130,7 +1131,7 @@ const VideoTab = ({ onStartGeneration, prefillJob, onPrefillConsumed }) => {
    Main Panel
 ═══════════════════════════════════════════════ */
 const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefillConsumed }) => {
-  const [tab, setTab] = useState('reverse'); // 'reverse' | 'generate'
+  const [tab, setTab] = useState('reverse'); // 'reverse' | 'generate' | 'json'
 
   useEffect(() => {
     if (!open) setTab('reverse');
@@ -1181,20 +1182,19 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
           </button>
         </div>
 
-        {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: 4, padding: '4px', backgroundColor: MUTED, borderRadius: 10, flexShrink: 0 }}>
-          <button style={TAB_STYLE(tab === 'reverse')} onClick={() => setTab('reverse')}>
-            Generate Image
-          </button>
-          <button style={TAB_STYLE(tab === 'generate')} onClick={() => setTab('generate')}>
-            Generate Video
-          </button>
+        {/* Tab switcher — 3 tabs */}
+        <div style={{ display: 'flex', gap: 3, padding: '3px', backgroundColor: MUTED, borderRadius: 10, flexShrink: 0 }}>
+          <button style={TAB_STYLE(tab === 'reverse')}  onClick={() => setTab('reverse')}>Image</button>
+          <button style={TAB_STYLE(tab === 'generate')} onClick={() => setTab('generate')}>Video</button>
+          <button style={TAB_STYLE(tab === 'json')}     onClick={() => setTab('json')}>JSON</button>
         </div>
 
         {/* Tab content */}
         {tab === 'reverse'
           ? <ReverseTab onClose={onClose} onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />
-          : <VideoTab onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />
+          : tab === 'generate'
+            ? <VideoTab onStartGeneration={onStartGeneration} prefillJob={prefillJob} onPrefillConsumed={onPrefillConsumed} />
+            : <JsonPromptTab onGenerated={onStartGeneration} />
         }
 
       </div>

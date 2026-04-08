@@ -106,8 +106,6 @@ const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _on
     return (
         <motion.div
             ref={(el) => { cardRef.current = el; ref(el); }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -2 }}
             style={{ gridRowEnd: `span ${gridSpan}` }}
             className="gallery-card group cursor-pointer"
@@ -126,7 +124,6 @@ const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _on
                     <img
                         src={prompt.previewImage}
                         alt={prompt.title || prompt.prompt?.substring(0, 80) || 'AI generated image'}
-                        loading="lazy"
                         decoding="async"
                         onLoad={handleImageLoad}
                         style={{

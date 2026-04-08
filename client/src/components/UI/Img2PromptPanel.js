@@ -22,27 +22,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { generateAPI } from '../../services/generateApi';
 import { useGeneration } from '../../contexts/GenerationContext';
 
-const MUTED   = 'rgba(0,0,0,0.04)';
-const MUTED_H = 'rgba(0,0,0,0.07)';
-const REVERSE_COST = 2;
-
-const RATIOS = ['1:1', '4:3', '3:4', '16:9'];
-const RESOLUTIONS = ['2K', '4K'];
-
-// 反推 Prompt 可用模型列表
-const REVERSE_MODELS = [
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash',      provider: 'Google', badge: null   },
-  { id: 'gemini-2.5-flash',       name: 'Gemini 2.5 Flash',    provider: 'Google', badge: 'Fast' },
-];
-
-
-/* ── SparklesIcon (MeiGen 原版双星 SVG) ── */
-const SparklesIcon = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
-    <path d="M11.85 4.22L11.72 3.24C11.69 3 11.49 2.83 11.25 2.83C11.01 2.83 10.81 3 10.78 3.24L10.65 4.22C10.27 7.08 8.01 9.34 5.14 9.72L4.16 9.85C3.93 9.89 3.75 10.09 3.75 10.33C3.75 10.56 3.93 10.77 4.16 10.8L5.14 10.93C8.01 11.31 10.27 13.57 10.65 16.43L10.78 17.41C10.81 17.65 11.01 17.83 11.25 17.83C11.49 17.83 11.69 17.65 11.72 17.41L11.85 16.43C12.23 13.57 14.49 11.31 17.36 10.93L18.34 10.8C18.57 10.77 18.75 10.56 18.75 10.33C18.75 10.09 18.57 9.89 18.34 9.85L17.36 9.72C14.49 9.34 12.23 7.08 11.85 4.22Z"
-          stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
-  </svg>
-);
+import {
+  MUTED, MUTED_H, REVERSE_COST,
+  RATIOS_IMG as RATIOS, RESOLUTIONS, REVERSE_MODELS,
+  SparklesIcon,
+} from '../Generation/constants';
 
 /* ═══════════════════════════════════════════════
    Tab 1 — Reverse Prompt（图生文 → 文生图）

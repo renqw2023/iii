@@ -7,6 +7,7 @@ const config = require('../config');
 const SrefStyle = require('../models/SrefStyle');
 const GalleryPrompt = require('../models/GalleryPrompt');
 const SeedancePrompt = require('../models/SeedancePrompt');
+const { notifyIndexNow } = require('../utils/indexNow');
 
 /**
  * SEO相关路由
@@ -586,6 +587,48 @@ router.post('/submit-sitemap', async (req, res) => {
       message: 'Failed to submit sitemap',
       error: error.message
     });
+  }
+});
+
+/**
+ * POST /api/seo/indexnow
+ * Submit recently updated URLs to Bing/Yandex via IndexNow protocol.
+ * Body: { limit: 200 }  — how many recent items per collection to include
+ */
+router.post('/indexnow', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.body?.limit) || 200, 2000);
+    const base = config.app.baseUrl || 'https://iii.pics';
+
+    // Static pages
+    const staticUrls = ['/', '/explore', '/gallery', '/seedance', '/create', '/midjourney-sref', '/seedance-guide', '/nanobanana', '/gpt-image']
+      .map(p => `${base}${p}`);
+
+    // Dynamic pages — most recent items
+    const [srefs, gallery, seedance] = await Promise.all([
+      SrefStyle.find({ isActive: true }, '_id').sort({ createdAt: -1 }).limit(limit).lean(),
+      GalleryPrompt.find({}, '_id').sort({ createdAt: -1 }).limit(limit).lean(),
+      SeedancePrompt.find({}, '_id').sort({ createdAt: -1 }).limit(limit).lean(),
+    ]);
+
+    const dynamicUrls = [
+      ...srefs.map(s => `${base}/explore/${s._id}`),
+      ...gallery.map(g => `${base}/gallery/${g._id}`),
+      ...seedance.map(s => `${base}/seedance/${s._id}`),
+    ];
+
+    const allUrls = [...staticUrls, ...dynamicUrls];
+    const result = await notifyIndexNow(allUrls);
+
+    res.json({
+      success: result.ok,
+      submitted: allUrls.length,
+      breakdown: { static: staticUrls.length, sref: srefs.length, gallery: gallery.length, seedance: seedance.length },
+      httpStatus: result.status,
+    });
+  } catch (error) {
+    console.error('[IndexNow] Error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

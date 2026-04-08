@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
 import {
@@ -170,13 +170,25 @@ export default function SEOTab() {
     }
   );
 
-  // ── Submit mutation ──
+  // ── Submit sitemap mutation ──
   const submitMutation = useMutation(
     (engines) => axios.post('/api/seo/submit-sitemap', { engines }).then(r => r.data),
     {
       onSuccess: (data) => {
         setSubmitResults(data.results);
         setTimeout(() => setSubmitResults(null), 8000);
+      },
+    }
+  );
+
+  // ── IndexNow mutation ──
+  const [indexNowResult, setIndexNowResult] = React.useState(null);
+  const indexNowMutation = useMutation(
+    () => axios.post('/api/seo/indexnow', { limit: 500 }).then(r => r.data),
+    {
+      onSuccess: (data) => {
+        setIndexNowResult(data);
+        setTimeout(() => setIndexNowResult(null), 8000);
       },
     }
   );
@@ -482,6 +494,33 @@ export default function SEOTab() {
         <p className="mt-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Sends a ping to each search engine's sitemap indexing endpoint. Google / Bing / Baidu may take days to process.
         </p>
+
+        {/* IndexNow */}
+        <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--border-light)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>IndexNow (Bing / Yandex)</span>
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>Instant</span>
+          </div>
+          {indexNowResult && (
+            <div className="mb-3 p-3 rounded-lg text-xs" style={{ background: indexNowResult.success ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', color: indexNowResult.success ? '#10b981' : '#ef4444' }}>
+              {indexNowResult.success
+                ? `✓ Submitted ${indexNowResult.submitted} URLs (${indexNowResult.breakdown?.sref} sref · ${indexNowResult.breakdown?.gallery} gallery · ${indexNowResult.breakdown?.seedance} video)`
+                : `✗ Failed — HTTP ${indexNowResult.httpStatus}`}
+            </div>
+          )}
+          <button
+            onClick={() => indexNowMutation.mutate()}
+            disabled={indexNowMutation.isLoading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-medium transition-all hover:opacity-80"
+            style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.25)' }}
+          >
+            {indexNowMutation.isLoading ? <Loader size={12} className="animate-spin" /> : <Globe size={12} />}
+            Push URLs to IndexNow
+          </button>
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            Notifies Bing instantly of new/updated URLs (up to 500 recent items). Key: <code style={{ fontSize: 10 }}>43c40c7bd4267ddcbe17f64665fc0d13</code>
+          </p>
+        </div>
       </Card>
 
       {/* ── Bot Crawl Simulator ── */}

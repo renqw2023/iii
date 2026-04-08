@@ -6,6 +6,7 @@ import axios from 'axios';
 import { Upload, Copy, Check, Loader2, ImageOff, Coins } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import JsonPromptTab from '../components/Generation/JsonPromptTab';
 
 const Img2Prompt = () => {
   useImg2PromptSEO();
@@ -13,12 +14,14 @@ const Img2Prompt = () => {
   const { t } = useTranslation();
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
   const fileInputRef = useRef(null);
-  const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
+
+  const [activeTab,  setActiveTab]  = useState('reverse'); // 'reverse' | 'json'
+  const [preview,    setPreview]    = useState(null);
+  const [file,       setFile]       = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [isLoading,  setIsLoading]  = useState(false);
+  const [result,     setResult]     = useState('');
+  const [copied,     setCopied]     = useState(false);
 
   const handleFile = (f) => {
     if (!f || !f.type.startsWith('image/')) {
@@ -40,18 +43,12 @@ const Img2Prompt = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragOver  = (e) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = () => setIsDragging(false);
 
   const handleSubmit = async () => {
-    if (!isAuthenticated) {
-      openLoginModal();
-      return;
-    }
-    if (!file) {
-      toast.error(t('img2prompt.toast.uploadFirst'));
-      return;
-    }
+    if (!isAuthenticated) { openLoginModal(); return; }
+    if (!file) { toast.error(t('img2prompt.toast.uploadFirst')); return; }
 
     setIsLoading(true);
     setResult('');
@@ -60,10 +57,7 @@ const Img2Prompt = () => {
       formData.append('image', file);
       const token = localStorage.getItem('token');
       const res = await axios.post('/api/tools/img2prompt', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });
       setResult(res.data.prompt);
       updateUser({ credits: res.data.creditsLeft });
@@ -90,8 +84,9 @@ const Img2Prompt = () => {
   return (
     <div className="min-h-screen py-12 px-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className="max-w-2xl mx-auto">
+
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
             {t('img2prompt.title')}
           </h1>
@@ -105,117 +100,124 @@ const Img2Prompt = () => {
           )}
         </div>
 
-        {/* Upload zone */}
-        <div
-          className="relative rounded-2xl border-2 border-dashed transition-colors cursor-pointer mb-6 overflow-hidden"
-          style={{
-            borderColor: isDragging ? 'var(--accent-primary)' : 'var(--border-color)',
-            backgroundColor: isDragging ? 'rgba(99,102,241,0.05)' : 'var(--bg-card)',
-            minHeight: preview ? 'auto' : 240,
-          }}
-          onClick={() => fileInputRef.current?.click()}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])}
-          />
-
-          {preview ? (
-            <img
-              src={preview}
-              alt="preview"
-              className="w-full max-h-80 object-contain"
-              style={{ display: 'block' }}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center h-60 gap-4">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
-                <Upload size={28} style={{ color: 'var(--text-tertiary)' }} />
-              </div>
-              <div className="text-center">
-                <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('img2prompt.upload.label')}</p>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('img2prompt.upload.hint')}</p>
-              </div>
-            </div>
-          )}
-
-          {preview && (
-            <div
-              className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-              style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-            >
-              <div className="flex flex-col items-center gap-2 text-white">
-                <ImageOff size={24} />
-                <span className="text-sm">{t('img2prompt.upload.change')}</span>
-              </div>
-            </div>
-          )}
+        {/* Tab switcher */}
+        <div className="flex gap-1 p-1 rounded-xl mb-6"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          {[
+            { key: 'reverse', label: 'Reverse Prompt' },
+            { key: 'json',    label: 'JSON Builder'   },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setActiveTab(key)}
+              className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+              style={{
+                backgroundColor: activeTab === key ? 'var(--accent-primary)' : 'transparent',
+                color: activeTab === key ? '#fff' : 'var(--text-secondary)',
+              }}>
+              {label}
+            </button>
+          ))}
         </div>
 
-        {/* Submit */}
-        <button
-          onClick={handleSubmit}
-          disabled={isLoading || !file}
-          className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity flex items-center justify-center gap-2 mb-8"
-          style={{
-            backgroundColor: 'var(--accent-primary)',
-            color: '#fff',
-            opacity: isLoading || !file ? 0.6 : 1,
-          }}
-        >
-          {isLoading ? (
-            <><Loader2 size={16} className="animate-spin" /> {t('img2prompt.generating')}</>
-          ) : (
-            <><Upload size={16} /> {t('img2prompt.generate')}</>
-          )}
-        </button>
-
-        {/* Result */}
-        {result && (
-          <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('img2prompt.result')}</h2>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                style={{
-                  backgroundColor: copied ? 'rgba(16,185,129,0.15)' : 'var(--bg-tertiary)',
-                  color: copied ? '#10b981' : 'var(--text-secondary)',
-                }}
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-                {copied ? t('common.copied') : t('common.copy')}
-              </button>
-            </div>
-            <p
-              className="text-sm leading-relaxed whitespace-pre-wrap"
-              style={{ color: 'var(--text-primary)', userSelect: 'text' }}
+        {/* ── Tab: Reverse Prompt ── */}
+        {activeTab === 'reverse' && (
+          <>
+            {/* Upload zone */}
+            <div
+              className="relative rounded-2xl border-2 border-dashed transition-colors cursor-pointer mb-6 overflow-hidden"
+              style={{
+                borderColor: isDragging ? 'var(--accent-primary)' : 'var(--border-color)',
+                backgroundColor: isDragging ? 'rgba(99,102,241,0.05)' : 'var(--bg-card)',
+                minHeight: preview ? 'auto' : 240,
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
             >
-              {result}
-            </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files[0] && handleFile(e.target.files[0])}
+              />
+
+              {preview ? (
+                <img src={preview} alt="preview" className="w-full max-h-80 object-contain" style={{ display: 'block' }} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-60 gap-4">
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                    <Upload size={28} style={{ color: 'var(--text-tertiary)' }} />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('img2prompt.upload.label')}</p>
+                    <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('img2prompt.upload.hint')}</p>
+                  </div>
+                </div>
+              )}
+
+              {preview && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                  <div className="flex flex-col items-center gap-2 text-white">
+                    <ImageOff size={24} />
+                    <span className="text-sm">{t('img2prompt.upload.change')}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !file}
+              className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity flex items-center justify-center gap-2 mb-8"
+              style={{ backgroundColor: 'var(--accent-primary)', color: '#fff', opacity: isLoading || !file ? 0.6 : 1 }}
+            >
+              {isLoading
+                ? <><Loader2 size={16} className="animate-spin" /> {t('img2prompt.generating')}</>
+                : <><Upload size={16} /> {t('img2prompt.generate')}</>
+              }
+            </button>
+
+            {/* Result */}
+            {result && (
+              <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('img2prompt.result')}</h2>
+                  <button onClick={handleCopy}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={{ backgroundColor: copied ? 'rgba(16,185,129,0.15)' : 'var(--bg-tertiary)', color: copied ? '#10b981' : 'var(--text-secondary)' }}>
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
+                    {copied ? t('common.copied') : t('common.copy')}
+                  </button>
+                </div>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-primary)', userSelect: 'text' }}>
+                  {result}
+                </p>
+              </div>
+            )}
+
+            {!isAuthenticated && (
+              <div className="text-center mt-6">
+                <p style={{ color: 'var(--text-secondary)' }}>
+                  <button onClick={openLoginModal} className="underline" style={{ color: 'var(--accent-primary)' }}>
+                    {t('img2prompt.login')}
+                  </button>
+                  {' '}{t('img2prompt.loginPrompt', { loginLink: '' }).replace('<1></1>', '').trim()}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Tab: JSON Builder ── */}
+        {activeTab === 'json' && (
+          <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <JsonPromptTab onGenerated={() => navigate('/generate-history')} />
           </div>
         )}
 
-        {!isAuthenticated && (
-          <div className="text-center mt-6">
-            <p style={{ color: 'var(--text-secondary)' }}>
-              <button
-                onClick={openLoginModal}
-                className="underline"
-                style={{ color: 'var(--accent-primary)' }}
-              >
-                {t('img2prompt.login')}
-              </button>
-              {' '}{t('img2prompt.loginPrompt', { loginLink: '' }).replace('<1></1>', '').trim()}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

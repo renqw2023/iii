@@ -47,8 +47,14 @@ const Layout = () => {
         <Sidebar onCreditsClick={() => setCreditsOpen(true)} onInviteClick={() => setInviteOpen(true)} />
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      {/* Main content area — shrinks right when AI panel is open */}
+      <div
+        className="flex-1 flex flex-col min-w-0 min-h-screen"
+        style={{
+          paddingRight: img2promptOpen ? 336 : 0,
+          transition: 'padding-right 0.2s ease-out',
+        }}
+      >
         {/* pb-24 on mobile for MobileDock clearance; pb-20 on desktop for DesktopDock */}
         <main className="flex-1 pb-24 md:pb-20">
           <Outlet />

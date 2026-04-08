@@ -183,8 +183,8 @@ router.post(
    Body (multipart):   { text?, image: File }
    Response: { explanation, jsonPrompt, creditsLeft, freeCreditsLeft }
 ─────────────────────────────────────────────────────────────── */
-const JSON_PROMPT_COST  = 3;
-const JSON_PROMPT_MODEL = 'gemini-2.5-flash';
+const JSON_PROMPT_COST  = 5;
+const JSON_PROMPT_MODEL = 'gemini-3-flash-preview';
 
 const JSON_SYSTEM_PROMPT = `You are an expert prompt engineer for Nano Banana Pro (a high-quality AI image generation model).
 Convert the user's input into a detailed, valid JSON prompt. Follow these rules strictly:

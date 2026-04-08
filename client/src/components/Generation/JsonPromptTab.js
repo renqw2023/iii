@@ -10,7 +10,7 @@ import { useGeneration } from '../../contexts/GenerationContext';
 import { generateAPI } from '../../services/generateApi';
 import { MUTED, MUTED_H, LABEL_STYLE } from './constants';
 
-const JSON_COST    = 3;
+const JSON_COST    = 5;
 const GEN_MODEL_ID = 'gemini3-pro'; // Nanobanana Pro
 
 /* ═══════════════════════════════════════════════════

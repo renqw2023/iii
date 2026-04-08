@@ -55,7 +55,7 @@ const Veo31Gallery = () => {
           copy any prompt and start generating instantly.
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/create" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem', background: ACCENT, color: '#fff', borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
+          <Link to="/generate" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem', background: ACCENT, color: '#fff', borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
             <Play size={15} /> Try Veo 3.1 Free
           </Link>
           <Link to="/seedance" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem', background: 'transparent', color: '#60a5fa', border: `1.5px solid ${ACCENT_BORDER}`, borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
@@ -160,7 +160,7 @@ const Veo31Gallery = () => {
           <p style={{ color: '#64748b', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
             Free daily credits — generate cinematic AI videos with Veo 3.1 on III.PICS. No subscription required.
           </p>
-          <Link to="/create" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', background: ACCENT, color: '#fff', borderRadius: '0.625rem', fontWeight: 700, textDecoration: 'none' }}>
+          <Link to="/generate" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', background: ACCENT, color: '#fff', borderRadius: '0.625rem', fontWeight: 700, textDecoration: 'none' }}>
             Generate Video Free <ArrowRight size={16} />
           </Link>
         </div>

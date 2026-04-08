@@ -59,7 +59,7 @@ const Seedance20Guide = () => {
           <Link to="/seedance" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem', background: ACCENT, color: '#fff', borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
             <Play size={15} /> Browse All Videos
           </Link>
-          <Link to="/create" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem', background: 'transparent', color: '#a78bfa', border: `1.5px solid ${ACCENT_BORDER}`, borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
+          <Link to="/generate" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 1.5rem', background: 'transparent', color: '#a78bfa', border: `1.5px solid ${ACCENT_BORDER}`, borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none', fontSize: '0.95rem' }}>
             <Zap size={15} /> Try Free Generator
           </Link>
         </div>
@@ -178,7 +178,7 @@ const Seedance20Guide = () => {
             <Link to="/seedance" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.75rem', background: ACCENT, color: '#fff', borderRadius: '0.625rem', fontWeight: 700, textDecoration: 'none' }}>
               Browse Prompts <ArrowRight size={16} />
             </Link>
-            <Link to="/create" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: 'transparent', color: '#a78bfa', border: `1.5px solid ${ACCENT_BORDER}`, borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none' }}>
+            <Link to="/generate" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', background: 'transparent', color: '#a78bfa', border: `1.5px solid ${ACCENT_BORDER}`, borderRadius: '0.625rem', fontWeight: 600, textDecoration: 'none' }}>
               Generate Now <Zap size={14} />
             </Link>
           </div>

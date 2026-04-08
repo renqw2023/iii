@@ -61,6 +61,7 @@ const SeedanceGuide        = lazy(() => import('./pages/Landing/SeedanceGuide'))
 const Wan27Gallery         = lazy(() => import('./pages/Landing/Wan27Gallery'));
 const Veo31Gallery         = lazy(() => import('./pages/Landing/Veo31Gallery'));
 const Seedance20Guide      = lazy(() => import('./pages/Landing/Seedance20Guide'));
+const GeneratePage         = lazy(() => import('./pages/GeneratePage'));
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
@@ -160,6 +161,7 @@ function App() {
                         <Route path="post/:id" element={<PostDetail />} />
                         <Route path="user/:id" element={<Profile />} />
                         <Route path="me" element={<MePage />} />
+                        <Route path="generate" element={<GeneratePage />} />
                       </Route>
 
                       <Route path="/" element={<DocsLayout />}>

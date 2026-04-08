@@ -1,0 +1,64 @@
+# III.PICS — AI Art Gallery & Midjourney Style Reference
+# https://iii.pics
+# Updated: 2026-04-07
+
+## About
+III.PICS is a free AI art gallery and Midjourney style reference hub.
+We index 1,300+ Midjourney --sref style codes with visual previews,
+11,000+ AI image prompts from top creators, and a growing AI video gallery
+powered by Seedance 2.0.
+
+## Key Pages
+
+### Midjourney Sref Style Reference
+URL: https://iii.pics/explore
+Description: Browse 1,300+ Midjourney --sref style codes, each with visual previews.
+Copy any sref code instantly and use it in your Midjourney prompts.
+
+### AI Prompt Gallery
+URL: https://iii.pics/gallery
+Description: 11,000+ AI-generated images with their original prompts from NanoBanana Pro,
+GPT Image 1.5, and Midjourney. Free inspiration for AI artists.
+
+### AI Video Gallery (Seedance)
+URL: https://iii.pics/seedance
+Description: Playable AI video gallery generated with Seedance 2.0.
+Includes text-to-video and image-to-video examples with original prompts.
+
+### AI Image Generator
+URL: https://iii.pics/create
+Description: Generate AI images with multiple models: Gemini Flash, Imagen 4,
+GPT Image 1.5, DALL·E 3, Wan2.7. Free daily credits, no signup required for browsing.
+
+### Midjourney Sref Guide
+URL: https://iii.pics/midjourney-sref
+Description: Complete guide to Midjourney --sref style reference codes.
+Explains how to browse, copy, and apply sref codes in Midjourney prompts.
+
+### Seedance AI Video Guide
+URL: https://iii.pics/seedance-guide
+Description: Guide to Seedance 2.0 AI video generation.
+Text-to-video and image-to-video examples with downloadable prompts.
+
+### NanoBanana Pro Prompts
+URL: https://iii.pics/nanobanana
+Description: Gallery of NanoBanana Pro AI image prompts with visual results.
+
+### GPT Image 1.5 Gallery
+URL: https://iii.pics/gpt-image
+Description: GPT Image 1.5 (OpenAI) generated images with their prompts.
+
+## Content Policy
+All AI-generated images are created by independent creators and community members.
+III.PICS does not generate NSFW content. All content is family-safe.
+
+## Data Coverage
+- Midjourney sref codes: 1,300+
+- AI prompt gallery items: 11,000+
+- AI videos: 1,200+
+- Daily updates: Yes
+- Languages: English (primary), Chinese, Japanese
+
+## Contact
+Website: https://iii.pics
+Twitter: https://twitter.com/iii_pics

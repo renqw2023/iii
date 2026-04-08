@@ -167,6 +167,12 @@ const SeedanceModal = () => {
                         name: prompt.title || 'Seedance Video',
                         description: prompt.prompt?.substring(0, 300),
                         thumbnailUrl: prompt.thumbnailUrl || prompt.previewImage || '',
+                        duration: 'PT10S',
+                        publisher: {
+                            '@type': 'Organization',
+                            name: 'III.PICS',
+                            logo: { '@type': 'ImageObject', url: 'https://iii.pics/logo192.png', width: 192, height: 192 }
+                        },
                         uploadDate: prompt.createdAt,
                         contentUrl: prompt.videoUrl || '',
                         url: `https://iii.pics/seedance/${id}`,

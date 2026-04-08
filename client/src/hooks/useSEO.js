@@ -336,16 +336,15 @@ export const useMidjourneySrefSEO = () => {
     type: 'website',
     structuredData: {
       '@context': 'https://schema.org',
-      '@type': 'HowTo',
-      'name': 'How to Use Midjourney --sref Style Reference Codes',
+      '@type': 'Article',
+      'headline': 'How to Use Midjourney --sref Style Reference Codes',
       'description': 'A complete guide to using Midjourney --sref style reference codes to control the artistic style of your AI-generated images.',
       'url': 'https://iii.pics/midjourney-sref',
-      'step': [
-        { '@type': 'HowToStep', 'position': 1, 'name': 'Browse the sref gallery', 'text': 'Explore over 1,300 Midjourney --sref style codes with visual previews on III.PICS.' },
-        { '@type': 'HowToStep', 'position': 2, 'name': 'Find your style', 'text': 'Click any style card to see full-size previews and explore related images generated with that sref code.' },
-        { '@type': 'HowToStep', 'position': 3, 'name': 'Copy the sref code', 'text': 'Click the copy button to instantly copy the --sref code to your clipboard.' },
-        { '@type': 'HowToStep', 'position': 4, 'name': 'Use in Midjourney', 'text': 'Paste the code at the end of your Midjourney prompt: /imagine [your prompt] --sref [code]' }
-      ]
+      'author': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' },
+      'publisher': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics', 'logo': { '@type': 'ImageObject', 'url': 'https://iii.pics/logo192.png' } },
+      'image': 'https://iii.pics/og-default.jpg',
+      'datePublished': '2025-01-01',
+      'dateModified': '2026-04-07'
     }
   });
 };
@@ -401,16 +400,15 @@ export const useSeedanceGuideSEO = () => {
     type: 'website',
     structuredData: {
       '@context': 'https://schema.org',
-      '@type': 'HowTo',
-      'name': 'How to Use Seedance 2.0 for AI Video Generation',
+      '@type': 'Article',
+      'headline': 'How to Use Seedance 2.0 for AI Video Generation',
       'description': 'A guide to creating AI videos with Seedance 2.0, including text-to-video and image-to-video prompts.',
       'url': 'https://iii.pics/seedance-guide',
-      'step': [
-        { '@type': 'HowToStep', 'position': 1, 'name': 'Browse video examples', 'text': 'Explore our gallery of Seedance 2.0 AI-generated videos with their original prompts.' },
-        { '@type': 'HowToStep', 'position': 2, 'name': 'Find your style', 'text': 'Click any video to play it and see the full prompt used to generate it.' },
-        { '@type': 'HowToStep', 'position': 3, 'name': 'Copy the prompt', 'text': 'Copy the text-to-video or image-to-video prompt with one click.' },
-        { '@type': 'HowToStep', 'position': 4, 'name': 'Generate with Seedance', 'text': 'Paste the prompt into Seedance 2.0 and generate your own AI video.' }
-      ]
+      'author': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' },
+      'publisher': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics', 'logo': { '@type': 'ImageObject', 'url': 'https://iii.pics/logo192.png' } },
+      'image': 'https://iii.pics/og-default.jpg',
+      'datePublished': '2025-01-01',
+      'dateModified': '2026-04-07'
     }
   });
 };

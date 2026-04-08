@@ -2,7 +2,7 @@
  * Bot detection utility
  * Returns true if the User-Agent matches known search engine / social crawlers.
  */
-const BOT_UA = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|applebot|semrushbot|ahrefsbot|rogerbot/i;
+const BOT_UA = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|applebot|semrushbot|ahrefsbot|rogerbot|gptbot|oai-searchbot|chatgpt-user|claudebot|anthropic-ai|perplexitybot|google-extended|ccbot|youbot|bytespider/i;
 
 function isBot(req) {
   return BOT_UA.test(req.headers['user-agent'] || '');

@@ -58,6 +58,9 @@ const MidjourneySrefGuide  = lazy(() => import('./pages/Landing/MidjourneySrefGu
 const NanobananaGallery    = lazy(() => import('./pages/Landing/NanobananaGallery'));
 const GptImageGallery      = lazy(() => import('./pages/Landing/GptImageGallery'));
 const SeedanceGuide        = lazy(() => import('./pages/Landing/SeedanceGuide'));
+const Wan27Gallery         = lazy(() => import('./pages/Landing/Wan27Gallery'));
+const Veo31Gallery         = lazy(() => import('./pages/Landing/Veo31Gallery'));
+const Seedance20Guide      = lazy(() => import('./pages/Landing/Seedance20Guide'));
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
@@ -138,6 +141,9 @@ function App() {
                         <Route path="nanobanana" element={<NanobananaGallery />} />
                         <Route path="gpt-image" element={<GptImageGallery />} />
                         <Route path="seedance-guide" element={<SeedanceGuide />} />
+                        <Route path="wan27" element={<Wan27Gallery />} />
+                        <Route path="veo31" element={<Veo31Gallery />} />
+                        <Route path="seedance-20" element={<Seedance20Guide />} />
                       </Route>
 
                       {/* 内容页 — 带全局侧边栏（含 filter 集成页） */}

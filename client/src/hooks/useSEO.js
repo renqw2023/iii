@@ -246,9 +246,9 @@ export const useGallerySEO = () => {
  */
 export const useSeedanceSEO = () => {
   useSEO({
-    title: 'AI Video Gallery — III.PICS | Seedance & Kling Video Prompts',
-    description: 'Explore AI-generated video clips made with Seedance 2.0, Kling, and Wan. Browse text-to-video and image-to-video prompts with playable previews.',
-    keywords: 'AI video generator, Seedance prompts, Kling AI video, text to video AI, image to video AI, AI video prompts, AI animation, Wan video, III.PICS video',
+    title: 'AI Video Gallery — III.PICS | Seedance 2.0, Veo 3.1 & Wan2.7 Video Prompts',
+    description: 'Explore AI-generated video clips made with Seedance 2.0, Google Veo 3.1, and Wan2.7. Browse text-to-video and image-to-video prompts with playable previews. Free AI video inspiration updated daily.',
+    keywords: 'AI video generator, Seedance 2.0 prompts, Seedance AI video, Google Veo 3.1, Veo 3 text to video, Wan2.7 video, Wan 2.7 image to video, Kling AI video, text to video AI, image to video AI, AI video prompts, AI animation, best AI video prompts 2025, III.PICS video',
     type: 'website'
   });
 };
@@ -260,7 +260,7 @@ export const useImg2PromptSEO = () => {
   useSEO({
     title: 'AI Image Generator & Reverse Prompt Tool — III.PICS',
     description: 'Generate AI images from text prompts, or upload any image to instantly extract its prompt. Free AI art generator powered by Gemini, DALL·E, and more.',
-    keywords: 'AI image generator, image to prompt, reverse prompt, img2prompt, text to image AI, AI art generator free, Gemini image, DALL-E prompts, AI prompt extractor, III.PICS generate',
+    keywords: 'AI image generator, image to prompt, reverse prompt, img2prompt, text to image AI, AI art generator free, Gemini image, Imagen 4 AI, DALL-E 3 prompts, Wan2.7 image generator, wan 2.7 text to image, Veo 3.1 video generator, google veo 3, AI prompt extractor, III.PICS generate',
     type: 'website',
     structuredData: {
       '@context': 'https://schema.org',
@@ -419,6 +419,78 @@ export const useSeedanceGuideSEO = () => {
       'publisher': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics', 'logo': { '@type': 'ImageObject', 'url': 'https://iii.pics/logo192.png' } },
       'image': 'https://iii.pics/og-default.jpg',
       'datePublished': '2025-01-01',
+      'dateModified': '2026-04-07'
+    }
+  });
+};
+
+/**
+ * /wan27 — Wan2.7 AI Image & Video Generator
+ */
+export const useWan27SEO = () => {
+  useSEO({
+    title: 'Wan2.7 AI Image Generator — Prompts & Examples | III.PICS',
+    description: 'Explore Wan2.7 AI-generated images and videos with their original prompts. Wan 2.7 by Alibaba Cloud supports text-to-image, image-to-image, and image-to-video generation. Browse free examples and copy proven prompts.',
+    keywords: 'wan2.7, wan 2.7 AI, wan2.7 image generator, wan2.7 text to image, wan2.7 image to video, wan2.7 prompts, alibaba wan AI, wan2.7 examples, wan 2.7 model, wan2.7 vs midjourney, best wan2.7 prompts 2025, III.PICS wan',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      'headline': 'Wan2.7 AI Image Generator — Prompts & Examples',
+      'description': 'A curated gallery of Wan2.7 AI-generated images and videos with original prompts. Learn how to use Wan 2.7 for text-to-image and image-to-video generation.',
+      'url': 'https://iii.pics/wan27',
+      'author': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' },
+      'publisher': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics', 'logo': { '@type': 'ImageObject', 'url': 'https://iii.pics/logo192.png' } },
+      'image': 'https://iii.pics/og-default.jpg',
+      'datePublished': '2026-04-07',
+      'dateModified': '2026-04-07'
+    }
+  });
+};
+
+/**
+ * /veo31 — Google Veo 3.1 AI Video Generator
+ */
+export const useVeo31SEO = () => {
+  useSEO({
+    title: 'Google Veo 3.1 AI Video Generator — Prompts & Examples | III.PICS',
+    description: 'Browse Google Veo 3.1 text-to-video prompts and AI video examples. Discover proven Veo 3 prompts for cinematic shots, product videos, and creative animations. Free gallery updated daily.',
+    keywords: 'google veo 3.1, veo 3.1 prompts, veo 3 text to video, veo 3.1 examples, google veo AI video, veo 3.1 video generator, veo 3 cinematic prompts, veo 3.1 vs sora, google veo prompts 2025, veo 3 image to video, best veo 3.1 prompts, III.PICS veo',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      'headline': 'Google Veo 3.1 AI Video Generator — Prompts & Examples',
+      'description': 'A curated gallery of Google Veo 3.1 AI-generated videos with original prompts. Learn how to write effective Veo 3 prompts for cinematic video generation.',
+      'url': 'https://iii.pics/veo31',
+      'author': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' },
+      'publisher': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics', 'logo': { '@type': 'ImageObject', 'url': 'https://iii.pics/logo192.png' } },
+      'image': 'https://iii.pics/og-default.jpg',
+      'datePublished': '2026-04-07',
+      'dateModified': '2026-04-07'
+    }
+  });
+};
+
+/**
+ * /seedance-20 — Seedance 2.0 deep-dive landing page
+ */
+export const useSeedance20SEO = () => {
+  useSEO({
+    title: 'Seedance 2.0 Prompts — Text-to-Video AI Examples & Guide | III.PICS',
+    description: 'Master Seedance 2.0 with proven text-to-video and image-to-video prompts. Browse 1,200+ real Seedance AI video examples, copy prompts in one click, and generate stunning AI videos instantly.',
+    keywords: 'seedance 2.0 prompts, seedance 2.0 text to video, seedance AI video generator, seedance 2.0 examples, seedance 2.0 guide, seedance 2.0 image to video, seedance prompt engineering, best seedance prompts 2025, seedance 2 tutorial, seedance vs kling, seedance vs sora, III.PICS seedance',
+    type: 'website',
+    structuredData: {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      'headline': 'Seedance 2.0 Text-to-Video Prompts — Examples & Guide',
+      'description': 'A complete guide to Seedance 2.0 AI video generation with 1,200+ real prompt examples. Learn text-to-video and image-to-video techniques.',
+      'url': 'https://iii.pics/seedance-20',
+      'author': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics' },
+      'publisher': { '@type': 'Organization', 'name': 'III.PICS', 'url': 'https://iii.pics', 'logo': { '@type': 'ImageObject', 'url': 'https://iii.pics/logo192.png' } },
+      'image': 'https://iii.pics/og-default.jpg',
+      'datePublished': '2026-04-07',
       'dateModified': '2026-04-07'
     }
   });

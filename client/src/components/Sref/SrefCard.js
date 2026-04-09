@@ -1,18 +1,29 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Eye, Check, ExternalLink } from 'lucide-react';
+import { Copy, Heart, Eye, Check, ExternalLink, Zap, ImagePlus, Braces } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FavoriteButton from '../UI/FavoriteButton';
+import { useGeneration } from '../../contexts/GenerationContext';
 import '../Post/LiblibStyleCard.css';
 
 const ROW_HEIGHT = 8;
 const ROW_GAP = 8;
 
+const AI_BTN = {
+  display: 'flex', alignItems: 'center', gap: 3,
+  padding: '3px 7px', borderRadius: 20, border: 'none', cursor: 'pointer',
+  fontSize: 10, fontWeight: 600, color: '#fff',
+  backgroundColor: 'rgba(255,255,255,0.18)',
+  transition: 'background-color 120ms',
+};
+
 const SrefCard = ({ sref, initialFavorited = false }) => {
   const navigate = useNavigate();
+  const { setPrefill } = useGeneration();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hoveredThumb, setHoveredThumb] = useState(null);
   const cardRef = useRef(null);
   const glowRef = useRef(null);
   const [gridSpan, setGridSpan] = useState(38);
@@ -61,6 +72,19 @@ const SrefCard = ({ sref, initialFavorited = false }) => {
     }
   };
 
+  const handleAIAction = useCallback((e, type, imageUrl) => {
+    e.stopPropagation();
+    if (type === 'reverse')   setPrefill({ tab: 'reverse', imageUrl });
+    if (type === 'reference') setPrefill({ tab: 'reverse', addReferenceUrl: imageUrl });
+    if (type === 'json')      setPrefill({ tab: 'json',    imageUrl });
+  }, [setPrefill]);
+
+  const handleThumbDragStart = useCallback((e, imgUrl) => {
+    e.stopPropagation();
+    e.dataTransfer.setData('application/json', JSON.stringify({ image: imgUrl }));
+    e.dataTransfer.effectAllowed = 'copy';
+  }, []);
+
   const handleDragStart = useCallback((e) => {
     if (sref.previewImage) {
       e.dataTransfer.setData('application/json', JSON.stringify({ image: sref.previewImage }));
@@ -103,6 +127,7 @@ const SrefCard = ({ sref, initialFavorited = false }) => {
 
         {sref.previewImage ? (
           <img
+            draggable={false}
             src={sref.previewImage}
             alt={`--sref ${sref.srefCode}`}
             loading="lazy"
@@ -156,6 +181,76 @@ const SrefCard = ({ sref, initialFavorited = false }) => {
                 </div>
               </div>
             </div>
+
+            {/* AI action buttons */}
+            {sref.previewImage && (
+              <div style={{ display: 'flex', gap: 4, padding: '0 8px 6px' }}>
+                <button style={AI_BTN} onClick={e => handleAIAction(e, 'reverse', sref.previewImage)}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.30)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.18)'; }}>
+                  <Zap size={10} /> Reverse
+                </button>
+                <button style={AI_BTN} onClick={e => handleAIAction(e, 'reference', sref.previewImage)}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.30)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.18)'; }}>
+                  <ImagePlus size={10} /> Ref
+                </button>
+                <button style={AI_BTN} onClick={e => handleAIAction(e, 'json', sref.previewImage)}
+                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.30)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.18)'; }}>
+                  <Braces size={10} /> JSON
+                </button>
+              </div>
+            )}
+
+            {/* Multi-image thumbnail strip */}
+            {sref.images?.length > 1 && (
+              <div style={{ display: 'flex', gap: 4, padding: '0 8px 8px', overflowX: 'auto' }}
+                onClick={e => e.stopPropagation()}>
+                {sref.images.map((filename, i) => {
+                  const imgUrl = `/output/sref_${sref.srefCode}/images/${filename}`;
+                  return (
+                    <div
+                      key={i}
+                      draggable
+                      onDragStart={e => handleThumbDragStart(e, imgUrl)}
+                      onMouseEnter={() => setHoveredThumb(i)}
+                      onMouseLeave={() => setHoveredThumb(null)}
+                      style={{ position: 'relative', flexShrink: 0, cursor: 'grab' }}
+                    >
+                      <img
+                        draggable={false}
+                        src={imgUrl}
+                        alt={`sref ${sref.srefCode} image ${i + 1}`}
+                        style={{ width: 38, height: 38, objectFit: 'cover', borderRadius: 6,
+                          border: '1px solid rgba(255,255,255,0.2)' }}
+                      />
+                      {hoveredThumb === i && (
+                        <div style={{
+                          position: 'absolute', bottom: 'calc(100% + 4px)', left: 0,
+                          display: 'flex', gap: 2, padding: '3px 4px',
+                          backgroundColor: 'rgba(0,0,0,0.85)', borderRadius: 8,
+                          zIndex: 10, whiteSpace: 'nowrap',
+                        }}>
+                          <button style={{ ...AI_BTN, padding: '2px 5px', fontSize: 9 }}
+                            onClick={e => handleAIAction(e, 'reverse', imgUrl)}>
+                            <Zap size={9} />
+                          </button>
+                          <button style={{ ...AI_BTN, padding: '2px 5px', fontSize: 9 }}
+                            onClick={e => handleAIAction(e, 'reference', imgUrl)}>
+                            <ImagePlus size={9} />
+                          </button>
+                          <button style={{ ...AI_BTN, padding: '2px 5px', fontSize: 9 }}
+                            onClick={e => handleAIAction(e, 'json', imgUrl)}>
+                            <Braces size={9} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>

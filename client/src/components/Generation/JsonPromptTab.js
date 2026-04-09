@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import {
@@ -21,7 +21,7 @@ const GEN_MODEL_ID = 'gemini3-pro'; // Nanobanana Pro
    4. Result: explanation + JSON code block + copy
    5. "Generate with Nanobanana Pro" button
 ═══════════════════════════════════════════════════ */
-const JsonPromptTab = ({ onGenerated }) => {
+const JsonPromptTab = ({ onGenerated, prefillJob = null, onPrefillConsumed = null }) => {
   const { isAuthenticated, user, updateUser, openLoginModal } = useAuth();
   const { addGeneration, updateGeneration } = useGeneration();
 
@@ -37,6 +37,16 @@ const JsonPromptTab = ({ onGenerated }) => {
   // result shape: { explanation, jsonPrompt, rawText? }
   const [copied, setCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Consume prefillJob: imageUrl → set image preview
+  useEffect(() => {
+    if (!prefillJob?.imageUrl) return;
+    setImagePreview(prefillJob.imageUrl);
+    setImageFile(null);
+    setResult(null);
+    onPrefillConsumed?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillJob]);
 
   const handleImageFile = (f) => {
     if (!f?.type?.startsWith('image/')) { toast.error('Please select an image file'); return; }

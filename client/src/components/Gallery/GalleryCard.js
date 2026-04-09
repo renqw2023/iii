@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wand2, Share2, Heart, Eye } from 'lucide-react';
+import { Wand2, Share2, Heart, Eye, ImagePlus, Layers } from 'lucide-react';
 import { useGeneration } from '../../contexts/GenerationContext';
 import FavoriteButton from '../UI/FavoriteButton';
 import { useTranslation } from 'react-i18next';
@@ -67,6 +67,16 @@ const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _on
         setPrefill({ prompt: prompt.prompt });
     };
 
+    const handleUseAsReference = (e) => {
+        e.stopPropagation();
+        setPrefill({ tab: 'reverse', addReferenceUrl: prompt.previewImage });
+    };
+
+    const handleUseBoth = (e) => {
+        e.stopPropagation();
+        setPrefill({ tab: 'reverse', addReferenceUrl: prompt.previewImage, prompt: prompt.prompt });
+    };
+
     const handleLike = (e) => {
         e.stopPropagation();
         onLike?.(prompt._id);
@@ -122,6 +132,7 @@ const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _on
 
                 {inView && prompt.previewImage ? (
                     <img
+                        draggable={false}
                         src={prompt.previewImage}
                         alt={prompt.title || prompt.prompt?.substring(0, 80) || 'AI generated image'}
                         decoding="async"
@@ -176,8 +187,22 @@ const GalleryCard = ({ prompt, initialFavorited = false, onLike, onFavorite: _on
                                 </span>
                                 <button className="gallery-cta-btn" onClick={handleUseIdea}>
                                     <Wand2 size={11} style={{ marginRight: '0.3rem' }} />
-                                    {t('gallery.actions.useIdea')}
+                                    Use Prompt
                                 </button>
+                                {prompt.previewImage && (
+                                    <button className="gallery-cta-btn" onClick={handleUseAsReference}
+                                        style={{ marginTop: 3 }}>
+                                        <ImagePlus size={11} style={{ marginRight: '0.3rem' }} />
+                                        + Ref
+                                    </button>
+                                )}
+                                {prompt.previewImage && prompt.prompt && (
+                                    <button className="gallery-cta-btn" onClick={handleUseBoth}
+                                        style={{ marginTop: 3 }}>
+                                        <Layers size={11} style={{ marginRight: '0.3rem' }} />
+                                        Use Both
+                                    </button>
+                                )}
                             </div>
                             {/* 右列：Like + Favorite */}
                             <div className="gallery-overlay-actions">

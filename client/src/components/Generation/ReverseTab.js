@@ -62,16 +62,40 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
       .catch(() => {});
   }, []);
 
-  // 消费 prefillJob：prompt 填入文本框；referenceImageUrl 填入参考图
+  // 消费 prefillJob
   useEffect(() => {
     if (!prefillJob) return;
     if (prefillJob.tab === 'video') return;
-    if (prefillJob.prompt) {
-      setPrompt(prefillJob.prompt);
-    }
+    if (prefillJob.tab === 'json') return; // JsonPromptTab handles this
+
+    // Fill text prompt
+    if (prefillJob.prompt) setPrompt(prefillJob.prompt);
+
+    // Replace reference images with a single URL (legacy path, e.g. from detail page)
     if (prefillJob.referenceImageUrl) {
       setRefImages([{ preview: prefillJob.referenceImageUrl, b64: null, mime: null, url: prefillJob.referenceImageUrl }]);
     }
+
+    // Append to reference images without replacing (from Gallery / Sref "Ref" button)
+    if (prefillJob.addReferenceUrl) {
+      const url = prefillJob.addReferenceUrl;
+      setRefImages(prev => {
+        if (prev.some(r => r.url === url || r.preview === url)) return prev;
+        if (prev.length >= MAX_REF) return prev;
+        return [...prev, { preview: url, b64: null, mime: null, url }];
+      });
+    }
+
+    // Set Card 1 image and auto-analyze
+    if (prefillJob.imageUrl) {
+      const url = prefillJob.imageUrl;
+      setReversePreview(url);
+      setReverseFile(null);
+      setResult('');
+      // Delay so state settles before runGenerate reads selectedRevModel
+      setTimeout(() => runGenerate(null, url), 0);
+    }
+
     onPrefillConsumed?.();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillJob]);
@@ -340,7 +364,7 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
             <ImageIcon size={14} style={{ color: '#9ca3af', flexShrink: 0 }} />
             <div>
               <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', margin: 0 }}>Drop or upload reference</p>
-              <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>optional</p>
+              <p style={{ fontSize: 11, color: '#9ca3af', margin: 0 }}>optional · Nanobanana & Seedream 5.0</p>
             </div>
           </div>
           <button onClick={(e) => { e.stopPropagation(); refFileInputRef.current?.click(); }}
@@ -385,6 +409,9 @@ const ReverseTab = ({ onClose: _onClose, onStartGeneration, prefillJob, onPrefil
           </div>
           <p style={{ fontSize: 11, color: '#6366f1', margin: '6px 0 0', paddingLeft: 2 }}>
             {refImages.length}/{MAX_REF} · Will be sent with prompt
+          </p>
+          <p style={{ fontSize: 10, color: '#9ca3af', margin: '2px 0 0 2px' }}>
+            Works with: Nanobanana · Seedream 5.0
           </p>
         </div>
       )}

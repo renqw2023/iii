@@ -22,9 +22,11 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
     if (!open) setTab('reverse');
   }, [open]);
 
-  // prefillJob with tab:'video' → switch to video tab automatically
+  // prefillJob tab routing
   useEffect(() => {
     if (prefillJob?.tab === 'video') setTab('generate');
+    if (prefillJob?.tab === 'json')  setTab('json');
+    // 'reverse' (default) and undefined stay on Image tab
   }, [prefillJob]);
 
   const TAB_STYLE = (active) => ({
@@ -88,7 +90,11 @@ const Img2PromptPanel = ({ open, onClose, onStartGeneration, prefillJob, onPrefi
                 prefillJob={prefillJob}
                 onPrefillConsumed={onPrefillConsumed}
               />
-            : <JsonPromptTab onGenerated={onStartGeneration} />
+            : <JsonPromptTab
+                onGenerated={onStartGeneration}
+                prefillJob={prefillJob}
+                onPrefillConsumed={onPrefillConsumed}
+              />
         }
 
       </div>

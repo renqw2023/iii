@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Copy, Heart, Eye, Check, ExternalLink, Zap, ImagePlus, Braces } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Heart, Eye, ExternalLink, Zap, ImagePlus, Braces } from 'lucide-react';
 import FavoriteButton from '../UI/FavoriteButton';
 import { useGeneration } from '../../contexts/GenerationContext';
 import '../Post/LiblibStyleCard.css';
@@ -22,7 +21,6 @@ const SrefCard = ({ sref, initialFavorited = false }) => {
   const navigate = useNavigate();
   const { setPrefill } = useGeneration();
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [hoveredThumb, setHoveredThumb] = useState(null);
   const cardRef = useRef(null);
   const glowRef = useRef(null);
@@ -57,18 +55,6 @@ const SrefCard = ({ sref, initialFavorited = false }) => {
         naturalSize.current = { w, h };
         calcSpan(cardRef.current.offsetWidth);
       }
-    }
-  };
-
-  const handleCopy = async (e) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(`--sref ${sref.srefCode}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-      toast.success('Copied!');
-    } catch {
-      toast.error('Copy failed');
     }
   };
 
@@ -145,15 +131,9 @@ const SrefCard = ({ sref, initialFavorited = false }) => {
         {imageLoaded && (
           <div className="liblib-card-overlay">
             <div className="liblib-card-action-bar">
-              {/* 左列：sref code + CTA */}
+              {/* 左列：sref code */}
               <div className="liblib-action-left">
                 <span className="liblib-sref-code">--sref {sref.srefCode}</span>
-                <button className="liblib-cta-btn" onClick={handleCopy}>
-                  {copied
-                    ? <><Check size={11} style={{ marginRight: '0.3rem' }} /> Copied!</>
-                    : <><Copy size={11} style={{ marginRight: '0.3rem' }} /> Copy Code</>
-                  }
-                </button>
               </div>
               {/* 右列：stats + Favorite */}
               <div className="liblib-overlay-right">

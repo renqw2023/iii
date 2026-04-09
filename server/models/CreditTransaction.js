@@ -27,6 +27,7 @@ const creditTransactionSchema = new mongoose.Schema({
       'generate_image',
       'generate_video',
       'img2prompt',
+      'json-prompt',
       'purchase',
     ],
     required: true

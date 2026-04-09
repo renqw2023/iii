@@ -96,9 +96,9 @@ const JsonPromptTab = ({ onGenerated, prefillJob = null, onPrefillConsumed = nul
           timeout: 60000,
         });
       } else {
-        // text-only or gallery image URL (send URL as text hint)
-        const body = { text: text.trim() || `Analyze the reference image and build a prompt for it.` };
-        if (imagePreview && imagePreview.startsWith('http')) {
+        // text-only or URL-based image (relative or absolute)
+        const body = { text: text.trim() || 'Analyze this image and build a JSON prompt for it.' };
+        if (imagePreview) {
           body.imageUrl = imagePreview;
         }
         res = await axios.post('/api/tools/json-prompt', body, {

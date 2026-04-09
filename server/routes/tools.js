@@ -225,10 +225,11 @@ router.post(
   },
   async (req, res) => {
     try {
-      const text     = req.body?.text?.trim() || '';
-      const hasFile  = !!req.file;
+      const text      = req.body?.text?.trim() || '';
+      const hasFile   = !!req.file;
+      const imageUrl  = req.body?.imageUrl;
 
-      if (!text && !hasFile) {
+      if (!text && !hasFile && !imageUrl) {
         return res.status(400).json({ message: 'Please provide a text description or upload an image.' });
       }
 
@@ -252,8 +253,28 @@ router.post(
 
       if (hasFile) {
         userParts.push({ inlineData: { mimeType: req.file.mimetype, data: req.file.buffer.toString('base64') } });
+      } else if (imageUrl) {
+        // Resolve image from URL (relative path → local file; absolute URL → fetch)
+        let mimeType, base64Data;
+        if (imageUrl.startsWith('/')) {
+          const localPath = resolveLocalFile(imageUrl);
+          if (!fs.existsSync(localPath)) {
+            return res.status(400).json({ message: '图片文件不存在' });
+          }
+          const ext = path.extname(localPath).toLowerCase();
+          const mimeMap = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif' };
+          mimeType = mimeMap[ext] || 'image/jpeg';
+          base64Data = fs.readFileSync(localPath).toString('base64');
+        } else {
+          const imgFetch = await fetch(imageUrl, { signal: AbortSignal.timeout(15000) });
+          if (!imgFetch.ok) return res.status(400).json({ message: '图片 URL 无法访问' });
+          mimeType = imgFetch.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+          base64Data = Buffer.from(await imgFetch.arrayBuffer()).toString('base64');
+        }
+        userParts.push({ inlineData: { mimeType, data: base64Data } });
       }
-      userParts.push({ text: text || 'Analyze this image and build a JSON prompt for it.' });
+
+      userParts.push({ text: text || 'Analyze this image in detail and build a JSON prompt for it.' });
 
       const geminiBody = {
         system_instruction: { parts: [{ text: JSON_SYSTEM_PROMPT }] },
